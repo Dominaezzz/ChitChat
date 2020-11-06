@@ -22,7 +22,7 @@ dependencies {
 
 compose.desktop {
 	application {
-		mainClass = "MainKt"
+		mainClass = "me.dominaezzz.chitchat.MainKt"
 
 		nativeDistributions {
 			targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)

@@ -1,3 +1,5 @@
+package me.dominaezzz.chitchat
+
 import androidx.compose.desktop.Window
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
