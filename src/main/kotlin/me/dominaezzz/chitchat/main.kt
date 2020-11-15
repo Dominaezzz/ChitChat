@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import me.dominaezzz.chitchat.ui.ChitChatTheme
 
 fun main() {
-	Window(title = "Compose for Desktop", size = IntSize(300, 300)) {
+	Window(title = "Chit Chat", size = IntSize(300, 300)) {
 		ChitChatTheme {
 			DefaultContent()
 		}
