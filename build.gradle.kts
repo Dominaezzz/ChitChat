@@ -19,7 +19,7 @@ val ktorVersion = "1.4.2"
 val coroutinesVersion = "1.4.1"
 val serializationVersion = "1.0.1"
 val matrixKtVersion = "0.1.0-dev-1-20-g6449827"
-val sqliteVersion = "3.28.0"
+val sqliteVersion = "3.32.3.2"
 
 dependencies {
 	implementation(compose.desktop.currentOs)
