@@ -51,3 +51,11 @@ compose.desktop {
 		}
 	}
 }
+
+tasks {
+	compileKotlin {
+		kotlinOptions {
+			freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn")
+		}
+	}
+}
