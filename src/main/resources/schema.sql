@@ -9,17 +9,6 @@ CREATE TABLE room_events
     unsigned      TEXT,
     stateKey      TEXT,
     prevContent   TEXT,
-    json          TEXT AS (JSON_OBJECT(
-        'type', type,
-        'content', JSON(content),
-        'event_id', eventId,
-        'sender', sender,
-        'origin_server_ts', timestamp,
-        'unsigned', JSON(unsigned),
-        'room_id', roomId,
-        'state_key', stateKey,
-        'prev_content', JSON(prevContent)
-        )),
 
     timelineId    INTEGER NOT NULL DEFAULT 0,
     timelineOrder INTEGER,
@@ -126,8 +115,7 @@ CREATE TABLE device_events
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     type    TEXT NOT NULL,
     content TEXT NOT NULL,
-    sender  TEXT NOT NULL,
-    json    TEXT AS (JSON_OBJECT('type', type, 'content', JSON(content), 'sender', sender))
+    sender  TEXT NOT NULL
 );
 
 CREATE TABLE room_metadata
