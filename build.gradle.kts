@@ -11,13 +11,30 @@ version = "1.0-SNAPSHOT"
 
 repositories {
 	maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+	mavenLocal()
 	jcenter()
 }
 
+val ktorVersion = "1.4.2"
+val coroutinesVersion = "1.4.1"
+val serializationVersion = "1.0.1"
+val matrixKtVersion = "0.1.0-dev-1-20-g6449827"
 val sqliteVersion = "3.28.0"
 
 dependencies {
 	implementation(compose.desktop.currentOs)
+	implementation(compose.materialIconsExtended)
+
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
+
+	implementation("io.github.matrixkt:client-jvm:$matrixKtVersion")
+	implementation("io.github.matrixkt:olm-jvm:$matrixKtVersion")
+	implementation("io.ktor:ktor-client-core:$ktorVersion")
+	implementation("io.ktor:ktor-client-apache:$ktorVersion")
+	implementation("io.ktor:ktor-client-logging:$ktorVersion")
 
 	implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
 
