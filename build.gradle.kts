@@ -14,8 +14,12 @@ repositories {
 	jcenter()
 }
 
+val sqliteVersion = "3.28.0"
+
 dependencies {
 	implementation(compose.desktop.currentOs)
+
+	implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
 
 	testImplementation(kotlin("test-junit"))
 }
