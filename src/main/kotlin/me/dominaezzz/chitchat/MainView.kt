@@ -13,6 +13,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonElement
 import me.dominaezzz.chitchat.db.ContentRepository
 import me.dominaezzz.chitchat.db.getValue
 import me.dominaezzz.chitchat.db.setValue
@@ -137,11 +138,11 @@ private suspend fun sync(client: MatrixClient): SyncResponse {
 									eventStmt.setString(1, roomId)
 									eventStmt.setString(2, event.eventId)
 									eventStmt.setString(3, event.type)
-									eventStmt.setString(4, event.content.toString())
+									eventStmt.setString(4, MatrixJson.encodeToString(JsonElement.serializer(), event.content))
 									eventStmt.setString(5, event.sender)
 									eventStmt.setString(6, event.unsigned?.let { MatrixJson.encodeToString(UnsignedData.serializer(), it) })
 									eventStmt.setString(7, event.stateKey)
-									eventStmt.setString(8, event.prevContent?.toString())
+									eventStmt.setString(8, event.prevContent?.let { MatrixJson.encodeToString(JsonElement.serializer(), it) })
 									eventStmt.setLong(9, event.originServerTimestamp)
 									eventStmt.setLong(10, order++)
 									eventStmt.executeUpdate()
@@ -160,11 +161,11 @@ private suspend fun sync(client: MatrixClient): SyncResponse {
 									eventStmt.setString(1, roomId)
 									eventStmt.setString(2, event.eventId)
 									eventStmt.setString(3, event.type)
-									eventStmt.setString(4, event.content.toString())
+									eventStmt.setString(4, MatrixJson.encodeToString(JsonElement.serializer(), event.content))
 									eventStmt.setString(5, event.sender)
 									eventStmt.setString(6, event.unsigned?.let { MatrixJson.encodeToString(UnsignedData.serializer(), it) })
 									eventStmt.setString(7, event.stateKey)
-									eventStmt.setString(8, event.prevContent?.toString())
+									eventStmt.setString(8, event.prevContent?.let { MatrixJson.encodeToString(JsonElement.serializer(), it) })
 									eventStmt.setLong(9, event.originServerTimestamp)
 									eventStmt.setNull(10, Types.INTEGER)
 									eventStmt.executeUpdate()
@@ -176,7 +177,7 @@ private suspend fun sync(client: MatrixClient): SyncResponse {
 								for (event in accountEvents) {
 									accountStmt.setString(1, event.type)
 									accountStmt.setString(2, roomId)
-									accountStmt.setString(3, event.content.toString())
+									accountStmt.setString(3, MatrixJson.encodeToString(JsonElement.serializer(), event.content))
 									accountStmt.executeUpdate()
 								}
 							}
@@ -199,7 +200,7 @@ private suspend fun sync(client: MatrixClient): SyncResponse {
                             """).use { stmt ->
 						for (event in accountData.events) {
 							stmt.setString(1, event.type)
-							stmt.setString(2, event.content.toString())
+							stmt.setString(2, MatrixJson.encodeToString(JsonElement.serializer(), event.content))
 							stmt.executeUpdate()
 						}
 					}
@@ -210,7 +211,7 @@ private suspend fun sync(client: MatrixClient): SyncResponse {
 					conn.prepareStatement("INSERT INTO device_events(type, content, sender) VALUES (?, ?, ?);").use { stmt ->
 						for (event in deviceEvents) {
 							stmt.setString(1, event.type)
-							stmt.setString(2, event.content.toString())
+							stmt.setString(2, MatrixJson.encodeToString(JsonElement.serializer(), event.content))
 							stmt.setString(3, event.sender)
 							stmt.executeUpdate()
 						}
