@@ -16,27 +16,7 @@ import me.dominaezzz.chitchat.ui.ChitChatTheme
 fun main() {
 	Window(title = "Chit Chat", size = IntSize(300, 300)) {
 		ChitChatTheme {
-			DefaultContent()
-		}
-	}
-}
-
-@Composable
-fun DefaultContent() {
-	var count by remember { mutableStateOf(0) }
-
-	Column(Modifier.fillMaxSize(), Arrangement.spacedBy(5.dp)) {
-		Button(modifier = Modifier.align(Alignment.CenterHorizontally),
-			onClick = {
-				count++
-			}) {
-			Text(if (count == 0) "Hello World" else "Clicked ${count}!")
-		}
-		Button(modifier = Modifier.align(Alignment.CenterHorizontally),
-			onClick = {
-				count = 0
-			}) {
-			Text("Reset")
+			AppView()
 		}
 	}
 }
