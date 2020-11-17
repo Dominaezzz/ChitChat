@@ -20,7 +20,7 @@ class ContentRepository(private val client: MatrixClient, private val mediaDir: 
         val mediaId = uri.path.removePrefix("/")
 
         val mediaFile = mediaDir.resolve(serverName).resolve(mediaId)
-        return if (Files.exists(mediaDir)) {
+        return if (Files.exists(mediaFile)) {
             ioSemaphore.withPermit {
                 withContext(Dispatchers.IO) {
                     Files.readAllBytes(mediaFile)
