@@ -1,6 +1,22 @@
 package me.dominaezzz.chitchat
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumnFor
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.ListItem
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageAsset
+import androidx.compose.ui.graphics.asImageAsset
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.events.UnsignedData
@@ -9,20 +25,20 @@ import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.utils.MatrixJson
 import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
-import me.dominaezzz.chitchat.db.ContentRepository
-import me.dominaezzz.chitchat.db.getValue
-import me.dominaezzz.chitchat.db.setValue
-import me.dominaezzz.chitchat.db.usingConnection
+import me.dominaezzz.chitchat.db.*
+import org.jetbrains.skija.Image
+import java.net.URI
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.sql.Types
 
-val projectDir: Path = Paths.get(".").toAbsolutePath()
+val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
 val databaseWriteSemaphore = Semaphore(1)
 
@@ -62,6 +78,61 @@ fun MainView() {
 			} catch (e: Exception) {
 				e.printStackTrace()
 			}
+		}
+	}
+
+	val rooms by produceState<List<Room>?>(null, lastSync) {
+		if (lastSync == null) {
+			// Ensure initial load is not cancelled.
+			withContext(NonCancellable) {
+				value = loadRoomsFromDatabase()
+			}
+		} else {
+			val syncRoomIds = lastSync?.rooms?.join?.keys
+			if (syncRoomIds != null) {
+				val missingRooms = syncRoomIds.toMutableSet()
+				value?.forEach { missingRooms.remove(it.id) }
+				if (missingRooms.isNotEmpty()) {
+					value = loadRoomsFromDatabase()
+				}
+			}
+		}
+	}
+
+	Column(Modifier.fillMaxSize()) {
+		Text(
+			"Rooms",
+			Modifier.padding(10.dp).align(Alignment.CenterHorizontally),
+			style = MaterialTheme.typography.h5
+		)
+
+		Spacer(Modifier.height(5.dp))
+
+		LazyColumnFor(rooms ?: emptyList()) { room ->
+			ListItem(
+				text = { Text(room.displayName) },
+				secondaryText = { Text("${room.memberCount} members") },
+				singleLineSecondaryText = true,
+				icon = {
+					val image by produceState<ImageAsset?>(null, room) {
+						value = null
+						if (room.avatarUrl != null) {
+							val url = URI(room.avatarUrl)
+							val data = contentRepo.getContent(url)
+							val image = withContext(Dispatchers.Default) {
+								Image.makeFromEncoded(data).asImageAsset()
+							}
+							value = image
+						}
+					}
+
+					if (image != null) {
+						Image(image!!, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+					} else {
+						Image(Icons.Filled.Contacts, Modifier.size(40.dp))
+					}
+				}
+			)
 		}
 	}
 }
@@ -243,4 +314,39 @@ private suspend fun sync(client: MatrixClient): SyncResponse {
 	}
 
 	return sync
+}
+
+class Room(
+	val id: String,
+	val displayName: String,
+	val topic: String?,
+	val memberCount: Int,
+	val avatarUrl: String?
+)
+
+@OptIn(ExperimentalStdlibApi::class)
+private suspend fun loadRoomsFromDatabase(): List<Room> {
+	return withContext(Dispatchers.IO) {
+		usingStatement { stmt ->
+			stmt.executeQuery(ROOM_INFO_SQL).use { rs ->
+				val idIndex = rs.findColumn("roomId")
+				val nameIndex = rs.findColumn("displayName")
+				val avatarIndex = rs.findColumn("displayAvatar")
+				val mCountIndex = rs.findColumn("memberCount")
+				val topicIndex = rs.findColumn("topic")
+
+				buildList {
+					while (rs.next()) {
+						add(Room(
+							id = rs.getString(idIndex),
+							displayName = rs.getString(nameIndex),
+							topic = rs.getString(topicIndex),
+							avatarUrl = rs.getString(avatarIndex),
+							memberCount = rs.getInt(mCountIndex)
+						))
+					}
+				}
+			}
+		}
+	}
 }
