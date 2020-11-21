@@ -35,11 +35,11 @@ private fun AnnotatedString.Builder.appendElement(element: Element, maxDepth: In
 		"i", "em" -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { appendChildren(element, maxDepth) }
 		"b", "strong" -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { appendChildren(element, maxDepth) }
 		"del", "strike" -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { appendChildren(element, maxDepth) }
-		"pre" /* TBD */ -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { appendChildren(element, maxDepth) }
-		"code" -> {
-			// language
-			withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { appendChildren(element, maxDepth) }
-		}
+		// "pre" /* TBD */ -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { appendChildren(element, maxDepth) }
+		// "code" -> {
+		// 	// language
+		// 	withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { appendChildren(element, maxDepth) }
+		// }
 		"sup" -> withStyle(SpanStyle(baselineShift = BaselineShift.Superscript)) { appendChildren(element, maxDepth) }
 		"sub" -> withStyle(SpanStyle(baselineShift = BaselineShift.Subscript)) { appendChildren(element, maxDepth) }
 		"a" -> withStyle(SpanStyle(textDecoration = TextDecoration.Underline)) {
