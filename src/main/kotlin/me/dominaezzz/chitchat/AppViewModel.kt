@@ -353,10 +353,16 @@ class AppViewModel(
 	}
 
 	private suspend fun backFill(roomId: String, eventId: String) {
-		val token = withContext(Dispatchers.IO) {
+		val (token, headEventId) = withContext(Dispatchers.IO) {
 			usingConnection { conn ->
-				// TODO: Should crawl up timeline until token is found or timeline is exhausted.
-				conn.prepareStatement("SELECT token FROM room_pagination_tokens WHERE roomId = ? AND eventId = ?;").use { stmt ->
+				// Find first event in timeline and get corresponding token.
+				conn.prepareStatement("""
+					SELECT token, first_timeline_event.eventId
+					FROM room_pagination_tokens
+					JOIN room_events first_timeline_event USING(roomId, eventId)
+					JOIN room_events first_supported_event USING(roomId, timelineId)
+					WHERE roomId = ? AND first_supported_event.eventId = ? AND first_timeline_event.timelineOrder == 1;
+				""").use { stmt ->
 					stmt.setString(1, roomId)
 					stmt.setString(2, eventId)
 					stmt.executeQuery().use { rs ->
@@ -365,7 +371,7 @@ class AppViewModel(
 							// Cannot paginate backwards from this event
 							throw CancellationException("Can not back paginate any further.")
 						}
-						rs.getString(1)
+						rs.getString(1) to rs.getString(2)
 					}
 				}
 			}
@@ -381,7 +387,7 @@ class AppViewModel(
 
 					conn.prepareStatement("DELETE FROM room_pagination_tokens WHERE roomId = ? AND eventId = ?;").use {
 						it.setString(1, roomId)
-						it.setString(2, eventId)
+						it.setString(2, headEventId)
 						val changes = it.executeUpdate()
 						if (changes != 1) {
 							conn.rollback()
@@ -396,15 +402,10 @@ class AppViewModel(
 					}
 					println(newEvents.size)
 
-					val timelineId = conn.prepareStatement("SELECT timelineId, timelineOrder FROM room_events WHERE roomId = ? AND eventId = ?;").use { stmt ->
-						stmt.setString(1, roomId)
-						stmt.setString(2, eventId)
-						stmt.executeQuery().use { rs ->
-							check(rs.next())
-							val order = rs.getInt(2)
-							check(order == 1) { "Can only back paginate from edge of timeline but was given $order." }
-							rs.getInt(1)
-						}
+					val timelineId = run {
+						val (id, order) = conn.getTimelineIdAndOrder(roomId, headEventId)
+						check(order == 1) { "Can only back paginate from edge of timeline but was given $order." }
+						id
 					}
 					val shiftTimelineStmt = conn.prepareStatement("UPDATE room_events SET timelineOrder = timelineOrder + ? WHERE roomId = ? AND timelineId = ?;")
 					shiftTimelineStmt.setString(2, roomId)
