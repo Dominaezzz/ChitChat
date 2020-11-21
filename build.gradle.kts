@@ -38,6 +38,8 @@ dependencies {
 
 	implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
 
+	implementation("org.jsoup:jsoup:1.13.1")
+
 	testImplementation(kotlin("test-junit"))
 }
 
