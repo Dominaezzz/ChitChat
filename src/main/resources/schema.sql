@@ -51,7 +51,7 @@ END;
 CREATE TRIGGER maintain_event_prev_content
     AFTER INSERT
     ON room_events
-    WHEN NEW.stateKey IS NOT NULL AND NEW.timelineOrder IS NOT NULL
+    WHEN NEW.stateKey IS NOT NULL
 BEGIN
     UPDATE room_events
     SET prevContent = (
@@ -64,12 +64,11 @@ BEGIN
         ORDER BY timelineId ASC, timelineOrder DESC
         LIMIT 1
     )
-    WHERE roomId = NEW.roomId AND eventId = NEW.eventId AND prevContent IS NULL;
+    WHERE roomId = NEW.roomId AND eventId = NEW.eventId AND NEW.timelineOrder IS NOT NULL AND prevContent IS NULL;
 
     UPDATE room_events
     SET prevContent = NEW.content
-    WHERE roomId = NEW.roomId
-      AND eventId = (
+    WHERE roomId = NEW.roomId AND prevContent IS NULL AND eventId = (
         SELECT eventId
         FROM room_events
         WHERE roomId = NEW.roomId AND type = NEW.type AND stateKey = NEW.stateKey
