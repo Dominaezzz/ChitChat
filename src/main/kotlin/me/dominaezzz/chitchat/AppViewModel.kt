@@ -14,7 +14,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.*
 import me.dominaezzz.chitchat.db.*
 import java.sql.Types
 
@@ -30,10 +30,11 @@ class AppViewModel(
 		val displayName: String,
 		val topic: String?,
 		val memberCount: Int,
-		val avatarUrl: String?
+		val avatarUrl: String?,
+
+		val firstEventsId: String,
+		val prevLatestOrder: Int
 	)
-	private val _rooms = MutableStateFlow<List<Room>>(emptyList())
-	val rooms: StateFlow<List<Room>> get() = _rooms
 
 	suspend fun sync() {
 		val syncToken = withContext(Dispatchers.IO) {
@@ -220,41 +221,67 @@ class AppViewModel(
 
 	suspend fun rooms(rooms: SnapshotStateList<Room>) {
 		rooms.clear()
-		val initialRooms = loadRoomsFromDatabase()
+
+		val initialRooms = loadRoomsFromDatabase(emptyList())
 		rooms.addAll(initialRooms)
+
 		lastSync.mapNotNull { it?.rooms?.join }
-			.cancellable()
-			.collect { joinedRooms ->
-				val missingRooms = joinedRooms.keys.toMutableSet()
-				rooms.forEach { missingRooms.remove(it.id) }
-				if (missingRooms.isNotEmpty()) {
-					// TODO: Make this smarter/granular.
-					rooms.clear()
-					rooms.addAll(loadRoomsFromDatabase())
+			.filter { joinedRooms ->
+				joinedRooms.values.asSequence()
+					.mapNotNull { it.timeline }
+					.flatMap { it.events }
+					.any { it.stateKey != null } ||
+						joinedRooms.values.any { it.state != null }
+			}
+			.map { Unit }
+			.conflate()
+			.collect {
+				val changedRooms = loadRoomsFromDatabase(rooms)
+				val lookUpMap = changedRooms.associateByTo(mutableMapOf()) { it.id }
+
+				for (i in rooms.indices) {
+					val changedRoom = lookUpMap.remove(rooms[i].id)
+					if (changedRoom != null) {
+						rooms[i] = changedRoom
+					}
+				}
+
+				if (lookUpMap.isNotEmpty()) {
+					// Might want to consider inserting this to
+					// preserve some sort of ordering.
+					rooms.addAll(lookUpMap.values)
 				}
 			}
 	}
 
 	@OptIn(ExperimentalStdlibApi::class)
-	private suspend fun loadRoomsFromDatabase(): List<Room> {
+	private suspend fun loadRoomsFromDatabase(loadedRooms: List<Room>): List<Room> {
+		val loadedRoomsJson = buildJsonObject {
+			for (room in loadedRooms) {
+				putJsonObject(room.id) {
+					put("first_events_id", room.firstEventsId)
+					put("last_state_order", room.prevLatestOrder)
+				}
+			}
+		}
 		return withContext(Dispatchers.IO) {
-			usingStatement { stmt ->
-				stmt.executeQuery(ROOM_INFO_SQL).use { rs ->
-					val idIndex = rs.findColumn("roomId")
-					val nameIndex = rs.findColumn("displayName")
-					val avatarIndex = rs.findColumn("displayAvatar")
-					val mCountIndex = rs.findColumn("memberCount")
-					val topicIndex = rs.findColumn("topic")
+			usingConnection { conn ->
+				conn.prepareStatement(ROOM_INFO_SQL).use { stmt ->
+					stmt.setSerializable(1, JsonElement.serializer(), loadedRoomsJson)
 
-					buildList {
-						while (rs.next()) {
-							add(Room(
-								id = rs.getString(idIndex),
-								displayName = rs.getString(nameIndex),
-								topic = rs.getString(topicIndex),
-								avatarUrl = rs.getString(avatarIndex),
-								memberCount = rs.getInt(mCountIndex)
-							))
+					stmt.executeQuery().use { rs ->
+						buildList {
+							while (rs.next()) {
+								add(Room(
+									id = rs.getString(1),
+									displayName = rs.getString(2),
+									avatarUrl = rs.getString(3),
+									memberCount = rs.getInt(4),
+									topic = rs.getString(5),
+									firstEventsId = rs.getString(6),
+									prevLatestOrder = rs.getInt(7)
+								))
+							}
 						}
 					}
 				}
