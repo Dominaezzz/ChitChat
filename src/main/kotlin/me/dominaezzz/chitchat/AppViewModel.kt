@@ -314,7 +314,8 @@ class AppViewModel(
 
 		// Load future events
 		val futureEventsFlow = _lastSync.mapNotNull { it?.rooms?.join?.get(roomId) }
-			.filter { it.timeline?.events.isNullOrEmpty() }
+			.filterNot { it.timeline?.events.isNullOrEmpty() }
+			.map { Unit }
 			.onEach {
 				val item = timelineEvents.last()
 				val lastEvent = item.event
