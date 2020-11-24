@@ -122,11 +122,13 @@ fun MainView() {
 							value = null
 							if (room.avatarUrl != null) {
 								val url = URI(room.avatarUrl)
-								val data = contentRepo.getContent(url)
-								val image = withContext(Dispatchers.Default) {
-									Image.makeFromEncoded(data).asImageAsset()
+								if (url.scheme == "mxc") {
+									val data = contentRepo.getContent(url)
+									val image = withContext(Dispatchers.Default) {
+										Image.makeFromEncoded(data).asImageAsset()
+									}
+									value = image
 								}
-								value = image
 							}
 						}
 
