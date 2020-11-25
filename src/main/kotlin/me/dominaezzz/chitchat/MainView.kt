@@ -11,7 +11,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,7 +122,7 @@ fun MainView() {
 							value = null
 							if (room.avatarUrl != null) {
 								val url = URI(room.avatarUrl)
-								if (url.scheme == "mxc") {
+								runCatching {
 									val data = contentRepo.getContent(url)
 									val image = withContext(Dispatchers.Default) {
 										Image.makeFromEncoded(data).asImageAsset()
@@ -148,6 +150,65 @@ fun MainView() {
 
 		if (selectedRoom != null) {
 			Column(Modifier.fillMaxWidth()) {
+				TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {
+					val room by derivedStateOf { rooms.single { it.id == selectedRoom } }
+
+					Spacer(Modifier.width(16.dp))
+
+					val image by produceState<ImageAsset?>(null, room) {
+						value = null
+						if (room.avatarUrl != null) {
+							val url = URI(room.avatarUrl)
+							runCatching {
+								val data = contentRepo.getContent(url)
+								val image = withContext(Dispatchers.Default) {
+									Image.makeFromEncoded(data).asImageAsset()
+								}
+								value = image
+							}
+						}
+					}
+
+					if (image != null) {
+						Image(image!!, Modifier.size(40.dp).clip(CircleShape).align(Alignment.CenterVertically), contentScale = ContentScale.Crop)
+					} else {
+						Image(Icons.Filled.Image, Modifier.size(40.dp).align(Alignment.CenterVertically))
+					}
+
+					Spacer(Modifier.width(24.dp))
+
+					ProvideEmphasis(AmbientEmphasisLevels.current.high) {
+						Text(
+							text = room.displayName,
+							modifier = Modifier.align(Alignment.CenterVertically),
+							style = MaterialTheme.typography.h5,
+							maxLines = 1,
+							overflow = TextOverflow.Ellipsis
+						)
+					}
+
+					Spacer(Modifier.width(24.dp))
+
+					val topic = room.topic
+					if (topic != null) {
+						ProvideEmphasis(AmbientEmphasisLevels.current.medium) {
+							Text(
+								text = topic,
+								modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
+								style = MaterialTheme.typography.body2,
+								maxLines = 2,
+								overflow = TextOverflow.Ellipsis
+							)
+						}
+					} else {
+						Spacer(Modifier.weight(1f).widthIn(min = 24.dp))
+					}
+
+					IconButton(onClick = { /* Open room settings */ }, enabled = false) {
+						Icon(Icons.Filled.Settings)
+					}
+				}
+
 				// Timeline
 				LazyColumnForIndexed(timelineEvents, Modifier.weight(1f)) { idx, item ->
 					if (idx == 0) {
