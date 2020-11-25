@@ -8,12 +8,10 @@ import androidx.compose.foundation.lazy.LazyColumnForIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ListItem
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -148,17 +146,40 @@ fun MainView() {
 				.background(color = Color.Black.copy(alpha = 0.27f))
 		)
 
-		// Timeline
-		LazyColumnForIndexed(timelineEvents, Modifier.fillMaxSize()) { idx, item ->
-			if (idx == 0) {
-				onActive {
-					shouldBackPaginate.value = true
-					onDispose {
-						shouldBackPaginate.value = false
+		if (selectedRoom != null) {
+			Column(Modifier.fillMaxWidth()) {
+				// Timeline
+				LazyColumnForIndexed(timelineEvents, Modifier.weight(1f)) { idx, item ->
+					if (idx == 0) {
+						onActive {
+							shouldBackPaginate.value = true
+							onDispose {
+								shouldBackPaginate.value = false
+							}
+						}
 					}
+					ChatItem(item, relevantMembers)
 				}
+
+				Spacer(Modifier.fillMaxWidth().height(8.dp))
+
+				var draftMessage by remember(selectedRoom) { mutableStateOf("") }
+
+				OutlinedTextField(
+					value = draftMessage,
+					onValueChange = { draftMessage = it },
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(16.dp),
+					placeholder = { Text("Send a message (unencrypted)...") },
+					trailingIcon = {
+						IconButton(onClick = { /* Send message */ }, enabled = false) {
+							Icon(Icons.Filled.Send)
+						}
+					},
+					onImeActionPerformed = { _, _ -> /* Send message */ }
+				)
 			}
-			ChatItem(item, relevantMembers)
 		}
 	}
 }
