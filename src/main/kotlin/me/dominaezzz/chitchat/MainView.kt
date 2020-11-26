@@ -73,6 +73,7 @@ fun MainView() {
 	val contentRepo = ContentRepoAmbient.current
 
 	val appViewModel = remember { AppViewModel(client, databaseWriteSemaphore) }
+	val iconLoader = remember(contentRepo) { IconLoader(contentRepo) }
 
 	LaunchedEffect(appViewModel) {
 		while (isActive) {
@@ -121,13 +122,9 @@ fun MainView() {
 						val image by produceState<ImageAsset?>(null, room) {
 							value = null
 							if (room.avatarUrl != null) {
-								val url = URI(room.avatarUrl)
 								runCatching {
-									val data = contentRepo.getContent(url)
-									val image = withContext(Dispatchers.Default) {
-										Image.makeFromEncoded(data).asImageAsset()
-									}
-									value = image
+									val url = URI(room.avatarUrl)
+									value = iconLoader.loadIcon(url)
 								}
 							}
 						}
@@ -158,13 +155,9 @@ fun MainView() {
 					val image by produceState<ImageAsset?>(null, room) {
 						value = null
 						if (room.avatarUrl != null) {
-							val url = URI(room.avatarUrl)
 							runCatching {
-								val data = contentRepo.getContent(url)
-								val image = withContext(Dispatchers.Default) {
-									Image.makeFromEncoded(data).asImageAsset()
-								}
-								value = image
+								val url = URI(room.avatarUrl)
+								value = iconLoader.loadIcon(url)
 							}
 						}
 					}
