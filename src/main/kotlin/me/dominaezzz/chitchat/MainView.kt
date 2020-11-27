@@ -10,10 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Contacts
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,6 +82,7 @@ fun MainView() {
 		}
 	}
 
+	var roomFilter by remember { mutableStateOf("") }
 	val rooms = remember { mutableStateListOf<AppViewModel.Room>() }
 	LaunchedEffect(appViewModel) { appViewModel.rooms(rooms) }
 	var selectedRoom by remember { mutableStateOf<String?>(null) }
@@ -101,13 +99,52 @@ fun MainView() {
 
 	Row(Modifier.fillMaxSize()) {
 		Column(Modifier.fillMaxWidth(0.3f)) {
+			TopAppBar(
+				title = {
+					val username by produceState("You", client) {
+						// TODO: Get this from database.
+						val userId = client.accountApi.getTokenOwner()
+						value = userId
+						val profile = client.userApi.getUserProfile(userId)
+						value = profile.displayName ?: userId
+					}
+					Text(username)
+				},
+				backgroundColor = Color.Transparent,
+				actions = {
+					IconButton(onClick = { /* Open Settings */ }, enabled = false) {
+						Icon(Icons.Filled.Settings)
+					}
+				},
+				elevation = 0.dp
+				// navigationIcon = { Icon(Icons.Filled.Person) },
+			)
+
+			Spacer(Modifier.height(5.dp))
+
+			Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
+				Spacer(Modifier.width(5.dp))
+
+				OutlinedTextField(
+					value = roomFilter,
+					onValueChange = { roomFilter = it },
+					modifier = Modifier.weight(1f),
+					placeholder = { Text("Filter...") },
+					leadingIcon = { Icon(Icons.Filled.FilterList) }
+				)
+
+				IconButton(onClick = { /* Show public rooms */ }, enabled = false) {
+					Icon(Icons.Filled.Explore)
+				}
+
+				Spacer(Modifier.width(5.dp))
+			}
+
 			Text(
 				"Rooms",
 				Modifier.padding(10.dp).align(Alignment.CenterHorizontally),
 				style = MaterialTheme.typography.h5
 			)
-
-			Spacer(Modifier.height(5.dp))
 
 			LazyColumnFor(rooms) { room ->
 				ListItem(
