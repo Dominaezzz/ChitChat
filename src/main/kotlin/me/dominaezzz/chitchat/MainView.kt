@@ -137,6 +137,12 @@ fun RoomListView(
 ) {
 	var roomFilter by remember { mutableStateOf("") }
 
+	var showPublicRoomsPopup by remember { mutableStateOf(false) }
+
+	if (showPublicRoomsPopup) {
+		PublicRoomsPopup { showPublicRoomsPopup = false }
+	}
+
 	Column(modifier) {
 		TopAppBar(
 			title = {
@@ -174,7 +180,7 @@ fun RoomListView(
 				leadingIcon = { Icon(Icons.Filled.FilterList) }
 			)
 
-			IconButton(onClick = { /* Show public rooms */ }, enabled = false) {
+			IconButton(onClick = { showPublicRoomsPopup = true }) {
 				Icon(Icons.Filled.Explore)
 			}
 
