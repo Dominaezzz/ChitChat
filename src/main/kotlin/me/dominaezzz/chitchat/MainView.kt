@@ -40,25 +40,40 @@ val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
 val databaseWriteSemaphore = Semaphore(1)
 
+data class LoginSession(
+	val accessToken: String,
+	val userId: String,
+	val deviceId: String
+)
 
+val SessionAmbient = staticAmbientOf<LoginSession> { error("No login session provided") }
 val ClientAmbient = staticAmbientOf<MatrixClient> { error("No client provided") }
 val ContentRepoAmbient = staticAmbientOf<ContentRepository> { error("No content repo provided") }
 val DatabaseSemaphoreAmbient = staticAmbientOf<Semaphore> { error("No database semaphore provided") }
 
 @Composable
 fun AppView() {
-	val client = remember {
+	val session = remember {
+		usingConnection { conn ->
+			LoginSession(
+				accessToken = conn.getValue("ACCESS_TOKEN")!!,
+				userId = conn.getValue("USER_ID")!!,
+				deviceId = conn.getValue("DEVICE_ID")!!
+			)
+		}
+	}
+	val client = remember(session) {
 		val engine = Apache.create {
 			connectTimeout = 0
 			socketTimeout = 0
 		}
 		MatrixClient(engine).apply {
-			accessToken = usingConnection { it.getValue("ACCESS_TOKEN")!! }
+			accessToken = session.accessToken
 		}
 	}
 	val contentRepo = remember(client) { ContentRepository(client, appWorkingDir.resolve("media")) }
 
-	Providers(ClientAmbient provides client, ContentRepoAmbient provides contentRepo) {
+	Providers(SessionAmbient provides session, ClientAmbient provides client, ContentRepoAmbient provides contentRepo) {
 		MainView()
 	}
 }
@@ -125,13 +140,14 @@ fun RoomListView(
 	Column(modifier) {
 		TopAppBar(
 			title = {
+				val session = SessionAmbient.current
 				val client = ClientAmbient.current
-				val username by produceState("You", client) {
-					// TODO: Get this from database.
-					val userId = client.accountApi.getTokenOwner()
-					value = userId
-					val profile = client.userApi.getUserProfile(userId)
-					value = profile.displayName ?: userId
+				val username by produceState(session.userId, client) {
+					val profile = client.userApi.getUserProfile(session.userId)
+					val displayName = profile.displayName
+					if (displayName != null) {
+						value = displayName
+					}
 				}
 				Text(username)
 			},
