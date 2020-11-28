@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageAsset
-import androidx.compose.ui.graphics.asImageAsset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.annotatedString
@@ -32,7 +31,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.util.parseMatrixCustomHtml
-import org.jetbrains.skija.Image
 import java.net.URI
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -86,16 +84,6 @@ fun MainView() {
 	val rooms = remember { mutableStateListOf<AppViewModel.Room>() }
 	LaunchedEffect(appViewModel) { appViewModel.rooms(rooms) }
 	var selectedRoom by remember { mutableStateOf<String?>(null) }
-
-	val timelineEvents = remember { mutableStateListOf<TimelineItem>() }
-	val relevantMembers = remember { mutableStateMapOf<String, MemberContent>() }
-	val shouldBackPaginate = remember { MutableStateFlow(true) }
-
-	LaunchedEffect(selectedRoom) {
-		val roomId = selectedRoom ?: return@LaunchedEffect
-
-		appViewModel.selectRoom(roomId, timelineEvents, relevantMembers, shouldBackPaginate)
-	}
 
 	Row(Modifier.fillMaxSize()) {
 		Column(Modifier.fillMaxWidth(0.3f)) {
@@ -183,95 +171,122 @@ fun MainView() {
 		)
 
 		if (selectedRoom != null) {
-			Column(Modifier.fillMaxWidth()) {
-				TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {
-					val room by derivedStateOf { rooms.single { it.id == selectedRoom } }
+			val room by derivedStateOf { rooms.single { it.id == selectedRoom } }
+			RoomView(
+				room,
+				appViewModel,
+				iconLoader,
+				Modifier.fillMaxWidth()
+			)
+		}
+	}
+}
 
-					Spacer(Modifier.width(16.dp))
+@Composable
+fun RoomView(
+	room: AppViewModel.Room,
+	appViewModel: AppViewModel,
+	iconLoader: IconLoader,
+	modifier: Modifier = Modifier
+) {
+	val timelineEvents = remember(room.id) { mutableStateListOf<TimelineItem>() }
+	val relevantMembers = remember(room.id) { mutableStateMapOf<String, MemberContent>() }
+	val shouldBackPaginate = remember(room.id) { MutableStateFlow(true) }
 
-					val image by produceState<ImageAsset?>(null, room) {
-						value = null
-						if (room.avatarUrl != null) {
-							runCatching {
-								val url = URI(room.avatarUrl)
-								value = iconLoader.loadIcon(url)
-							}
-						}
-					}
+	LaunchedEffect(room.id) {
+		appViewModel.selectRoom(room.id, timelineEvents, relevantMembers, shouldBackPaginate)
+	}
 
-					if (image != null) {
-						Image(image!!, Modifier.size(40.dp).clip(CircleShape).align(Alignment.CenterVertically), contentScale = ContentScale.Crop)
-					} else {
-						Image(Icons.Filled.Image, Modifier.size(40.dp).align(Alignment.CenterVertically))
-					}
+	Column(modifier) {
+		TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {
 
-					Spacer(Modifier.width(24.dp))
+			Spacer(Modifier.width(16.dp))
 
-					ProvideEmphasis(AmbientEmphasisLevels.current.high) {
-						Text(
-							text = room.displayName,
-							modifier = Modifier.align(Alignment.CenterVertically),
-							style = MaterialTheme.typography.h5,
-							maxLines = 1,
-							overflow = TextOverflow.Ellipsis
-						)
-					}
-
-					Spacer(Modifier.width(24.dp))
-
-					val topic = room.topic
-					if (topic != null) {
-						ProvideEmphasis(AmbientEmphasisLevels.current.medium) {
-							Text(
-								text = topic,
-								modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
-								style = MaterialTheme.typography.body2,
-								maxLines = 2,
-								overflow = TextOverflow.Ellipsis
-							)
-						}
-					} else {
-						Spacer(Modifier.weight(1f).widthIn(min = 24.dp))
-					}
-
-					IconButton(onClick = { /* Open room settings */ }, enabled = false) {
-						Icon(Icons.Filled.Settings)
+			val image by produceState<ImageAsset?>(null, room) {
+				value = null
+				if (room.avatarUrl != null) {
+					runCatching {
+						val url = URI(room.avatarUrl)
+						value = iconLoader.loadIcon(url)
 					}
 				}
+			}
 
-				// Timeline
-				LazyColumnForIndexed(timelineEvents, Modifier.weight(1f)) { idx, item ->
-					if (idx == 0) {
-						onActive {
-							shouldBackPaginate.value = true
-							onDispose {
-								shouldBackPaginate.value = false
-							}
-						}
-					}
-					ChatItem(item, relevantMembers)
-				}
+			if (image != null) {
+				Image(
+					image!!,
+					Modifier.size(40.dp).clip(CircleShape).align(Alignment.CenterVertically),
+					contentScale = ContentScale.Crop
+				)
+			} else {
+				Image(Icons.Filled.Image, Modifier.size(40.dp).align(Alignment.CenterVertically))
+			}
 
-				Spacer(Modifier.fillMaxWidth().height(8.dp))
+			Spacer(Modifier.width(24.dp))
 
-				var draftMessage by remember(selectedRoom) { mutableStateOf("") }
-
-				OutlinedTextField(
-					value = draftMessage,
-					onValueChange = { draftMessage = it },
-					modifier = Modifier
-						.fillMaxWidth()
-						.padding(16.dp),
-					placeholder = { Text("Send a message (unencrypted)...") },
-					trailingIcon = {
-						IconButton(onClick = { /* Send message */ }, enabled = false) {
-							Icon(Icons.Filled.Send)
-						}
-					},
-					onImeActionPerformed = { _, _ -> /* Send message */ }
+			ProvideEmphasis(AmbientEmphasisLevels.current.high) {
+				Text(
+					text = room.displayName,
+					modifier = Modifier.align(Alignment.CenterVertically),
+					style = MaterialTheme.typography.h5,
+					maxLines = 1,
+					overflow = TextOverflow.Ellipsis
 				)
 			}
+
+			Spacer(Modifier.width(24.dp))
+
+			val topic = room.topic
+			if (topic != null) {
+				ProvideEmphasis(AmbientEmphasisLevels.current.medium) {
+					Text(
+						text = topic,
+						modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
+						style = MaterialTheme.typography.body2,
+						maxLines = 2,
+						overflow = TextOverflow.Ellipsis
+					)
+				}
+			} else {
+				Spacer(Modifier.weight(1f).widthIn(min = 24.dp))
+			}
+
+			IconButton(onClick = { /* Open room settings */ }, enabled = false) {
+				Icon(Icons.Filled.Settings)
+			}
 		}
+
+		// Timeline
+		LazyColumnForIndexed(timelineEvents, Modifier.weight(1f)) { idx, item ->
+			if (idx == 0) {
+				onActive {
+					shouldBackPaginate.value = true
+					onDispose {
+						shouldBackPaginate.value = false
+					}
+				}
+			}
+			ChatItem(item, relevantMembers)
+		}
+
+		Spacer(Modifier.fillMaxWidth().height(8.dp))
+
+		var draftMessage by remember(room.id) { mutableStateOf("") }
+
+		OutlinedTextField(
+			value = draftMessage,
+			onValueChange = { draftMessage = it },
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(16.dp),
+			placeholder = { Text("Send a message (unencrypted)...") },
+			trailingIcon = {
+				IconButton(onClick = { /* Send message */ }, enabled = false) {
+					Icon(Icons.Filled.Send)
+				}
+			},
+			onImeActionPerformed = { _, _ -> /* Send message */ }
+		)
 	}
 }
 
