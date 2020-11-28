@@ -12,6 +12,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,89 +81,18 @@ fun MainView() {
 		}
 	}
 
-	var roomFilter by remember { mutableStateOf("") }
 	val rooms = remember { mutableStateListOf<AppViewModel.Room>() }
 	LaunchedEffect(appViewModel) { appViewModel.rooms(rooms) }
 	var selectedRoom by remember { mutableStateOf<String?>(null) }
 
 	Row(Modifier.fillMaxSize()) {
-		Column(Modifier.fillMaxWidth(0.3f)) {
-			TopAppBar(
-				title = {
-					val username by produceState("You", client) {
-						// TODO: Get this from database.
-						val userId = client.accountApi.getTokenOwner()
-						value = userId
-						val profile = client.userApi.getUserProfile(userId)
-						value = profile.displayName ?: userId
-					}
-					Text(username)
-				},
-				backgroundColor = Color.Transparent,
-				actions = {
-					IconButton(onClick = { /* Open Settings */ }, enabled = false) {
-						Icon(Icons.Filled.Settings)
-					}
-				},
-				elevation = 0.dp
-				// navigationIcon = { Icon(Icons.Filled.Person) },
-			)
-
-			Spacer(Modifier.height(5.dp))
-
-			Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
-				Spacer(Modifier.width(5.dp))
-
-				OutlinedTextField(
-					value = roomFilter,
-					onValueChange = { roomFilter = it },
-					modifier = Modifier.weight(1f),
-					placeholder = { Text("Filter...") },
-					leadingIcon = { Icon(Icons.Filled.FilterList) }
-				)
-
-				IconButton(onClick = { /* Show public rooms */ }, enabled = false) {
-					Icon(Icons.Filled.Explore)
-				}
-
-				Spacer(Modifier.width(5.dp))
-			}
-
-			Text(
-				"Rooms",
-				Modifier.padding(10.dp).align(Alignment.CenterHorizontally),
-				style = MaterialTheme.typography.h5
-			)
-
-			LazyColumnFor(rooms) { room ->
-				ListItem(
-					modifier = Modifier.selectable(
-						selected = selectedRoom == room.id,
-						onClick = { selectedRoom = room.id }
-					),
-					text = { Text(room.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-					secondaryText = { Text("${room.memberCount} members") },
-					singleLineSecondaryText = true,
-					icon = {
-						val image by produceState<ImageAsset?>(null, room) {
-							value = null
-							if (room.avatarUrl != null) {
-								runCatching {
-									val url = URI(room.avatarUrl)
-									value = iconLoader.loadIcon(url)
-								}
-							}
-						}
-
-						if (image != null) {
-							Image(image!!, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
-						} else {
-							Image(Icons.Filled.Contacts, Modifier.size(40.dp))
-						}
-					}
-				)
-			}
-		}
+		RoomListView(
+			rooms,
+			selectedRoom,
+			{ selectedRoom = it },
+			iconLoader,
+			Modifier.fillMaxWidth(0.3f)
+		)
 
 		Box(
 			Modifier.fillMaxHeight()
@@ -177,6 +107,96 @@ fun MainView() {
 				appViewModel,
 				iconLoader,
 				Modifier.fillMaxWidth()
+			)
+		}
+	}
+}
+
+@Composable
+fun RoomListView(
+	rooms: SnapshotStateList<AppViewModel.Room>,
+	selectedRoom: String?,
+	onSelectedRoomChanged: (String?) -> Unit,
+	iconLoader: IconLoader,
+	modifier: Modifier = Modifier
+) {
+	var roomFilter by remember { mutableStateOf("") }
+
+	Column(modifier) {
+		TopAppBar(
+			title = {
+				val client = ClientAmbient.current
+				val username by produceState("You", client) {
+					// TODO: Get this from database.
+					val userId = client.accountApi.getTokenOwner()
+					value = userId
+					val profile = client.userApi.getUserProfile(userId)
+					value = profile.displayName ?: userId
+				}
+				Text(username)
+			},
+			backgroundColor = Color.Transparent,
+			actions = {
+				IconButton(onClick = { /* Open Settings */ }, enabled = false) {
+					Icon(Icons.Filled.Settings)
+				}
+			},
+			elevation = 0.dp
+			// navigationIcon = { Icon(Icons.Filled.Person) },
+		)
+
+		Spacer(Modifier.height(5.dp))
+
+		Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
+			Spacer(Modifier.width(5.dp))
+
+			OutlinedTextField(
+				value = roomFilter,
+				onValueChange = { roomFilter = it },
+				modifier = Modifier.weight(1f),
+				placeholder = { Text("Filter...") },
+				leadingIcon = { Icon(Icons.Filled.FilterList) }
+			)
+
+			IconButton(onClick = { /* Show public rooms */ }, enabled = false) {
+				Icon(Icons.Filled.Explore)
+			}
+
+			Spacer(Modifier.width(5.dp))
+		}
+
+		Text(
+			"Rooms",
+			Modifier.padding(10.dp).align(Alignment.CenterHorizontally),
+			style = MaterialTheme.typography.h5
+		)
+
+		LazyColumnFor(rooms) { room ->
+			ListItem(
+				modifier = Modifier.selectable(
+					selected = selectedRoom == room.id,
+					onClick = { onSelectedRoomChanged(room.id) }
+				),
+				text = { Text(room.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+				secondaryText = { Text("${room.memberCount} members") },
+				singleLineSecondaryText = true,
+				icon = {
+					val image by produceState<ImageAsset?>(null, room) {
+						value = null
+						if (room.avatarUrl != null) {
+							runCatching {
+								val url = URI(room.avatarUrl)
+								value = iconLoader.loadIcon(url)
+							}
+						}
+					}
+
+					if (image != null) {
+						Image(image!!, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+					} else {
+						Image(Icons.Filled.Contacts, Modifier.size(40.dp))
+					}
+				}
 			)
 		}
 	}
