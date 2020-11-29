@@ -33,20 +33,13 @@ fun PublicRoomsPopup(onDismissRequest: (() -> Unit)? = null) {
 	val client = ClientAmbient.current
 	val contentRepo = ContentRepoAmbient.current
 
-	Popup(onDismissRequest = onDismissRequest, alignment = Alignment.Center) {
-		Box(
-			modifier = Modifier.background(Color.Black.copy(alpha = 0.2f))
-				.fillMaxSize()
-				.let { if (onDismissRequest != null) it.clickable { onDismissRequest() } else it },
-			alignment = Alignment.Center
-		) {
-			Providers(ClientAmbient provides client, ContentRepoAmbient provides contentRepo) {
-				Card(
-					modifier = Modifier.fillMaxSize(0.7f).tapGestureFilter {  },
-					elevation = 20.dp
-				) {
-					PublicRooms()
-				}
+	Popup(Alignment.Center, onDismissRequest = onDismissRequest, isFocusable = true) {
+		Providers(ClientAmbient provides client, ContentRepoAmbient provides contentRepo) {
+			Card(
+				modifier = Modifier.fillMaxSize(0.7f),
+				elevation = 20.dp
+			) {
+				PublicRooms()
 			}
 		}
 	}
