@@ -16,9 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.gesture.tapGestureFilter
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageAsset
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -79,15 +77,15 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 		)
 
 		if (isLoadingFirstBatch) {
-			Box(Modifier.fillMaxSize(), alignment = Alignment.Center) {
+			Box(Modifier.fillMaxSize(), Alignment.Center) {
 				CircularProgressIndicator()
 			}
 		} else if (rooms.isEmpty()) {
-			Box(Modifier.fillMaxSize(), alignment = Alignment.Center) {
+			Box(Modifier.fillMaxSize(), Alignment.Center) {
 				Text("No rooms were found", style = MaterialTheme.typography.h3)
 			}
 		} else {
-			Box(Modifier.fillMaxWidth(), alignment = Alignment.TopStart) {
+			Box(Modifier.fillMaxWidth(), Alignment.TopStart) {
 				val state = rememberLazyListState()
 
 				LazyColumnForIndexed(rooms, Modifier.padding(end = 12.dp), state = state) { idx, room ->
@@ -100,7 +98,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 						}
 					}
 
-					val image by produceState<ImageAsset?>(null, room) {
+					val image by produceState<ImageBitmap?>(null, room) {
 						value = null
 						val uri = room.avatarUrl?.let(::URI)
 						if (uri != null) {

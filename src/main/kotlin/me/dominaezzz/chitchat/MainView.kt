@@ -18,9 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageAsset
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.annotatedString
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.MatrixClient
@@ -203,7 +205,7 @@ fun RoomListView(
 				secondaryText = { Text("${room.memberCount} members") },
 				singleLineSecondaryText = true,
 				icon = {
-					val image by produceState<ImageAsset?>(null, room) {
+					val image by produceState<ImageBitmap?>(null, room) {
 						value = null
 						if (room.avatarUrl != null) {
 							runCatching {
@@ -244,7 +246,7 @@ fun RoomView(
 
 			Spacer(Modifier.width(16.dp))
 
-			val image by produceState<ImageAsset?>(null, room) {
+			val image by produceState<ImageBitmap?>(null, room) {
 				value = null
 				if (room.avatarUrl != null) {
 					runCatching {
@@ -266,7 +268,7 @@ fun RoomView(
 
 			Spacer(Modifier.width(24.dp))
 
-			ProvideEmphasis(AmbientEmphasisLevels.current.high) {
+			Providers(AmbientContentAlpha provides ContentAlpha.high) {
 				Text(
 					text = room.displayName,
 					modifier = Modifier.align(Alignment.CenterVertically),
@@ -280,7 +282,7 @@ fun RoomView(
 
 			val topic = room.topic
 			if (topic != null) {
-				ProvideEmphasis(AmbientEmphasisLevels.current.medium) {
+				Providers(AmbientContentAlpha provides ContentAlpha.high) {
 					Text(
 						text = topic,
 						modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
@@ -382,7 +384,7 @@ fun ChatItem(item: TimelineItem, members: Map<String, MemberContent>) {
 			val content = MatrixJson.decodeFromJsonElement(MemberContent.serializer(), event.content)
 			val prevContent = event.prevContent?.let { MatrixJson.decodeFromJsonElement(MemberContent.serializer(), it) }
 
-			val text = annotatedString {
+			val text = buildAnnotatedString {
 				append(members[event.stateKey]?.displayName ?: event.stateKey ?: "Unknown user ")
 
 				when (prevContent?.membership) {

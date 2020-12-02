@@ -2,8 +2,8 @@ import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-	kotlin("jvm") version "1.4.0"
-	id("org.jetbrains.compose") version "0.1.0-m1-build62"
+	kotlin("jvm") version "1.4.20"
+	id("org.jetbrains.compose") version "0.2.0-build132"
 }
 
 group = "me.dominaezzz"
@@ -15,8 +15,8 @@ repositories {
 	jcenter()
 }
 
-val ktorVersion = "1.4.2"
-val coroutinesVersion = "1.4.1"
+val ktorVersion = "1.4.3"
+val coroutinesVersion = "1.4.2"
 val serializationVersion = "1.0.1"
 val matrixKtVersion = "0.1.0-dev-1-20-g6449827"
 val sqliteVersion = "3.32.3.2"

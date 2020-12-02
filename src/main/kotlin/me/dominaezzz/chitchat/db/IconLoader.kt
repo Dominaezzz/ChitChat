@@ -1,7 +1,7 @@
 package me.dominaezzz.chitchat.db
 
-import androidx.compose.ui.graphics.ImageAsset
-import androidx.compose.ui.graphics.asImageAsset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -17,7 +17,7 @@ import kotlin.math.min
 class IconLoader(private val repo: ContentRepository) {
 	private val iconSize = 100f
 
-	private val images = mutableMapOf<URI, ImageAsset>()
+	private val images = mutableMapOf<URI, ImageBitmap>()
 	private val imagesSemaphore = Semaphore(1)
 
 	private val imageJobs = mutableMapOf<URI, Job>()
@@ -25,7 +25,7 @@ class IconLoader(private val repo: ContentRepository) {
 
 	private val iconLoaderScope = CoroutineScope(SupervisorJob())
 
-	suspend fun loadIcon(uri: URI): ImageAsset {
+	suspend fun loadIcon(uri: URI): ImageBitmap {
 		// If we have the image cached return it.
 		imagesSemaphore.withPermit {
 			val image = images[uri]
@@ -64,7 +64,7 @@ class IconLoader(private val repo: ContentRepository) {
 		return imagesSemaphore.withPermit { images.getValue(uri) }
 	}
 
-	private suspend fun loadIconReal(uri: URI): ImageAsset {
+	private suspend fun loadIconReal(uri: URI): ImageBitmap {
 		val rawImageData = repo.getContent(uri)
 
 		return withContext(Dispatchers.Default) {
@@ -72,7 +72,7 @@ class IconLoader(private val repo: ContentRepository) {
 
 			val scale = iconSize / min(srcImage.width, srcImage.height)
 			if (scale > 0.9) {
-				return@withContext Image.makeFromEncoded(rawImageData).asImageAsset()
+				return@withContext Image.makeFromEncoded(rawImageData).asImageBitmap()
 			}
 
 			val dstImage = BufferedImage(
@@ -89,7 +89,7 @@ class IconLoader(private val repo: ContentRepository) {
 			val output = ByteArrayOutputStream((rawImageData.size * scale).toInt() /* Calm down it's just a hint */)
 			ImageIO.write(dstImage, "PNG", output)
 
-			Image.makeFromEncoded(output.toByteArray()).asImageAsset()
+			Image.makeFromEncoded(output.toByteArray()).asImageBitmap()
 		}
 	}
 }

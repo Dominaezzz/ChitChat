@@ -1,22 +1,18 @@
 package me.dominaezzz.chitchat.util
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.annotatedString
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withStyle
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
 
 fun parseMatrixCustomHtml(htmlText: String, maxDepth: Int = 100): AnnotatedString {
 	val html = Jsoup.parseBodyFragment(htmlText).body()
-	return annotatedString { appendChildren(html, maxDepth) }
+	return buildAnnotatedString { appendChildren(html, maxDepth) }
 }
 
 private fun AnnotatedString.Builder.appendElement(element: Element, maxDepth: Int) {
