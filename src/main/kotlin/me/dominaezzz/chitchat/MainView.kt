@@ -4,10 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumnFor
-import androidx.compose.foundation.lazy.LazyColumnForIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,23 +15,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageAsset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.annotatedString
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.MatrixClient
-import io.github.matrixkt.models.events.contents.room.*
-import io.github.matrixkt.utils.MatrixJson
 import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.db.*
-import me.dominaezzz.chitchat.util.parseMatrixCustomHtml
+import me.dominaezzz.chitchat.room.timeline.Conversation
 import java.net.URI
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -233,14 +224,6 @@ fun RoomView(
 	iconLoader: IconLoader,
 	modifier: Modifier = Modifier
 ) {
-	val timelineEvents = remember(room.id) { mutableStateListOf<TimelineItem>() }
-	val relevantMembers = remember(room.id) { mutableStateMapOf<String, MemberContent>() }
-	val shouldBackPaginate = remember(room.id) { MutableStateFlow(true) }
-
-	LaunchedEffect(room.id) {
-		appViewModel.selectRoom(room.id, timelineEvents, relevantMembers, shouldBackPaginate)
-	}
-
 	Column(modifier) {
 		TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {
 
@@ -301,17 +284,7 @@ fun RoomView(
 		}
 
 		// Timeline
-		LazyColumnForIndexed(timelineEvents, Modifier.weight(1f)) { idx, item ->
-			if (idx == 0) {
-				onActive {
-					shouldBackPaginate.value = true
-					onDispose {
-						shouldBackPaginate.value = false
-					}
-				}
-			}
-			ChatItem(item, relevantMembers)
-		}
+		Conversation(room.id, appViewModel, Modifier.weight(1f))
 
 		Spacer(Modifier.fillMaxWidth().height(8.dp))
 
@@ -331,193 +304,5 @@ fun RoomView(
 			},
 			onImeActionPerformed = { _, _ -> /* Send message */ }
 		)
-	}
-}
-
-@Composable
-fun ChatItem(item: TimelineItem, members: Map<String, MemberContent>) {
-	val event = item.event
-	val sender = members.getValue(event.sender)
-	when (event.type) {
-		"m.room.message" -> {
-			val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
-
-			Column(Modifier.padding(start = 8.dp)) {
-				// Author
-				Text(
-					text = sender.displayName ?: event.sender,
-					style = MaterialTheme.typography.subtitle1
-				)
-
-				// Message
-				when (content) {
-					is MessageContent.Text -> {
-						Surface(color = Color(0xFFF5F5F5), shape = RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)) {
-							if (content.format == "org.matrix.custom.html") {
-								val body = remember(content.formattedBody) {
-									runCatching { parseMatrixCustomHtml(content.formattedBody!!) }
-								}
-								Text(
-									text = body.getOrElse { AnnotatedString(content.body) },
-									style = MaterialTheme.typography.body1,
-									modifier = Modifier.padding(8.dp)
-								)
-							} else {
-								Text(
-									text = content.body,
-									style = MaterialTheme.typography.body1,
-									modifier = Modifier.padding(8.dp)
-								)
-							}
-						}
-					}
-					is MessageContent.Redacted -> {
-						Text("**This event was redacted**")
-					}
-					else -> {
-						Text("This is a ${content::class.simpleName} message")
-					}
-				}
-			}
-		}
-		"m.room.member" -> {
-			val content = MatrixJson.decodeFromJsonElement(MemberContent.serializer(), event.content)
-			val prevContent = event.prevContent?.let { MatrixJson.decodeFromJsonElement(MemberContent.serializer(), it) }
-
-			val text = buildAnnotatedString {
-				append(members[event.stateKey]?.displayName ?: event.stateKey ?: "Unknown user ")
-
-				when (prevContent?.membership) {
-					Membership.KNOCK -> TODO()
-					Membership.BAN -> when (content.membership) {
-						Membership.KNOCK -> TODO()
-						Membership.INVITE, Membership.JOIN -> throw IllegalStateException("Must never happen")
-						Membership.LEAVE -> append(" was unbanned")
-						Membership.BAN -> append(" made no change")
-					}
-					Membership.LEAVE, null -> when (content.membership) {
-						Membership.KNOCK -> TODO()
-						Membership.INVITE -> append(" was invited")
-						Membership.JOIN -> append(" joined")
-						Membership.LEAVE -> append(" made no change")
-						Membership.BAN -> append(" was banned")
-					}
-					Membership.JOIN -> when (content.membership) {
-						Membership.KNOCK -> TODO()
-						Membership.INVITE -> throw IllegalStateException("Must never happen")
-						Membership.JOIN -> {
-							val changedName = prevContent.displayName != content.displayName
-							val changedAvatar = prevContent.avatarUrl != content.avatarUrl
-							if (changedAvatar && changedName) {
-								append(" changed their avatar and display name")
-							} else if (changedAvatar) {
-								append(" changed their avatar")
-							} else if (changedName) {
-								append(" changed display name")
-							} else {
-								append(" made no change")
-							}
-						}
-						Membership.LEAVE -> append(if (event.stateKey == event.sender) " left" else " was kicked")
-						Membership.BAN -> append(" was kicked and banned")
-					}
-					Membership.INVITE -> when (content.membership) {
-						Membership.KNOCK -> TODO()
-						Membership.INVITE -> append(" made no change")
-						Membership.JOIN -> append(" joined")
-						Membership.LEAVE -> append(if (event.stateKey == event.sender) " rejected invite" else "'s invitation was revoked")
-						Membership.BAN -> append(" was banned")
-					}
-				}
-			}
-			ListItem {
-				Text(text)
-			}
-		}
-		"m.room.name" -> {
-			val content = MatrixJson.decodeFromJsonElement(NameContent.serializer(), event.content)
-			ListItem {
-				Text("${sender.displayName ?: event.sender} updated the room name to '${content.name}'.")
-			}
-		}
-		"m.room.topic" -> {
-			val content = MatrixJson.decodeFromJsonElement(TopicContent.serializer(), event.content)
-			ListItem {
-				Text("${sender.displayName ?: event.sender} updated the topic to '${content.topic}'.")
-			}
-		}
-		"m.room.avatar" -> {
-			ListItem {
-				Text("${sender.displayName ?: event.sender} updated the room avatar.")
-			}
-		}
-		"m.room.canonical_alias" -> {
-			val content = MatrixJson.decodeFromJsonElement(CanonicalAliasContent.serializer(), event.content)
-			ListItem {
-				Text("${sender.displayName ?: event.sender} set the room's canonical alias to '${content.alias}'.")
-			}
-		}
-		"m.room.guest_access" -> {
-			val content = MatrixJson.decodeFromJsonElement(GuestAccessContent.serializer(), event.content)
-			ListItem {
-				val action = when (content.guestAccess) {
-					GuestAccess.CAN_JOIN -> "has allowed guests to join the room"
-					GuestAccess.FORBIDDEN -> "disabled guest access"
-				}
-				Text("${sender.displayName ?: event.sender} ${action}.")
-			}
-		}
-		"m.room.create" -> {
-			val content = MatrixJson.decodeFromJsonElement(CreateContent.serializer(), event.content)
-			ListItem {
-				val text = buildString {
-					append(members[content.creator]?.displayName ?: content.creator)
-					append(" created this room")
-					if (content.predecessor != null) {
-						append(" to replace room '${content.predecessor?.roomId}'")
-					}
-				}
-				Text(text)
-			}
-		}
-		"m.room.join_rules" -> {
-			val content = MatrixJson.decodeFromJsonElement(JoinRulesContent.serializer(), event.content)
-			ListItem {
-				val action = when (content.joinRule) {
-					JoinRule.PUBLIC -> "has allowed anyone to join the room."
-					JoinRule.PRIVATE -> "has allowed anyone to join the room if they know the roomId."
-					JoinRule.INVITE -> "made the room invite only."
-					JoinRule.KNOCK -> "has set the join rule to 'KNOCK'."
-				}
-				Text("${sender.displayName ?: event.sender} ${action}.")
-			}
-		}
-		"m.room.history_visibility" -> {
-			val content = MatrixJson.decodeFromJsonElement(HistoryVisibilityContent.serializer(), event.content)
-			ListItem {
-				val action = when (content.historyVisibility) {
-					HistoryVisibility.INVITED -> "has set history visibility to 'INVITED'."
-					HistoryVisibility.JOINED -> "has set history visibility to 'JOINED'."
-					HistoryVisibility.SHARED -> "made future room history visible to all room members."
-					HistoryVisibility.WORLD_READABLE -> "has set history visibility to 'WORLD_READABLE'."
-				}
-				Text("${sender.displayName ?: event.sender} ${action}.")
-			}
-		}
-		"m.room.encrypted" -> {
-			ListItem {
-				Text("${sender.displayName ?: event.sender} has sent an encrypted message. E2EE not supported yet!")
-			}
-		}
-		"m.room.encryption" -> {
-			ListItem {
-				Text("${sender.displayName ?: event.sender} has enabled End to End Encryption. E2EE not supported yet!")
-			}
-		}
-		else -> {
-			ListItem {
-				Text("Cannot render '${event.type}' yet" )
-			}
-		}
 	}
 }
