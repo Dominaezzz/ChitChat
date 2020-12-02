@@ -1,14 +1,18 @@
 package me.dominaezzz.chitchat.room.timeline
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumnForIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ListItem
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
@@ -36,16 +40,28 @@ fun Conversation(
 		appViewModel.selectRoom(roomId, timelineEvents, relevantMembers, shouldBackPaginate)
 	}
 
-	LazyColumnForIndexed(timelineEvents, modifier) { idx, item ->
-		if (idx == 0) {
-			onActive {
-				shouldBackPaginate.value = true
-				onDispose {
-					shouldBackPaginate.value = false
+	Row(modifier) {
+		val state = rememberLazyListState(timelineEvents.size - 1)
+
+		LazyColumnForIndexed(timelineEvents, Modifier.weight(1f), state = state) { idx, item ->
+			if (idx == 0) {
+				onActive {
+					shouldBackPaginate.value = true
+					onDispose {
+						shouldBackPaginate.value = false
+					}
 				}
 			}
+			ChatItem(item, relevantMembers)
 		}
-		ChatItem(item, relevantMembers)
+
+		Spacer(Modifier.width(8.dp))
+
+		@OptIn(ExperimentalFoundationApi::class)
+		VerticalScrollbar(
+			rememberScrollbarAdapter(state, timelineEvents.size, 45.dp),
+			Modifier.fillMaxHeight()
+		)
 	}
 }
 
