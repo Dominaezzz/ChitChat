@@ -54,7 +54,12 @@ fun Conversation(
 						}
 					}
 				}
-				ChatItem(item)
+
+				if (item.event.type == "m.room.message") {
+					MessageEvent(item)
+				} else {
+					ChatItem(item)
+				}
 			}
 		}
 
@@ -70,11 +75,6 @@ fun Conversation(
 
 @Composable
 fun ChatItem(item: TimelineItem) {
-	if (item.event.type == "m.room.message") {
-		MessageEvent(item)
-		return
-	}
-
 	val members = AmbientMembers.current
 	val event = item.event
 	val sender = members.getValue(event.sender)
