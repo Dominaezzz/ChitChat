@@ -12,7 +12,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
@@ -25,6 +24,8 @@ import me.dominaezzz.chitchat.AppViewModel
 import me.dominaezzz.chitchat.db.TimelineItem
 import me.dominaezzz.chitchat.util.parseMatrixCustomHtml
 
+
+private val AmbientMembers = ambientOf<Map<String, MemberContent>> { error("No members provided") }
 
 @Composable
 fun Conversation(
@@ -43,16 +44,18 @@ fun Conversation(
 	Row(modifier) {
 		val state = rememberLazyListState(timelineEvents.size - 1)
 
-		LazyColumnForIndexed(timelineEvents, Modifier.weight(1f), state = state) { idx, item ->
-			if (idx == 0) {
-				onActive {
-					shouldBackPaginate.value = true
-					onDispose {
-						shouldBackPaginate.value = false
+		Providers(AmbientMembers provides relevantMembers) {
+			LazyColumnForIndexed(timelineEvents, Modifier.weight(1f), state = state) { idx, item ->
+				if (idx == 0) {
+					onActive {
+						shouldBackPaginate.value = true
+						onDispose {
+							shouldBackPaginate.value = false
+						}
 					}
 				}
+				ChatItem(item)
 			}
-			ChatItem(item, relevantMembers)
 		}
 
 		Spacer(Modifier.width(8.dp))
@@ -66,51 +69,16 @@ fun Conversation(
 }
 
 @Composable
-fun ChatItem(item: TimelineItem, members: Map<String, MemberContent>) {
+fun ChatItem(item: TimelineItem) {
+	if (item.event.type == "m.room.message") {
+		MessageEvent(item)
+		return
+	}
+
+	val members = AmbientMembers.current
 	val event = item.event
 	val sender = members.getValue(event.sender)
 	when (event.type) {
-		"m.room.message" -> {
-			val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
-
-			Column(Modifier.padding(start = 8.dp)) {
-				// Author
-				Text(
-					text = sender.displayName ?: event.sender,
-					style = MaterialTheme.typography.subtitle1
-				)
-
-				// Message
-				when (content) {
-					is MessageContent.Text -> {
-						Surface(color = Color(0xFFF5F5F5), shape = RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)) {
-							if (content.format == "org.matrix.custom.html") {
-								val body = remember(content.formattedBody) {
-									runCatching { parseMatrixCustomHtml(content.formattedBody!!) }
-								}
-								Text(
-									text = body.getOrElse { AnnotatedString(content.body) },
-									style = MaterialTheme.typography.body1,
-									modifier = Modifier.padding(8.dp)
-								)
-							} else {
-								Text(
-									text = content.body,
-									style = MaterialTheme.typography.body1,
-									modifier = Modifier.padding(8.dp)
-								)
-							}
-						}
-					}
-					is MessageContent.Redacted -> {
-						Text("**This event was redacted**")
-					}
-					else -> {
-						Text("This is a ${content::class.simpleName} message")
-					}
-				}
-			}
-		}
 		"m.room.member" -> {
 			val content = MatrixJson.decodeFromJsonElement(MemberContent.serializer(), event.content)
 			val prevContent = event.prevContent?.let { MatrixJson.decodeFromJsonElement(MemberContent.serializer(), it) }
@@ -248,6 +216,52 @@ fun ChatItem(item: TimelineItem, members: Map<String, MemberContent>) {
 		else -> {
 			ListItem {
 				Text("Cannot render '${event.type}' yet" )
+			}
+		}
+	}
+}
+
+@Composable
+private fun MessageEvent(item: TimelineItem) {
+	val event = item.event
+	val sender = AmbientMembers.current.getValue(event.sender)
+
+	val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
+
+	Column(Modifier.padding(start = 8.dp)) {
+		// Author
+		Text(
+			text = sender.displayName ?: event.sender,
+			style = MaterialTheme.typography.subtitle1
+		)
+
+		// Message
+		when (content) {
+			is MessageContent.Text -> {
+				Surface(color = Color(0xFFF5F5F5), shape = RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)) {
+					if (content.format == "org.matrix.custom.html") {
+						val body = remember(content.formattedBody) {
+							runCatching { parseMatrixCustomHtml(content.formattedBody!!) }
+						}
+						Text(
+							text = body.getOrElse { AnnotatedString(content.body) },
+							style = MaterialTheme.typography.body1,
+							modifier = Modifier.padding(8.dp)
+						)
+					} else {
+						Text(
+							text = content.body,
+							style = MaterialTheme.typography.body1,
+							modifier = Modifier.padding(8.dp)
+						)
+					}
+				}
+			}
+			is MessageContent.Redacted -> {
+				Text("**This event was redacted**")
+			}
+			else -> {
+				Text("This is a ${content::class.simpleName} message")
 			}
 		}
 	}
