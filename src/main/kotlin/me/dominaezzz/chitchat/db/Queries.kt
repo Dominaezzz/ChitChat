@@ -39,7 +39,12 @@ WITH
 		FROM loaded_rooms
 		JOIN room_events ON loaded_rooms.roomId == room_events.roomId AND loaded_rooms.firstEventsId == room_events.eventId
 		WHERE timelineId == 0
-    )
+    ),
+	room_display_order(roomId, latest_sent_event_timestamp, latest_event_timestamp) AS (
+		SELECT roomId, MAX(timestamp) FILTER (WHERE sender = (SELECT value FROM key_value_store WHERE key = 'USER_ID')), MAX(timestamp)
+		FROM room_events
+		GROUP BY roomId
+	)
 SELECT rooms.roomId,
        COALESCE(
            JSON_EXTRACT(name_event.content, '${'$'}.name'),
@@ -64,6 +69,7 @@ SELECT rooms.roomId,
 	   ) AS latestOrder
 FROM room_metadata AS rooms
 JOIN room_events AS first_event ON rooms.roomId == first_event.roomId AND first_event.timelineId = 0 AND first_event.timelineOrder == 1
+JOIN room_display_order USING (roomId)
 LEFT JOIN rooms_to_skip USING (roomId)
 LEFT JOIN room_events AS name_event ON name_event.isLatestState AND name_event.roomId = rooms.roomId AND name_event.type = 'm.room.name'
 LEFT JOIN room_events AS canon_alias_event ON canon_alias_event.isLatestState AND canon_alias_event.roomId = rooms.roomId AND canon_alias_event.type = 'm.room.canonical_alias'
@@ -82,7 +88,8 @@ WHERE rooms_to_skip.roomId IS NULL OR IFNULL(rooms_to_skip.prevLatestOrder, -1) 
 	   	   IFNULL(CASE WHEN topic_event.timelineId == 0 THEN topic_event.timelineOrder END, -1),
 	   	   IFNULL(member_avatar.latestOrder, -1),
 	   	   IFNULL(member_count.latestOrder, -1)
-	   );
+	   )
+ORDER BY room_display_order.latest_sent_event_timestamp DESC, room_display_order.latest_event_timestamp DESC;
 """
 
 // language=sql
