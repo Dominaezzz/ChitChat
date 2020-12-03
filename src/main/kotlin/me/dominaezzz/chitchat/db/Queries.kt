@@ -30,6 +30,28 @@ WITH
         WHERE isLatestState AND type = 'm.room.member' AND JSON_EXTRACT(content, '${'$'}.membership') = 'join'
         GROUP BY roomId
     ),
+	room_state AS (SELECT * FROM room_events WHERE isLatestState),
+	room_display_names(roomId, displayName, latestOrder) AS (
+        SELECT rooms.roomId,
+               COALESCE(
+                   JSON_EXTRACT(name_event.content, '${'$'}.name'),
+                   JSON_EXTRACT(canon_alias_event.content, '${'$'}.alias'),
+                   JSON_EXTRACT(aliases_event.content, '${'$'}.aliases[0]'),
+                   members,
+	              'Empty Room'
+               ),
+			   MAX(
+                   IFNULL(CASE WHEN name_event.timelineId == 0 THEN name_event.timelineOrder END, -1),
+                   IFNULL(CASE WHEN canon_alias_event.timelineId == 0 THEN canon_alias_event.timelineOrder END, -1),
+                   IFNULL(CASE WHEN aliases_event.timelineId == 0 THEN aliases_event.timelineOrder END, -1),
+                   IFNULL(heroes.latestOrder, -1)
+               )
+        FROM room_metadata AS rooms
+        LEFT JOIN room_state AS name_event ON name_event.roomId = rooms.roomId AND name_event.type = 'm.room.name'
+        LEFT JOIN room_state AS canon_alias_event ON canon_alias_event.roomId = rooms.roomId AND canon_alias_event.type = 'm.room.canonical_alias'
+        LEFT JOIN room_state AS aliases_event ON aliases_event.roomId = rooms.roomId AND aliases_event.type = 'm.room.aliases'
+        LEFT JOIN heroes USING(roomId)
+    ),
     loaded_rooms(roomId, firstEventsId, lastStateOrder) AS (
         SELECT key, JSON_EXTRACT(value, '${'$'}.first_events_id'), JSON_EXTRACT(value, '${'$'}.last_state_order')
         FROM JSON_EACH(?1)
@@ -45,23 +67,13 @@ WITH
 		FROM room_events
 		GROUP BY roomId
 	)
-SELECT rooms.roomId,
-       COALESCE(
-           JSON_EXTRACT(name_event.content, '${'$'}.name'),
-           JSON_EXTRACT(canon_alias_event.content, '${'$'}.alias'),
-           JSON_EXTRACT(aliases_event.content, '${'$'}.aliases[0]'),
-           members,
-	      'Empty Room'
-       ) AS displayName,
+SELECT rooms.roomId, room_display_names.displayName,
        IFNULL(JSON_EXTRACT(avatar_event.content, '${'$'}.url'), JSON_EXTRACT(member_avatar.content, '${'$'}.avatar_url')) AS displayAvatar,
        joined_member_count AS memberCount,
        JSON_EXTRACT(topic_event.content, '${'$'}.topic') AS topic,
 	   first_event.eventId AS firstEventsId,
 	   MAX(
-	   	   IFNULL(CASE WHEN name_event.timelineId == 0 THEN name_event.timelineOrder END, -1),
-	   	   IFNULL(CASE WHEN canon_alias_event.timelineId == 0 THEN canon_alias_event.timelineOrder END, -1),
-	   	   IFNULL(CASE WHEN aliases_event.timelineId == 0 THEN aliases_event.timelineOrder END, -1),
-	   	   IFNULL(heroes.latestOrder, -1),
+	   	   IFNULL(room_display_names.latestOrder, -1),
 	   	   IFNULL(CASE WHEN avatar_event.timelineId == 0 THEN avatar_event.timelineOrder END, -1),
 	   	   IFNULL(CASE WHEN topic_event.timelineId == 0 THEN topic_event.timelineOrder END, -1),
 	   	   IFNULL(member_avatar.latestOrder, -1),
@@ -71,19 +83,13 @@ FROM room_metadata AS rooms
 JOIN room_events AS first_event ON rooms.roomId == first_event.roomId AND first_event.timelineId = 0 AND first_event.timelineOrder == 1
 JOIN room_display_order USING (roomId)
 LEFT JOIN rooms_to_skip USING (roomId)
-LEFT JOIN room_events AS name_event ON name_event.isLatestState AND name_event.roomId = rooms.roomId AND name_event.type = 'm.room.name'
-LEFT JOIN room_events AS canon_alias_event ON canon_alias_event.isLatestState AND canon_alias_event.roomId = rooms.roomId AND canon_alias_event.type = 'm.room.canonical_alias'
-LEFT JOIN room_events AS aliases_event ON aliases_event.isLatestState AND aliases_event.roomId = rooms.roomId AND aliases_event.type = 'm.room.aliases'
-LEFT JOIN heroes ON heroes.roomId == rooms.roomId
+LEFT JOIN room_display_names USING (roomId)
 LEFT JOIN room_events AS avatar_event ON avatar_event.isLatestState AND avatar_event.roomId = rooms.roomId AND avatar_event.type = 'm.room.avatar'
 LEFT JOIN room_events AS topic_event ON topic_event.isLatestState AND topic_event.roomId = rooms.roomId AND topic_event.type = 'm.room.topic'
 LEFT JOIN room_members AS member_avatar ON member_avatar.roomId = rooms.roomId AND rowNum = 1
 LEFT JOIN member_count ON member_count.roomId = rooms.roomId
 WHERE rooms_to_skip.roomId IS NULL OR IFNULL(rooms_to_skip.prevLatestOrder, -1) < MAX(
-	   	   IFNULL(CASE WHEN name_event.timelineId == 0 THEN name_event.timelineOrder END, -1),
-	   	   IFNULL(CASE WHEN canon_alias_event.timelineId == 0 THEN canon_alias_event.timelineOrder END, -1),
-	   	   IFNULL(CASE WHEN aliases_event.timelineId == 0 THEN aliases_event.timelineOrder END, -1),
-	   	   IFNULL(heroes.latestOrder, -1),
+	   	   IFNULL(room_display_names.latestOrder, -1),
 	   	   IFNULL(CASE WHEN avatar_event.timelineId == 0 THEN avatar_event.timelineOrder END, -1),
 	   	   IFNULL(CASE WHEN topic_event.timelineId == 0 THEN topic_event.timelineOrder END, -1),
 	   	   IFNULL(member_avatar.latestOrder, -1),
