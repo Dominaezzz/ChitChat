@@ -1,5 +1,7 @@
 package me.dominaezzz.chitchat
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -187,32 +189,35 @@ fun RoomListView(
 		)
 
 		LazyColumnFor(rooms) { room ->
-			ListItem(
-				modifier = Modifier.selectable(
-					selected = selectedRoom == room.id,
-					onClick = { onSelectedRoomChanged(room.id) }
-				),
-				text = { Text(room.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-				secondaryText = { Text("${room.memberCount} members") },
-				singleLineSecondaryText = true,
-				icon = {
-					val image by produceState<ImageBitmap?>(null, room) {
-						value = null
-						if (room.avatarUrl != null) {
-							runCatching {
-								val url = URI(room.avatarUrl)
-								value = iconLoader.loadIcon(url)
+			@OptIn(ExperimentalAnimationApi::class)
+			AnimatedVisibility(roomFilter.isEmpty() || room.displayName.contains(roomFilter)) {
+				ListItem(
+					modifier = Modifier.selectable(
+						selected = selectedRoom == room.id,
+						onClick = { onSelectedRoomChanged(room.id) }
+					),
+					text = { Text(room.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+					secondaryText = { Text("${room.memberCount} members") },
+					singleLineSecondaryText = true,
+					icon = {
+						val image by produceState<ImageBitmap?>(null, room) {
+							value = null
+							if (room.avatarUrl != null) {
+								runCatching {
+									val url = URI(room.avatarUrl)
+									value = iconLoader.loadIcon(url)
+								}
 							}
 						}
-					}
 
-					if (image != null) {
-						Image(image!!, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
-					} else {
-						Image(Icons.Filled.Contacts, Modifier.size(40.dp))
+						if (image != null) {
+							Image(image!!, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+						} else {
+							Image(Icons.Filled.Contacts, Modifier.size(40.dp))
+						}
 					}
-				}
-			)
+				)
+			}
 		}
 	}
 }
