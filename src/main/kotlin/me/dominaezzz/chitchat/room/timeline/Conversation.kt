@@ -1,19 +1,23 @@
 package me.dominaezzz.chitchat.room.timeline
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumnForIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ListItem
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material.*
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
@@ -21,11 +25,18 @@ import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.flow.MutableStateFlow
 import me.dominaezzz.chitchat.AppViewModel
+import me.dominaezzz.chitchat.ContentRepoAmbient
+import me.dominaezzz.chitchat.db.IconLoader
 import me.dominaezzz.chitchat.db.TimelineItem
 import me.dominaezzz.chitchat.util.parseMatrixCustomHtml
+import java.net.URI
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 
 private val AmbientMembers = ambientOf<Map<String, MemberContent>> { error("No members provided") }
+private val AmbientIconLoader = ambientOf<IconLoader> { error("No icon loader provided") }
 
 @Composable
 fun Conversation(
@@ -37,6 +48,9 @@ fun Conversation(
 	val relevantMembers = remember(roomId) { mutableStateMapOf<String, MemberContent>() }
 	val shouldBackPaginate = remember(roomId) { MutableStateFlow(true) }
 
+	val contentRepo = ContentRepoAmbient.current
+	val iconLoader = remember(contentRepo) { IconLoader(contentRepo) }
+
 	LaunchedEffect(roomId) {
 		appViewModel.selectRoom(roomId, timelineEvents, relevantMembers, shouldBackPaginate)
 	}
@@ -44,7 +58,7 @@ fun Conversation(
 	Row(modifier) {
 		val state = rememberLazyListState(timelineEvents.size - 1)
 
-		Providers(AmbientMembers provides relevantMembers) {
+		Providers(AmbientMembers provides relevantMembers, AmbientIconLoader provides iconLoader) {
 			LazyColumnForIndexed(timelineEvents, Modifier.weight(1f), state = state) { idx, item ->
 				if (idx == 0) {
 					onActive {
@@ -56,7 +70,12 @@ fun Conversation(
 				}
 
 				if (item.event.type == "m.room.message") {
-					MessageEvent(item)
+					val sender = item.event.sender
+					val prev = timelineEvents.getOrNull(idx - 1)?.event
+					val next = timelineEvents.getOrNull(idx + 1)?.event
+					val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
+					val isNotLast  = next != null && next.sender == sender && next.type == "m.room.message"
+					MessageEvent(item, !isNotFirst, !isNotLast)
 				} else {
 					ChatItem(item)
 				}
@@ -222,46 +241,106 @@ fun ChatItem(item: TimelineItem) {
 }
 
 @Composable
-private fun MessageEvent(item: TimelineItem) {
+private fun loadImage(url: String): ImageBitmap? {
+	val iconLoader = AmbientIconLoader.current
+	return produceState<ImageBitmap?>(null, url) {
+		value = null
+		runCatching {
+			val uri = URI(url)
+			value = iconLoader.loadIcon(uri)
+		}
+	}.value
+}
+
+@Composable
+private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByAuthor: Boolean) {
 	val event = item.event
 	val sender = AmbientMembers.current.getValue(event.sender)
 
 	val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
 
-	Column(Modifier.padding(start = 8.dp)) {
-		// Author
-		Text(
-			text = sender.displayName ?: event.sender,
-			style = MaterialTheme.typography.subtitle1
-		)
+	val authorAvatar = sender.avatarUrl?.let { loadImage(it) }
 
-		// Message
-		when (content) {
-			is MessageContent.Text -> {
-				Surface(color = Color(0xFFF5F5F5), shape = RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)) {
-					if (content.format == "org.matrix.custom.html") {
-						val body = remember(content.formattedBody) {
-							runCatching { parseMatrixCustomHtml(content.formattedBody!!) }
-						}
+	Row(Modifier.padding(top = if(isFirstByAuthor) 8.dp else 0.dp)) {
+		// Render author image on the left
+		if (isFirstByAuthor) {
+			val modifier = Modifier.padding(horizontal = 16.dp)
+				.preferredSize(42.dp)
+				.clip(CircleShape)
+				.align(Alignment.Top)
+			if (authorAvatar != null) {
+				Image(authorAvatar, modifier, contentScale = ContentScale.Crop)
+			} else {
+				Image(Icons.Filled.Person, modifier, contentScale = ContentScale.Crop)
+			}
+		} else {
+			Spacer(Modifier.preferredWidth(74.dp))
+		}
+
+		// Render message on the right
+		Column(Modifier.weight(1f)) {
+			// Author and timestamp
+			if (isFirstByAuthor) {
+				Row {
+					Text(
+						text = sender.displayName ?: event.sender,
+						style = MaterialTheme.typography.subtitle1,
+						modifier = Modifier.alignBy(LastBaseline)
+							.paddingFrom(LastBaseline, after = 8.dp) // Space to 1st bubble
+					)
+					Spacer(Modifier.preferredWidth(8.dp))
+					Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+						// TODO: Get ZoneId from compose and watch for system changes
 						Text(
-							text = body.getOrElse { AnnotatedString(content.body) },
-							style = MaterialTheme.typography.body1,
-							modifier = Modifier.padding(8.dp)
-						)
-					} else {
-						Text(
-							text = content.body,
-							style = MaterialTheme.typography.body1,
-							modifier = Modifier.padding(8.dp)
+							text = Instant.ofEpochMilli(event.originServerTimestamp).atZone(ZoneId.systemDefault())
+								.format(DateTimeFormatter.ofPattern("HH:mm")),
+							style = MaterialTheme.typography.caption,
+							modifier = Modifier.alignBy(LastBaseline)
 						)
 					}
 				}
 			}
-			is MessageContent.Redacted -> {
-				Text("**This event was redacted**")
+
+			// Message
+			when (content) {
+				is MessageContent.Text -> {
+					val bubbleShape = if (isLastByAuthor) {
+						RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)
+					} else {
+						RoundedCornerShape(0.dp, 8.dp, 8.dp, 0.dp)
+					}
+
+					Surface(color = Color(0xFFF5F5F5), shape = bubbleShape) {
+						if (content.format == "org.matrix.custom.html") {
+							val body = remember(content.formattedBody) {
+								runCatching { parseMatrixCustomHtml(content.formattedBody!!) }
+							}
+							Text(
+								text = body.getOrElse { AnnotatedString(content.body) },
+								style = MaterialTheme.typography.body1,
+								modifier = Modifier.padding(8.dp)
+							)
+						} else {
+							Text(
+								text = content.body,
+								style = MaterialTheme.typography.body1,
+								modifier = Modifier.padding(8.dp)
+							)
+						}
+					}
+				}
+				is MessageContent.Redacted -> {
+					Text("**This event was redacted**")
+				}
+				else -> {
+					Text("This is a ${content::class.simpleName} message")
+				}
 			}
-			else -> {
-				Text("This is a ${content::class.simpleName} message")
+
+			if (isLastByAuthor) {
+				Spacer(Modifier.preferredHeight(8.dp))
+			} else {
+				Spacer(Modifier.preferredHeight(4.dp))
 			}
 		}
 	}
