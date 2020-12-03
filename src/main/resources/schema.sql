@@ -60,8 +60,9 @@ BEGIN
         WHERE roomId = NEW.roomId
           AND type = NEW.type
           AND stateKey = NEW.stateKey
-          AND (timelineId, -COALESCE(timelineOrder, 0)) > (NEW.timelineId, -COALESCE(NEW.timelineOrder, 0))
-        ORDER BY timelineId ASC, timelineOrder DESC
+          AND timelineId = NEW.timelineId
+          AND COALESCE(timelineOrder, 0) < COALESCE(NEW.timelineOrder, 0)
+        ORDER BY timelineOrder DESC
         LIMIT 1
     )
     WHERE roomId = NEW.roomId AND eventId = NEW.eventId AND NEW.timelineOrder IS NOT NULL AND prevContent IS NULL;
@@ -71,9 +72,12 @@ BEGIN
     WHERE roomId = NEW.roomId AND prevContent IS NULL AND eventId = (
         SELECT eventId
         FROM room_events
-        WHERE roomId = NEW.roomId AND type = NEW.type AND stateKey = NEW.stateKey
-          AND (timelineId, -COALESCE(timelineOrder, 0)) < (NEW.timelineId, -COALESCE(NEW.timelineOrder, 0))
-        ORDER BY timelineId DESC, timelineOrder ASC
+        WHERE roomId = NEW.roomId
+          AND type = NEW.type
+          AND stateKey = NEW.stateKey
+          AND timelineId = NEW.timelineId
+          AND COALESCE(timelineOrder, 0) > COALESCE(NEW.timelineOrder, 0)
+        ORDER BY timelineOrder ASC
         LIMIT 1
     );
 END;
