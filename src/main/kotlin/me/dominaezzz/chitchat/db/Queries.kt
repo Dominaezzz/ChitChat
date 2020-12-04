@@ -86,15 +86,16 @@ LEFT JOIN rooms_to_skip USING (roomId)
 LEFT JOIN room_display_names USING (roomId)
 LEFT JOIN room_events AS avatar_event ON avatar_event.isLatestState AND avatar_event.roomId = rooms.roomId AND avatar_event.type = 'm.room.avatar'
 LEFT JOIN room_events AS topic_event ON topic_event.isLatestState AND topic_event.roomId = rooms.roomId AND topic_event.type = 'm.room.topic'
+LEFT JOIN room_events AS tombstone_event ON tombstone_event.isLatestState AND tombstone_event.roomId = rooms.roomId AND tombstone_event.type = 'm.room.tombstone'
 LEFT JOIN room_members AS member_avatar ON member_avatar.roomId = rooms.roomId AND rowNum = 1
 LEFT JOIN member_count ON member_count.roomId = rooms.roomId
-WHERE rooms_to_skip.roomId IS NULL OR IFNULL(rooms_to_skip.prevLatestOrder, -1) < MAX(
+WHERE tombstone_event.eventId IS NULL AND (rooms_to_skip.roomId IS NULL OR IFNULL(rooms_to_skip.prevLatestOrder, -1) < MAX(
 	   	   IFNULL(room_display_names.latestOrder, -1),
 	   	   IFNULL(CASE WHEN avatar_event.timelineId == 0 THEN avatar_event.timelineOrder END, -1),
 	   	   IFNULL(CASE WHEN topic_event.timelineId == 0 THEN topic_event.timelineOrder END, -1),
 	   	   IFNULL(member_avatar.latestOrder, -1),
 	   	   IFNULL(member_count.latestOrder, -1)
-	   )
+	   ))
 ORDER BY room_display_order.latest_sent_event_timestamp DESC, room_display_order.latest_event_timestamp DESC;
 """
 
