@@ -241,7 +241,7 @@ fun ChatItem(item: TimelineItem) {
 }
 
 @Composable
-private fun loadImage(url: String): ImageBitmap? {
+private fun loadIcon(url: String): ImageBitmap? {
 	val iconLoader = AmbientIconLoader.current
 	return produceState<ImageBitmap?>(null, url) {
 		value = null
@@ -259,7 +259,7 @@ private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByA
 
 	val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
 
-	val authorAvatar = sender.avatarUrl?.let { loadImage(it) }
+	val authorAvatar = sender.avatarUrl?.let { loadIcon(it) }
 
 	Row(Modifier.padding(top = if(isFirstByAuthor) 8.dp else 0.dp)) {
 		// Render author image on the left
