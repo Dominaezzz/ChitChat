@@ -11,14 +11,14 @@ version = "1.0-SNAPSHOT"
 
 repositories {
 	maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-	mavenLocal()
+	maven("https://dl.bintray.com/dominaezzz/kotlin-native")
 	jcenter()
 }
 
 val ktorVersion = "1.4.3"
 val coroutinesVersion = "1.4.2"
 val serializationVersion = "1.0.1"
-val matrixKtVersion = "0.1.0-dev-1-20-g6449827"
+val matrixKtVersion = "0.1.0"
 val sqliteVersion = "3.32.3.2"
 
 dependencies {
