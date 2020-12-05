@@ -10,12 +10,14 @@ import androidx.compose.material.*
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.text.AnnotatedString
@@ -23,7 +25,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.withContext
 import me.dominaezzz.chitchat.AppViewModel
 import me.dominaezzz.chitchat.ContentRepoAmbient
 import me.dominaezzz.chitchat.db.IconLoader
@@ -253,6 +257,22 @@ private fun loadIcon(url: String): ImageBitmap? {
 }
 
 @Composable
+private fun loadImage(url: String): ImageBitmap? {
+	val contentRepo = ContentRepoAmbient.current
+	return produceState<ImageBitmap?>(null, url) {
+		value = null
+		runCatching {
+			val uri = URI(url)
+			val content = contentRepo.getContent(uri)
+			val image = withContext(Dispatchers.Default) {
+				org.jetbrains.skija.Image.makeFromEncoded(content).asImageBitmap()
+			}
+			value = image
+		}
+	}.value
+}
+
+@Composable
 private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByAuthor: Boolean) {
 	val event = item.event
 	val sender = AmbientMembers.current.getValue(event.sender)
@@ -301,16 +321,17 @@ private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByA
 				}
 			}
 
+			val bubbleColor = Color(0xFFF5F5F5)
+			val bubbleShape = if (isLastByAuthor) {
+				RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)
+			} else {
+				RoundedCornerShape(0.dp, 8.dp, 8.dp, 0.dp)
+			}
+
 			// Message
 			when (content) {
 				is MessageContent.Text -> {
-					val bubbleShape = if (isLastByAuthor) {
-						RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)
-					} else {
-						RoundedCornerShape(0.dp, 8.dp, 8.dp, 0.dp)
-					}
-
-					Surface(color = Color(0xFFF5F5F5), shape = bubbleShape) {
+					Surface(color = bubbleColor, shape = bubbleShape) {
 						if (content.format == "org.matrix.custom.html") {
 							val body = remember(content.formattedBody) {
 								runCatching { parseMatrixCustomHtml(content.formattedBody!!) }
@@ -326,6 +347,23 @@ private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByA
 								style = MaterialTheme.typography.body1,
 								modifier = Modifier.padding(8.dp)
 							)
+						}
+					}
+				}
+				is MessageContent.Image -> {
+					Surface(color = bubbleColor, shape = bubbleShape) {
+						val image = loadImage(content.url)
+						if (image != null) {
+							val width = content.info?.width
+							val height = content.info?.height
+							val modifier = if (width != null && height != null) {
+								Modifier.preferredSize(width.toInt().dp, height.toInt().dp)
+							} else {
+								Modifier.preferredSize(image.width.dp, image.height.dp)
+							}
+							Image(image, modifier)
+						} else {
+							Image(Icons.Outlined.BrokenImage)
 						}
 					}
 				}
