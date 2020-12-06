@@ -16,14 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import io.github.matrixkt.models.PublicRoomsChunk
 import io.github.matrixkt.models.SearchPublicRoomsRequest
 import kotlinx.coroutines.flow.*
-import me.dominaezzz.chitchat.db.IconLoader
+import me.dominaezzz.chitchat.util.IconCache
+import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 
 @Composable
@@ -33,11 +33,13 @@ fun PublicRoomsPopup(onDismissRequest: (() -> Unit)? = null) {
 
 	Popup(Alignment.Center, onDismissRequest = onDismissRequest, isFocusable = true) {
 		Providers(ClientAmbient provides client, ContentRepoAmbient provides contentRepo) {
-			Card(
-				modifier = Modifier.fillMaxSize(0.7f),
-				elevation = 20.dp
-			) {
-				PublicRooms()
+			IconCache {
+				Card(
+					modifier = Modifier.fillMaxSize(0.7f),
+					elevation = 20.dp
+				) {
+					PublicRooms()
+				}
 			}
 		}
 	}
@@ -46,9 +48,6 @@ fun PublicRoomsPopup(onDismissRequest: (() -> Unit)? = null) {
 @Composable
 fun PublicRooms(modifier: Modifier = Modifier) {
 	val client = ClientAmbient.current
-	val contentRepo = ContentRepoAmbient.current
-
-	val iconLoader = remember(contentRepo) { IconLoader(contentRepo) }
 
 	var searchTerm by remember { mutableStateOf("") }
 	var isLoadingFirstBatch by remember { mutableStateOf(false) }
@@ -98,15 +97,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 						}
 					}
 
-					val image by produceState<ImageBitmap?>(null, room) {
-						value = null
-						val uri = room.avatarUrl?.let(::URI)
-						if (uri != null) {
-							runCatching {
-								value = iconLoader.loadIcon(uri)
-							}
-						}
-					}
+					val image = room.avatarUrl?.let { loadIcon(URI(it)) }
 					ListItem(
 						icon = image?.let {
 							{

@@ -16,8 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.text.AnnotatedString
@@ -25,13 +23,11 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.withContext
 import me.dominaezzz.chitchat.AppViewModel
-import me.dominaezzz.chitchat.ContentRepoAmbient
-import me.dominaezzz.chitchat.db.IconLoader
 import me.dominaezzz.chitchat.db.TimelineItem
+import me.dominaezzz.chitchat.util.loadIcon
+import me.dominaezzz.chitchat.util.loadImage
 import me.dominaezzz.chitchat.util.parseMatrixCustomHtml
 import java.net.URI
 import java.time.Instant
@@ -40,7 +36,6 @@ import java.time.format.DateTimeFormatter
 
 
 private val AmbientMembers = ambientOf<Map<String, MemberContent>> { error("No members provided") }
-private val AmbientIconLoader = ambientOf<IconLoader> { error("No icon loader provided") }
 
 @Composable
 fun Conversation(
@@ -52,9 +47,6 @@ fun Conversation(
 	val relevantMembers = remember(roomId) { mutableStateMapOf<String, MemberContent>() }
 	val shouldBackPaginate = remember(roomId) { MutableStateFlow(true) }
 
-	val contentRepo = ContentRepoAmbient.current
-	val iconLoader = remember(contentRepo) { IconLoader(contentRepo) }
-
 	LaunchedEffect(roomId) {
 		appViewModel.selectRoom(roomId, timelineEvents, relevantMembers, shouldBackPaginate)
 	}
@@ -62,7 +54,7 @@ fun Conversation(
 	Row(modifier) {
 		val state = rememberLazyListState(timelineEvents.size - 1)
 
-		Providers(AmbientMembers provides relevantMembers, AmbientIconLoader provides iconLoader) {
+		Providers(AmbientMembers provides relevantMembers) {
 			LazyColumnForIndexed(timelineEvents, Modifier.weight(1f), state = state) { idx, item ->
 				if (idx == 0) {
 					onActive {
@@ -245,41 +237,13 @@ fun ChatItem(item: TimelineItem) {
 }
 
 @Composable
-private fun loadIcon(url: String): ImageBitmap? {
-	val iconLoader = AmbientIconLoader.current
-	return produceState<ImageBitmap?>(null, url) {
-		value = null
-		runCatching {
-			val uri = URI(url)
-			value = iconLoader.loadIcon(uri)
-		}
-	}.value
-}
-
-@Composable
-private fun loadImage(url: String): ImageBitmap? {
-	val contentRepo = ContentRepoAmbient.current
-	return produceState<ImageBitmap?>(null, url) {
-		value = null
-		runCatching {
-			val uri = URI(url)
-			val content = contentRepo.getContent(uri)
-			val image = withContext(Dispatchers.Default) {
-				org.jetbrains.skija.Image.makeFromEncoded(content).asImageBitmap()
-			}
-			value = image
-		}
-	}.value
-}
-
-@Composable
 private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByAuthor: Boolean) {
 	val event = item.event
 	val sender = AmbientMembers.current.getValue(event.sender)
 
 	val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
 
-	val authorAvatar = sender.avatarUrl?.let { loadIcon(it) }
+	val authorAvatar = sender.avatarUrl?.let { loadIcon(URI(it)) }
 
 	Row(Modifier.padding(top = if(isFirstByAuthor) 8.dp else 0.dp)) {
 		// Render author image on the left
@@ -352,7 +316,7 @@ private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByA
 				}
 				is MessageContent.Image -> {
 					Surface(color = bubbleColor, shape = bubbleShape) {
-						val image = loadImage(content.url)
+						val image = loadImage(URI(content.url))
 						if (image != null) {
 							val width = content.info?.width
 							val height = content.info?.height

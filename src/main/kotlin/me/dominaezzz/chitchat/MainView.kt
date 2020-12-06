@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,6 +26,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.room.timeline.Conversation
+import me.dominaezzz.chitchat.util.IconCache
+import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -69,17 +70,17 @@ fun AppView() {
 	val contentRepo = remember(client) { ContentRepository(client, appWorkingDir.resolve("media")) }
 
 	Providers(SessionAmbient provides session, ClientAmbient provides client, ContentRepoAmbient provides contentRepo) {
-		MainView()
+		IconCache {
+			MainView()
+		}
 	}
 }
 
 @Composable
 fun MainView() {
 	val client = ClientAmbient.current
-	val contentRepo = ContentRepoAmbient.current
 
 	val appViewModel = remember { AppViewModel(client, databaseWriteSemaphore) }
-	val iconLoader = remember(contentRepo) { IconLoader(contentRepo) }
 
 	LaunchedEffect(appViewModel) {
 		while (isActive) {
@@ -100,7 +101,6 @@ fun MainView() {
 			rooms,
 			selectedRoom,
 			{ selectedRoom = it },
-			iconLoader,
 			Modifier.fillMaxWidth(0.3f)
 		)
 
@@ -115,7 +115,6 @@ fun MainView() {
 			RoomView(
 				room,
 				appViewModel,
-				iconLoader,
 				Modifier.fillMaxWidth()
 			)
 		}
@@ -127,7 +126,6 @@ fun RoomListView(
 	rooms: SnapshotStateList<AppViewModel.Room>,
 	selectedRoom: String?,
 	onSelectedRoomChanged: (String?) -> Unit,
-	iconLoader: IconLoader,
 	modifier: Modifier = Modifier
 ) {
 	var roomFilter by remember { mutableStateOf("") }
@@ -200,18 +198,10 @@ fun RoomListView(
 					secondaryText = { Text("${room.memberCount} members") },
 					singleLineSecondaryText = true,
 					icon = {
-						val image by produceState<ImageBitmap?>(null, room) {
-							value = null
-							if (room.avatarUrl != null) {
-								runCatching {
-									val url = URI(room.avatarUrl)
-									value = iconLoader.loadIcon(url)
-								}
-							}
-						}
+						val image = room.avatarUrl?.let { loadIcon(URI(it)) }
 
 						if (image != null) {
-							Image(image!!, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+							Image(image, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
 						} else {
 							Image(Icons.Filled.Contacts, Modifier.size(40.dp))
 						}
@@ -226,7 +216,6 @@ fun RoomListView(
 fun RoomView(
 	room: AppViewModel.Room,
 	appViewModel: AppViewModel,
-	iconLoader: IconLoader,
 	modifier: Modifier = Modifier
 ) {
 	Column(modifier) {
@@ -234,19 +223,11 @@ fun RoomView(
 
 			Spacer(Modifier.width(16.dp))
 
-			val image by produceState<ImageBitmap?>(null, room) {
-				value = null
-				if (room.avatarUrl != null) {
-					runCatching {
-						val url = URI(room.avatarUrl)
-						value = iconLoader.loadIcon(url)
-					}
-				}
-			}
+			val image = room.avatarUrl?.let { loadIcon(URI(it)) }
 
 			if (image != null) {
 				Image(
-					image!!,
+					image,
 					Modifier.size(40.dp).clip(CircleShape).align(Alignment.CenterVertically),
 					contentScale = ContentScale.Crop
 				)
