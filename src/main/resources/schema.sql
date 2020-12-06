@@ -133,8 +133,8 @@ CREATE TABLE account_data
     roomId  TEXT,
     content TEXT NOT NULL -- CHECK (JSON_VALID(content))
 );
-CREATE UNIQUE INDEX global_account_data_index ON account_data (type, content) WHERE roomId IS NULL;
-CREATE UNIQUE INDEX room_account_data_index ON account_data (roomId, type, content) WHERE roomId IS NOT NULL;
+CREATE UNIQUE INDEX global_account_data_index ON account_data(type) WHERE roomId IS NULL;
+CREATE UNIQUE INDEX room_account_data_index ON account_data(roomId, type) WHERE roomId IS NOT NULL;
 
 CREATE TABLE tracked_users
 (
