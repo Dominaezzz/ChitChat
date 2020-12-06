@@ -28,7 +28,7 @@ import me.dominaezzz.chitchat.AppViewModel
 import me.dominaezzz.chitchat.db.TimelineItem
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage
-import me.dominaezzz.chitchat.util.parseMatrixCustomHtml
+import me.dominaezzz.chitchat.util.formatting.parseMatrixCustomHtml
 import java.net.URI
 import java.time.Instant
 import java.time.ZoneId

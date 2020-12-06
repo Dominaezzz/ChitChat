@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.util
+package me.dominaezzz.chitchat.util.formatting
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.*
