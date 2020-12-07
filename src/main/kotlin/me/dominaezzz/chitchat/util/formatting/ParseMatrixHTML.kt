@@ -20,7 +20,7 @@ private fun AnnotatedString.Builder.appendElement(element: Element, maxDepth: In
 
 	// https://matrix.org/docs/spec/client_server/r0.6.0#id328
 
-	// font, h1, h2, h3, h4, h5, h6, p, ul, ol, li, img
+	// font, h1, h2, h3, h4, h5, h6, p, img
 
 	// Must be down outside
 	// blockquote, hr, div
@@ -58,6 +58,45 @@ private fun AnnotatedString.Builder.appendElement(element: Element, maxDepth: In
 				appendChildren(element, maxDepth)
 			}
 		}
+		"ul" -> {
+			val nesting = element.parents().takeWhile { it.nodeName() != "ol" }.count { it.nodeName() == "ul" }
+			val indent = element.parents().count { it.nodeName() == "ul" || it.nodeName() == "ol" }
+
+			append('\n')
+			for (li in element.children()) {
+				check(li.nodeName() == "li")
+				repeat(indent) { append("    ") }
+
+				append(' ')
+				append(when (nesting) {
+					0 -> '•'
+					1 -> '◦'
+					else -> '∙'
+				})
+				append(' ')
+				appendChildren(li, maxDepth)
+				append('\n')
+			}
+		}
+		"ol" -> {
+			val nesting = element.parents().takeWhile { it.nodeName() != "ul" }.count { it.nodeName() == "ol" }
+			val indent = element.parents().count { it.nodeName() == "ol" || it.nodeName() == "ul" }
+
+			append('\n')
+			for ((idx, li) in element.children().withIndex()) {
+				check(li.nodeName() == "li")
+				repeat(indent) { append("    ") }
+
+				append(' ')
+				append(when (nesting) {
+					0 -> (idx + 1).toString()
+					else -> encodeToRomanNumerals(idx + 1).toLowerCase()
+				})
+				append(". ")
+				appendChildren(li, maxDepth)
+				append('\n')
+			}
+		}
 		else -> appendChildren(element, maxDepth) // TODO: Need to properly handle this.
 	}
 }
@@ -74,4 +113,34 @@ private fun AnnotatedString.Builder.appendChildren(parent: Element, maxDepth: In
 private fun parseColor(color: String): Color? {
 	if (color.length != 6) return null
 	return color.toIntOrNull(16)?.let { Color(it).copy(alpha = 1f) }
+}
+
+private val romanNumerals = listOf(
+	1000 to "M",
+	900 to "CM",
+	500 to "D",
+	400 to "CD",
+	100 to "C",
+	90 to "XC",
+	50 to "L",
+	40 to "XL",
+	10 to "X",
+	9 to "IX",
+	5 to "V",
+	4 to "IV",
+	1 to "I"
+)
+
+private fun encodeToRomanNumerals(number: Int): String {
+	if (number !in 1..5000) return number.toString()
+
+	return buildString {
+		var num = number
+		for ((multiple, numeral) in romanNumerals) {
+			while (num >= multiple) {
+				num -= multiple
+				append(numeral)
+			}
+		}
+	}
 }
