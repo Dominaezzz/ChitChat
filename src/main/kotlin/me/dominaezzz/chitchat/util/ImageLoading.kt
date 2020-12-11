@@ -79,7 +79,7 @@ fun loadImage(uri: URI): ImageBitmap? {
 	val iconCache = AmbientImageCache.current
 	return produceState<ImageBitmap?>(null, uri) {
 		value = null
-		value = iconCache.getData(uri)
+		value = runCatching { iconCache.getData(uri) }.getOrNull()
 	}.value
 }
 
@@ -88,6 +88,6 @@ fun loadIcon(uri: URI): ImageBitmap? {
 	val iconCache = AmbientIconCache.current
 	return produceState<ImageBitmap?>(null, uri) {
 		value = null
-		value = iconCache.getData(uri)
+		value = runCatching { iconCache.getData(uri) }.getOrNull()
 	}.value
 }

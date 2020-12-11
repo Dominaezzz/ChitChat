@@ -318,17 +318,17 @@ private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByA
 				is MessageContent.Image -> {
 					Surface(color = bubbleColor, shape = bubbleShape) {
 						val image = loadImage(URI(content.url))
-						if (image != null) {
-							val width = content.info?.width
-							val height = content.info?.height
-							val modifier = if (width != null && height != null) {
-								Modifier.preferredSize(width.toInt().dp, height.toInt().dp)
-							} else {
-								Modifier.preferredSize(image.width.dp, image.height.dp)
-							}
-							Image(image, modifier)
+						val width = content.info?.width
+						val height = content.info?.height
+						val specifiedSize = if (width != null && height != null) {
+							Modifier.preferredSize(width.toInt().dp, height.toInt().dp)
 						} else {
-							Image(Icons.Outlined.BrokenImage)
+							Modifier
+						}
+						if (image != null) {
+							Image(image, specifiedSize)
+						} else {
+							Image(Icons.Outlined.BrokenImage, specifiedSize)
 						}
 					}
 				}
