@@ -25,6 +25,7 @@ import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.db.*
+import me.dominaezzz.chitchat.models.RoomHeader
 import me.dominaezzz.chitchat.room.timeline.Conversation
 import me.dominaezzz.chitchat.util.IconCache
 import me.dominaezzz.chitchat.util.loadIcon
@@ -92,7 +93,7 @@ fun MainView() {
 		}
 	}
 
-	val rooms = remember { mutableStateListOf<AppViewModel.Room>() }
+	val rooms = remember { mutableStateListOf<RoomHeader>() }
 	LaunchedEffect(appViewModel) { appViewModel.rooms(rooms) }
 	var selectedRoom by remember { mutableStateOf<String?>(null) }
 
@@ -123,7 +124,7 @@ fun MainView() {
 
 @Composable
 fun RoomListView(
-	rooms: SnapshotStateList<AppViewModel.Room>,
+	rooms: SnapshotStateList<RoomHeader>,
 	selectedRoom: String?,
 	onSelectedRoomChanged: (String?) -> Unit,
 	modifier: Modifier = Modifier
@@ -214,7 +215,7 @@ fun RoomListView(
 
 @Composable
 fun RoomView(
-	room: AppViewModel.Room,
+	room: RoomHeader,
 	appViewModel: AppViewModel,
 	modifier: Modifier = Modifier
 ) {

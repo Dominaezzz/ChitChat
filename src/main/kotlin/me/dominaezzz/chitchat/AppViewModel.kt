@@ -16,6 +16,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.*
 import me.dominaezzz.chitchat.db.*
+import me.dominaezzz.chitchat.models.RoomHeader
 import java.sql.Types
 
 class AppViewModel(
@@ -24,17 +25,6 @@ class AppViewModel(
 ) {
 	private val _lastSync = MutableStateFlow<SyncResponse?>(null)
 	val lastSync: StateFlow<SyncResponse?> get() = _lastSync
-
-	class Room(
-		val id: String,
-		val displayName: String,
-		val topic: String?,
-		val memberCount: Int,
-		val avatarUrl: String?,
-
-		val firstEventsId: String,
-		val prevLatestOrder: Int
-	)
 
 	suspend fun sync() {
 		val syncToken = withContext(Dispatchers.IO) {
@@ -219,7 +209,7 @@ class AppViewModel(
 		_lastSync.value = sync
 	}
 
-	suspend fun rooms(rooms: SnapshotStateList<Room>) {
+	suspend fun rooms(rooms: SnapshotStateList<RoomHeader>) {
 		rooms.clear()
 
 		val initialRooms = loadRoomsFromDatabase(emptyList())
@@ -255,7 +245,7 @@ class AppViewModel(
 	}
 
 	@OptIn(ExperimentalStdlibApi::class)
-	private suspend fun loadRoomsFromDatabase(loadedRooms: List<Room>): List<Room> {
+	private suspend fun loadRoomsFromDatabase(loadedRooms: List<RoomHeader>): List<RoomHeader> {
 		val loadedRoomsJson = buildJsonObject {
 			for (room in loadedRooms) {
 				putJsonObject(room.id) {
@@ -272,15 +262,17 @@ class AppViewModel(
 					stmt.executeQuery().use { rs ->
 						buildList {
 							while (rs.next()) {
-								add(Room(
-									id = rs.getString(1),
-									displayName = rs.getString(2),
-									avatarUrl = rs.getString(3),
-									memberCount = rs.getInt(4),
-									topic = rs.getString(5),
-									firstEventsId = rs.getString(6),
-									prevLatestOrder = rs.getInt(7)
-								))
+								add(
+									RoomHeader(
+										id = rs.getString(1),
+										displayName = rs.getString(2),
+										avatarUrl = rs.getString(3),
+										memberCount = rs.getInt(4),
+										topic = rs.getString(5),
+										firstEventsId = rs.getString(6),
+										prevLatestOrder = rs.getInt(7)
+									)
+								)
 							}
 						}
 					}
