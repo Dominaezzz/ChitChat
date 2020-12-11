@@ -5,6 +5,7 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
@@ -20,13 +21,26 @@ private fun AnnotatedString.Builder.appendElement(element: Element, maxDepth: In
 
 	// https://matrix.org/docs/spec/client_server/r0.6.0#id328
 
-	// font, h1, h2, h3, h4, h5, h6, p, img
+	// font, h1, h2, h3, h4, h5, h6, img
 
 	// Must be down outside
 	// blockquote, hr, div
 	// table, thead, tbody, tr, th, td, caption
 
 	when (element.normalName()) {
+		"p" -> {
+			val align = when (element.attr("align")) {
+				"left" -> TextAlign.Left // TextAlign.Start
+				"right" -> TextAlign.Right // TextAlign.End
+				"center" -> TextAlign.Center
+				"justify" -> TextAlign.Justify
+				else -> null
+			}
+			withStyle(ParagraphStyle(textAlign = align)) {
+				appendChildren(element, maxDepth)
+				append("\n")
+			}
+		}
 		"br" -> append("\n")
 		"i", "em" -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { appendChildren(element, maxDepth) }
 		"b", "strong" -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { appendChildren(element, maxDepth) }
