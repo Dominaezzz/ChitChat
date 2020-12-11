@@ -297,8 +297,9 @@ private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByA
 				is MessageContent.Text -> {
 					Surface(color = bubbleColor, shape = bubbleShape) {
 						if (content.format == "org.matrix.custom.html") {
+							val typography = MaterialTheme.typography
 							val body = remember(content.formattedBody) {
-								runCatching { parseMatrixCustomHtml(content.formattedBody!!) }
+								runCatching { parseMatrixCustomHtml(content.formattedBody!!, typography) }
 							}
 							Text(
 								text = body.getOrElse { AnnotatedString(content.body) },
