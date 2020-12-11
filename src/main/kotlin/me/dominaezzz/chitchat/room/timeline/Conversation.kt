@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.flow.MutableStateFlow
-import me.dominaezzz.chitchat.AppViewModel
+import me.dominaezzz.chitchat.models.AppViewModel
 import me.dominaezzz.chitchat.db.TimelineItem
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage

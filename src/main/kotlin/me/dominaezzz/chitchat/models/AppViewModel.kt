@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat
+package me.dominaezzz.chitchat.models
 
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
@@ -16,7 +16,6 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.*
 import me.dominaezzz.chitchat.db.*
-import me.dominaezzz.chitchat.models.RoomHeader
 import java.sql.Types
 
 class AppViewModel(

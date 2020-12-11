@@ -25,6 +25,7 @@ import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.db.*
+import me.dominaezzz.chitchat.models.AppViewModel
 import me.dominaezzz.chitchat.models.RoomHeader
 import me.dominaezzz.chitchat.room.timeline.Conversation
 import me.dominaezzz.chitchat.util.IconCache
