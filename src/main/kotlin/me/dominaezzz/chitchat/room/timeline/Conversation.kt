@@ -241,13 +241,11 @@ private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByA
 	val event = item.event
 	val sender = AmbientMembers.current.getValue(event.sender)
 
-	val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
-
-	val authorAvatar = sender.avatarUrl?.let { loadIcon(URI(it)) }
-
 	Row(Modifier.padding(top = if(isFirstByAuthor) 8.dp else 0.dp)) {
 		// Render author image on the left
 		if (isFirstByAuthor) {
+			val authorAvatar = sender.avatarUrl?.let { loadIcon(URI(it)) }
+
 			val modifier = Modifier.padding(horizontal = 16.dp)
 				.preferredSize(42.dp)
 				.clip(CircleShape)
@@ -263,88 +261,99 @@ private fun MessageEvent(item: TimelineItem, isFirstByAuthor: Boolean, isLastByA
 
 		// Render message on the right
 		Column(Modifier.weight(1f)) {
-			// Author and timestamp
 			if (isFirstByAuthor) {
-				Row {
-					Text(
-						text = sender.displayName ?: event.sender,
-						style = MaterialTheme.typography.subtitle1,
-						modifier = Modifier.alignBy(LastBaseline)
-							.paddingFrom(LastBaseline, after = 8.dp) // Space to 1st bubble
-					)
-					Spacer(Modifier.preferredWidth(8.dp))
-					Providers(AmbientContentAlpha provides ContentAlpha.medium) {
-						// TODO: Get ZoneId from compose and watch for system changes
-						Text(
-							text = Instant.ofEpochMilli(event.originServerTimestamp).atZone(ZoneId.systemDefault())
-								.format(DateTimeFormatter.ofPattern("HH:mm")),
-							style = MaterialTheme.typography.caption,
-							modifier = Modifier.alignBy(LastBaseline)
-						)
-					}
-				}
+				AuthorAndTimeStamp(event.sender, event.originServerTimestamp)
 			}
 
-			val bubbleColor = Color(0xFFF5F5F5)
-			val bubbleShape = if (isLastByAuthor) {
-				RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)
-			} else {
-				RoundedCornerShape(0.dp, 8.dp, 8.dp, 0.dp)
-			}
-
-			// Message
-			when (content) {
-				is MessageContent.Text -> {
-					Surface(color = bubbleColor, shape = bubbleShape) {
-						if (content.format == "org.matrix.custom.html") {
-							val typography = MaterialTheme.typography
-							val body = remember(content.formattedBody) {
-								runCatching { parseMatrixCustomHtml(content.formattedBody!!, typography) }
-							}
-							Text(
-								text = body.getOrElse { AnnotatedString(content.body) },
-								style = MaterialTheme.typography.body1,
-								modifier = Modifier.padding(8.dp)
-							)
-						} else {
-							Text(
-								text = content.body,
-								style = MaterialTheme.typography.body1,
-								modifier = Modifier.padding(8.dp)
-							)
-						}
-					}
-				}
-				is MessageContent.Image -> {
-					Surface(color = bubbleColor, shape = bubbleShape) {
-						val image = loadImage(URI(content.url))
-						val width = content.info?.width
-						val height = content.info?.height
-						val specifiedSize = if (width != null && height != null) {
-							Modifier.preferredSize(width.toInt().dp, height.toInt().dp)
-						} else {
-							Modifier
-						}
-						if (image != null) {
-							Image(image, specifiedSize)
-						} else {
-							Image(Icons.Outlined.BrokenImage, specifiedSize)
-						}
-					}
-				}
-				is MessageContent.Redacted -> {
-					Text("**This event was redacted**")
-				}
-				else -> {
-					Text("This is a ${content::class.simpleName} message")
-				}
-			}
+			val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
+			Message(content, isLastByAuthor)
 
 			if (isLastByAuthor) {
 				Spacer(Modifier.preferredHeight(8.dp))
 			} else {
 				Spacer(Modifier.preferredHeight(4.dp))
 			}
+		}
+	}
+}
+
+@Composable
+private fun AuthorAndTimeStamp(senderUserId: String, originServerTimestamp: Long) {
+	val sender = AmbientMembers.current[senderUserId]
+
+	Row {
+		Text(
+			text = sender?.displayName ?: senderUserId,
+			style = MaterialTheme.typography.subtitle1,
+			modifier = Modifier.alignBy(LastBaseline)
+				.paddingFrom(LastBaseline, after = 8.dp) // Space to 1st bubble
+		)
+		Spacer(Modifier.preferredWidth(8.dp))
+		Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+			// TODO: Get ZoneId from compose and watch for system changes
+			Text(
+				text = Instant.ofEpochMilli(originServerTimestamp).atZone(ZoneId.systemDefault())
+					.format(DateTimeFormatter.ofPattern("HH:mm")),
+				style = MaterialTheme.typography.caption,
+				modifier = Modifier.alignBy(LastBaseline)
+			)
+		}
+	}
+}
+
+@Composable
+private fun Message(content: MessageContent, isLastByAuthor: Boolean) {
+	val bubbleColor = Color(0xFFF5F5F5)
+	val bubbleShape = if (isLastByAuthor) {
+		RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)
+	} else {
+		RoundedCornerShape(0.dp, 8.dp, 8.dp, 0.dp)
+	}
+
+	when (content) {
+		is MessageContent.Text -> {
+			Surface(color = bubbleColor, shape = bubbleShape) {
+				if (content.format == "org.matrix.custom.html") {
+					val typography = MaterialTheme.typography
+					val body = remember(content.formattedBody) {
+						runCatching { parseMatrixCustomHtml(content.formattedBody!!, typography) }
+					}
+					Text(
+						text = body.getOrElse { AnnotatedString(content.body) },
+						style = MaterialTheme.typography.body1,
+						modifier = Modifier.padding(8.dp)
+					)
+				} else {
+					Text(
+						text = content.body,
+						style = MaterialTheme.typography.body1,
+						modifier = Modifier.padding(8.dp)
+					)
+				}
+			}
+		}
+		is MessageContent.Image -> {
+			Surface(color = bubbleColor, shape = bubbleShape) {
+				val image = loadImage(URI(content.url))
+				val width = content.info?.width
+				val height = content.info?.height
+				val specifiedSize = if (width != null && height != null) {
+					Modifier.preferredSize(width.toInt().dp, height.toInt().dp)
+				} else {
+					Modifier
+				}
+				if (image != null) {
+					Image(image, specifiedSize)
+				} else {
+					Image(Icons.Outlined.BrokenImage, specifiedSize)
+				}
+			}
+		}
+		is MessageContent.Redacted -> {
+			Text("**This event was redacted**")
+		}
+		else -> {
+			Text("This is a ${content::class.simpleName} message")
 		}
 	}
 }
