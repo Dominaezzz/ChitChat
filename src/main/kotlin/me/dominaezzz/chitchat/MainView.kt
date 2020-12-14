@@ -276,21 +276,27 @@ fun RoomView(
 
 		Spacer(Modifier.fillMaxWidth().height(8.dp))
 
-		var draftMessage by remember(room.id) { mutableStateOf("") }
-
-		OutlinedTextField(
-			value = draftMessage,
-			onValueChange = { draftMessage = it },
-			modifier = Modifier
-				.fillMaxWidth()
-				.padding(16.dp),
-			placeholder = { Text("Send a message (unencrypted)...") },
-			trailingIcon = {
-				IconButton(onClick = { /* Send message */ }, enabled = false) {
-					Icon(Icons.Filled.Send)
-				}
-			},
-			onImeActionPerformed = { _, _ -> /* Send message */ }
-		)
+		UserMessageInput(room.id, Modifier.fillMaxWidth())
 	}
+}
+
+@Composable
+fun UserMessageInput(
+	roomId: String,
+	modifier: Modifier = Modifier
+) {
+	var draftMessage by remember(roomId) { mutableStateOf("") }
+
+	OutlinedTextField(
+		value = draftMessage,
+		onValueChange = { draftMessage = it },
+		modifier = modifier.padding(16.dp),
+		placeholder = { Text("Send a message...") },
+		trailingIcon = {
+			IconButton(onClick = { /* Send message */ }, enabled = false) {
+				Icon(Icons.Filled.Send)
+			}
+		},
+		onImeActionPerformed = { _, _ -> /* Send message */ }
+	)
 }
