@@ -22,8 +22,7 @@ class AppViewModel(
 	private val client: MatrixClient,
 	private val dbSemaphore: Semaphore
 ) {
-	private val _lastSync = MutableStateFlow<SyncResponse?>(null)
-	val lastSync: StateFlow<SyncResponse?> get() = _lastSync
+	private val _syncFlow = MutableSharedFlow<SyncResponse>()
 
 	suspend fun sync() {
 		val syncToken = withContext(Dispatchers.IO) {
@@ -205,7 +204,7 @@ class AppViewModel(
 			}
 		}
 
-		_lastSync.value = sync
+		_syncFlow.emit(sync)
 	}
 
 	suspend fun rooms(rooms: SnapshotStateList<RoomHeader>) {
@@ -214,7 +213,7 @@ class AppViewModel(
 		val initialRooms = loadRoomsFromDatabase(emptyList())
 		rooms.addAll(initialRooms)
 
-		lastSync.mapNotNull { it?.rooms?.join }
+		_syncFlow.mapNotNull { it.rooms?.join }
 			.filter { joinedRooms ->
 				joinedRooms.values.asSequence()
 					.mapNotNull { it.timeline }
@@ -304,7 +303,7 @@ class AppViewModel(
 		}
 
 		// Load future events
-		val futureEventsFlow = _lastSync.mapNotNull { it?.rooms?.join?.get(roomId) }
+		val futureEventsFlow = _syncFlow.mapNotNull { it.rooms?.join?.get(roomId) }
 			.filterNot { it.timeline?.events.isNullOrEmpty() }
 			.map { Unit }
 			.onEach {
