@@ -93,12 +93,12 @@ fun ChatItem(item: TimelineItem) {
 	val members = AmbientMembers.current
 	val event = item.event
 	val sender = members.getValue(event.sender)
-	when (event.type) {
+	val text = when (event.type) {
 		"m.room.member" -> {
 			val content = MatrixJson.decodeFromJsonElement(MemberContent.serializer(), event.content)
 			val prevContent = event.prevContent?.let { MatrixJson.decodeFromJsonElement(MemberContent.serializer(), it) }
 
-			val text = buildAnnotatedString {
+			buildAnnotatedString {
 				append(members[event.stateKey]?.displayName ?: event.stateKey ?: "Unknown user ")
 
 				when (prevContent?.membership) {
@@ -144,95 +144,72 @@ fun ChatItem(item: TimelineItem) {
 					}
 				}
 			}
-			ListItem {
-				Text(text)
-			}
 		}
 		"m.room.name" -> {
 			val content = MatrixJson.decodeFromJsonElement(NameContent.serializer(), event.content)
-			ListItem {
-				Text("${sender.displayName ?: event.sender} updated the room name to '${content.name}'.")
-			}
+			AnnotatedString("${sender.displayName ?: event.sender} updated the room name to '${content.name}'.")
 		}
 		"m.room.topic" -> {
 			val content = MatrixJson.decodeFromJsonElement(TopicContent.serializer(), event.content)
-			ListItem {
-				Text("${sender.displayName ?: event.sender} updated the topic to '${content.topic}'.")
-			}
+			AnnotatedString("${sender.displayName ?: event.sender} updated the topic to '${content.topic}'.")
 		}
 		"m.room.avatar" -> {
-			ListItem {
-				Text("${sender.displayName ?: event.sender} updated the room avatar.")
-			}
+			AnnotatedString("${sender.displayName ?: event.sender} updated the room avatar.")
 		}
 		"m.room.canonical_alias" -> {
 			val content = MatrixJson.decodeFromJsonElement(CanonicalAliasContent.serializer(), event.content)
-			ListItem {
-				Text("${sender.displayName ?: event.sender} set the room's canonical alias to '${content.alias}'.")
-			}
+			AnnotatedString("${sender.displayName ?: event.sender} set the room's canonical alias to '${content.alias}'.")
 		}
 		"m.room.guest_access" -> {
 			val content = MatrixJson.decodeFromJsonElement(GuestAccessContent.serializer(), event.content)
-			ListItem {
-				val action = when (content.guestAccess) {
-					GuestAccess.CAN_JOIN -> "has allowed guests to join the room"
-					GuestAccess.FORBIDDEN -> "disabled guest access"
-				}
-				Text("${sender.displayName ?: event.sender} ${action}.")
+			val action = when (content.guestAccess) {
+				GuestAccess.CAN_JOIN -> "has allowed guests to join the room"
+				GuestAccess.FORBIDDEN -> "disabled guest access"
 			}
+			AnnotatedString("${sender.displayName ?: event.sender} ${action}.")
 		}
 		"m.room.create" -> {
 			val content = MatrixJson.decodeFromJsonElement(CreateContent.serializer(), event.content)
-			ListItem {
-				val text = buildString {
-					append(members[content.creator]?.displayName ?: content.creator)
-					append(" created this room")
-					if (content.predecessor != null) {
-						append(" to replace room '${content.predecessor?.roomId}'")
-					}
+			buildAnnotatedString {
+				append(members[content.creator]?.displayName ?: content.creator)
+				append(" created this room")
+				if (content.predecessor != null) {
+					append(" to replace room '${content.predecessor?.roomId}'")
 				}
-				Text(text)
 			}
 		}
 		"m.room.join_rules" -> {
 			val content = MatrixJson.decodeFromJsonElement(JoinRulesContent.serializer(), event.content)
-			ListItem {
-				val action = when (content.joinRule) {
-					JoinRule.PUBLIC -> "has allowed anyone to join the room."
-					JoinRule.PRIVATE -> "has allowed anyone to join the room if they know the roomId."
-					JoinRule.INVITE -> "made the room invite only."
-					JoinRule.KNOCK -> "has set the join rule to 'KNOCK'."
-				}
-				Text("${sender.displayName ?: event.sender} ${action}.")
+			val action = when (content.joinRule) {
+				JoinRule.PUBLIC -> "has allowed anyone to join the room."
+				JoinRule.PRIVATE -> "has allowed anyone to join the room if they know the roomId."
+				JoinRule.INVITE -> "made the room invite only."
+				JoinRule.KNOCK -> "has set the join rule to 'KNOCK'."
 			}
+			AnnotatedString("${sender.displayName ?: event.sender} ${action}.")
 		}
 		"m.room.history_visibility" -> {
 			val content = MatrixJson.decodeFromJsonElement(HistoryVisibilityContent.serializer(), event.content)
-			ListItem {
-				val action = when (content.historyVisibility) {
-					HistoryVisibility.INVITED -> "has set history visibility to 'INVITED'."
-					HistoryVisibility.JOINED -> "has set history visibility to 'JOINED'."
-					HistoryVisibility.SHARED -> "made future room history visible to all room members."
-					HistoryVisibility.WORLD_READABLE -> "has set history visibility to 'WORLD_READABLE'."
-				}
-				Text("${sender.displayName ?: event.sender} ${action}.")
+			val action = when (content.historyVisibility) {
+				HistoryVisibility.INVITED -> "has set history visibility to 'INVITED'."
+				HistoryVisibility.JOINED -> "has set history visibility to 'JOINED'."
+				HistoryVisibility.SHARED -> "made future room history visible to all room members."
+				HistoryVisibility.WORLD_READABLE -> "has set history visibility to 'WORLD_READABLE'."
 			}
+			AnnotatedString("${sender.displayName ?: event.sender} ${action}.")
 		}
 		"m.room.encrypted" -> {
-			ListItem {
-				Text("${sender.displayName ?: event.sender} has sent an encrypted message. E2EE not supported yet!")
-			}
+			AnnotatedString("${sender.displayName ?: event.sender} has sent an encrypted message. E2EE not supported yet!")
 		}
 		"m.room.encryption" -> {
-			ListItem {
-				Text("${sender.displayName ?: event.sender} has enabled End to End Encryption. E2EE not supported yet!")
-			}
+			AnnotatedString("${sender.displayName ?: event.sender} has enabled End to End Encryption. E2EE not supported yet!")
 		}
 		else -> {
-			ListItem {
-				Text("Cannot render '${event.type}' yet" )
-			}
+			AnnotatedString("Cannot render '${event.type}' yet" )
 		}
+	}
+	ListItem {
+		Text(text)
 	}
 }
 
