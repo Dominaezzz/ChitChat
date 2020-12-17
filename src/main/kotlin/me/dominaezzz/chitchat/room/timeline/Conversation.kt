@@ -23,7 +23,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import me.dominaezzz.chitchat.models.AppViewModel
 import me.dominaezzz.chitchat.db.TimelineItem
 import me.dominaezzz.chitchat.util.loadIcon
@@ -43,13 +43,14 @@ fun Conversation(
 	appViewModel: AppViewModel,
 	modifier: Modifier = Modifier
 ) {
-	val timelineEvents = remember(roomId) { mutableStateListOf<TimelineItem>() }
-	val relevantMembers = remember(roomId) { mutableStateMapOf<String, MemberContent>() }
-	val shouldBackPaginate = remember(roomId) { MutableStateFlow(true) }
+	val scope = rememberCoroutineScope()
+	val timeline = remember(roomId) { appViewModel.getRoomTimeline(scope, roomId) }
+	val shouldBackPaginate = timeline.shouldBackPaginate
 
-	LaunchedEffect(roomId) {
-		appViewModel.selectRoom(roomId, timelineEvents, relevantMembers, shouldBackPaginate)
-	}
+	@OptIn(ExperimentalCoroutinesApi::class)
+	val timelineEvents by timeline.events.collectAsState()
+	@OptIn(ExperimentalCoroutinesApi::class)
+	val relevantMembers by timeline.relevantMembers.collectAsState()
 
 	Row(modifier) {
 		val state = rememberLazyListState(timelineEvents.size - 1)
