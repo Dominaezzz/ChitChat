@@ -84,7 +84,7 @@ fun Conversation(
 
 		@OptIn(ExperimentalFoundationApi::class)
 		VerticalScrollbar(
-			rememberScrollbarAdapter(state, timelineEvents.size, 45.dp),
+			rememberScrollbarAdapter(state, timelineEvents.size, 72.dp),
 			Modifier.fillMaxHeight()
 		)
 	}
