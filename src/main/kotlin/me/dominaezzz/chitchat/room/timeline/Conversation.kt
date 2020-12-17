@@ -53,7 +53,7 @@ fun Conversation(
 	val relevantMembers by timeline.relevantMembers.collectAsState()
 
 	Row(modifier) {
-		val state = rememberLazyListState(timelineEvents.size - 1)
+		val state = rememberLazyListState()
 
 		Providers(AmbientMembers provides relevantMembers) {
 			LazyColumn(Modifier.weight(1f), state = state) {
