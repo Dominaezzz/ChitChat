@@ -2,7 +2,7 @@ package me.dominaezzz.chitchat.room.timeline
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumnForIndexed
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,25 +55,27 @@ fun Conversation(
 		val state = rememberLazyListState(timelineEvents.size - 1)
 
 		Providers(AmbientMembers provides relevantMembers) {
-			LazyColumnForIndexed(timelineEvents, Modifier.weight(1f), state = state) { idx, item ->
-				if (idx == 0) {
-					onActive {
-						shouldBackPaginate.value = true
-						onDispose {
-							shouldBackPaginate.value = false
+			LazyColumn(Modifier.weight(1f), state = state) {
+				itemsIndexed(timelineEvents) { idx, item ->
+					if (idx == 0) {
+						onActive {
+							shouldBackPaginate.value = true
+							onDispose {
+								shouldBackPaginate.value = false
+							}
 						}
 					}
-				}
 
-				if (item.event.type == "m.room.message") {
-					val sender = item.event.sender
-					val prev = timelineEvents.getOrNull(idx - 1)?.event
-					val next = timelineEvents.getOrNull(idx + 1)?.event
-					val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
-					val isNotLast  = next != null && next.sender == sender && next.type == "m.room.message"
-					MessageEvent(item, !isNotFirst, !isNotLast)
-				} else {
-					ChatItem(item)
+					if (item.event.type == "m.room.message") {
+						val sender = item.event.sender
+						val prev = timelineEvents.getOrNull(idx - 1)?.event
+						val next = timelineEvents.getOrNull(idx + 1)?.event
+						val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
+						val isNotLast = next != null && next.sender == sender && next.type == "m.room.message"
+						MessageEvent(item, !isNotFirst, !isNotLast)
+					} else {
+						ChatItem(item)
+					}
 				}
 			}
 		}

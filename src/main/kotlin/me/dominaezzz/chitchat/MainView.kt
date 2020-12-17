@@ -5,7 +5,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumnFor
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -188,27 +188,29 @@ fun RoomListView(
 			style = MaterialTheme.typography.h5
 		)
 
-		LazyColumnFor(rooms) { room ->
-			@OptIn(ExperimentalAnimationApi::class)
-			AnimatedVisibility(roomFilter.isEmpty() || room.displayName.contains(roomFilter)) {
-				ListItem(
-					modifier = Modifier.selectable(
-						selected = selectedRoom == room.id,
-						onClick = { onSelectedRoomChanged(room.id) }
-					),
-					text = { Text(room.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-					secondaryText = { Text("${room.memberCount} members") },
-					singleLineSecondaryText = true,
-					icon = {
-						val image = room.avatarUrl?.let { loadIcon(URI(it)) }
+		LazyColumn {
+			items(rooms) { room ->
+				@OptIn(ExperimentalAnimationApi::class)
+				AnimatedVisibility(roomFilter.isEmpty() || room.displayName.contains(roomFilter)) {
+					ListItem(
+						modifier = Modifier.selectable(
+							selected = selectedRoom == room.id,
+							onClick = { onSelectedRoomChanged(room.id) }
+						),
+						text = { Text(room.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+						secondaryText = { Text("${room.memberCount} members") },
+						singleLineSecondaryText = true,
+						icon = {
+							val image = room.avatarUrl?.let { loadIcon(URI(it)) }
 
-						if (image != null) {
-							Image(image, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
-						} else {
-							Image(Icons.Filled.Contacts, Modifier.size(40.dp))
+							if (image != null) {
+								Image(image, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+							} else {
+								Image(Icons.Filled.Contacts, Modifier.size(40.dp))
+							}
 						}
-					}
-				)
+					)
+				}
 			}
 		}
 	}

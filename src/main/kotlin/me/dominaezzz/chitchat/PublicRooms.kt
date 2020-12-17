@@ -2,7 +2,7 @@ package me.dominaezzz.chitchat
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumnForIndexed
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -87,34 +87,36 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 			Box(Modifier.fillMaxWidth(), Alignment.TopStart) {
 				val state = rememberLazyListState()
 
-				LazyColumnForIndexed(rooms, Modifier.padding(end = 12.dp), state = state) { idx, room ->
-					if (idx == rooms.lastIndex) {
-						onActive {
-							shouldPaginate.value = true
-							onDispose {
-								shouldPaginate.value = false
+				LazyColumn(Modifier.padding(end = 12.dp), state = state) {
+					itemsIndexed(rooms) { idx, room ->
+						if (idx == rooms.lastIndex) {
+							onActive {
+								shouldPaginate.value = true
+								onDispose {
+									shouldPaginate.value = false
+								}
 							}
 						}
-					}
 
-					val image = room.avatarUrl?.let { loadIcon(URI(it)) }
-					ListItem(
-						icon = image?.let {
-							{
-								Image(it, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+						val image = room.avatarUrl?.let { loadIcon(URI(it)) }
+						ListItem(
+							icon = image?.let {
+								{
+									Image(it, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+								}
+							},
+							text = { Text(room.name ?: room.canonicalAlias ?: room.roomId) },
+							secondaryText = room.topic?.let { { Text(it) } },
+							singleLineSecondaryText = false,
+							trailing = {
+								Row(verticalAlignment = Alignment.CenterVertically) {
+									Icon(Icons.Filled.Contacts)
+									Text(room.numJoinedMembers.toString())
+								}
 							}
-						},
-						text = { Text(room.name ?: room.canonicalAlias ?: room.roomId) },
-						secondaryText = room.topic?.let { { Text(it) } },
-						singleLineSecondaryText = false,
-						trailing = {
-							Row(verticalAlignment = Alignment.CenterVertically) {
-								Icon(Icons.Filled.Contacts)
-								Text(room.numJoinedMembers.toString())
-							}
-						}
-					)
-					Divider()
+						)
+						Divider()
+					}
 				}
 
 				VerticalScrollbar(
