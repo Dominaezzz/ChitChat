@@ -48,7 +48,7 @@ fun Conversation(
 	val shouldBackPaginate = timeline.shouldBackPaginate
 
 	@OptIn(ExperimentalCoroutinesApi::class)
-	val timelineEvents by timeline.events.collectAsState()
+	val timelineEvents by timeline.events.collectAsState().let { derivedStateOf { it.value.asReversed() } }
 	@OptIn(ExperimentalCoroutinesApi::class)
 	val relevantMembers by timeline.relevantMembers.collectAsState()
 
@@ -56,9 +56,9 @@ fun Conversation(
 		val state = rememberLazyListState()
 
 		Providers(AmbientMembers provides relevantMembers) {
-			LazyColumn(Modifier.weight(1f), state = state) {
+			LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
 				itemsIndexed(timelineEvents) { idx, item ->
-					if (idx == 0) {
+					if (idx == timelineEvents.lastIndex) {
 						onActive {
 							shouldBackPaginate.value = true
 							onDispose {
@@ -69,8 +69,8 @@ fun Conversation(
 
 					if (item.event.type == "m.room.message") {
 						val sender = item.event.sender
-						val prev = timelineEvents.getOrNull(idx - 1)?.event
-						val next = timelineEvents.getOrNull(idx + 1)?.event
+						val prev = timelineEvents.getOrNull(idx + 1)?.event
+						val next = timelineEvents.getOrNull(idx - 1)?.event
 						val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
 						val isNotLast = next != null && next.sender == sender && next.type == "m.room.message"
 						MessageEvent(item, !isNotFirst, !isNotLast)
