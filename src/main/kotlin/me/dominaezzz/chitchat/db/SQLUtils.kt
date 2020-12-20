@@ -49,17 +49,16 @@ inline fun <T> usingStatement(block: (Statement) -> T): T {
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun Connection.savepoint(block: () -> Boolean) {
+inline fun <T> Connection.savepoint(block: () -> T): T {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
 
     val savepoint = setSavepoint()
 
-    var isSavepointSuccessful = false
     var exception: Throwable? = null
     try {
-        isSavepointSuccessful = block()
+        return block()
     } catch (e: Throwable) {
         exception = e
         throw e
@@ -72,11 +71,33 @@ inline fun Connection.savepoint(block: () -> Boolean) {
                 exception?.addSuppressed(rollbackException)
             }
         } else {
-            if (isSavepointSuccessful) {
-                releaseSavepoint(savepoint)
-            } else {
-                rollback(savepoint)
+            releaseSavepoint(savepoint)
+        }
+    }
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun <T> Connection.withoutIndex(tableName: String, indexName: String, block: () -> T) {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+
+    savepoint {
+        val ddlStmt = prepareStatement("SELECT sql FROM sqlite_master WHERE type = ? AND tbl_name = ? AND name = ?").use { stmt ->
+            stmt.setString(1, "index")
+            stmt.setString(2, tableName)
+            stmt.setString(3, indexName)
+            stmt.executeQuery().use { rs ->
+                if (!rs.next()) {
+                    throw NoSuchElementException("Index($indexName) on Table '${tableName}' does not exist!")
+                }
+                rs.getString(1)
             }
+        }
+        usingStatement { stmt ->
+            stmt.execute("DROP INDEX $indexName;") // No way around this concatenation sadly.
+            block()
+            stmt.execute(ddlStmt)
         }
     }
 }

@@ -235,10 +235,12 @@ class RoomTimeline(
 							shiftTimelineStmt.executeUpdate()
 
 							// Merge timelines (and maintain contiguous timelineIds).
-							conn.prepareStatement("UPDATE room_events SET timelineId = timelineId - 1 WHERE roomId = ? AND timelineId > ?;").use { stmt ->
-								stmt.setString(1, roomId)
-								stmt.setInt(2, timelineId)
-								stmt.executeUpdate()
+							conn.withoutIndex("room_events", "compressed_state") {
+								conn.prepareStatement("UPDATE room_events SET timelineId = timelineId - 1 WHERE roomId = ? AND timelineId > ?;").use { stmt ->
+									stmt.setString(1, roomId)
+									stmt.setInt(2, timelineId)
+									stmt.executeUpdate()
+								}
 							}
 						} else {
 							val stateEvents = response.state

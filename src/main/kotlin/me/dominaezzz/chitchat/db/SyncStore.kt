@@ -168,40 +168,42 @@ private fun storeSyncResponse(sync: SyncResponse, syncToken: String?) {
 		InsertUtils(conn).use { utils ->
 			val rooms = sync.rooms
 			if (rooms != null) {
-				for ((roomId, joinedRoom) in rooms.join) {
-					val summary = joinedRoom.summary
-					if (summary != null) {
-						utils.updateRoomSummary(roomId, summary)
-					}
+				conn.withoutIndex("room_events", "compressed_state") {
+					for ((roomId, joinedRoom) in rooms.join) {
+						val summary = joinedRoom.summary
+						if (summary != null) {
+							utils.updateRoomSummary(roomId, summary)
+						}
 
-					val timeline = joinedRoom.timeline
-					if (timeline != null) {
-						// Create new batch
-						var order = if (timeline.limited == true) {
-							utils.createNewTimeline(roomId)
-							1
-						} else {
-							utils.getLastOrder(roomId) + 1
+						val timeline = joinedRoom.timeline
+						if (timeline != null) {
+							// Create new batch
+							var order = if (timeline.limited == true) {
+								utils.createNewTimeline(roomId)
+								1
+							} else {
+								utils.getLastOrder(roomId) + 1
+							}
+							for (event in timeline.events) {
+								utils.insertRoomEvent(roomId, event, order++)
+							}
+							if (timeline.limited == true) {
+								utils.setPaginationToken(roomId, timeline.events.first().eventId, timeline.prevBatch!!)
+							}
 						}
-						for (event in timeline.events) {
-							utils.insertRoomEvent(roomId, event, order++)
-						}
-						if (timeline.limited == true) {
-							utils.setPaginationToken(roomId, timeline.events.first().eventId, timeline.prevBatch!!)
-						}
-					}
 
-					val stateEvents = joinedRoom.state?.events
-					if (stateEvents != null) {
-						for (event in stateEvents) {
-							utils.insertRoomEvent(roomId, event, null)
+						val stateEvents = joinedRoom.state?.events
+						if (stateEvents != null) {
+							for (event in stateEvents) {
+								utils.insertRoomEvent(roomId, event, null)
+							}
 						}
-					}
 
-					val accountEvents = joinedRoom.accountData?.events
-					if (accountEvents != null) {
-						for (event in accountEvents) {
-							utils.updateAccountData(roomId, event.type, event.content)
+						val accountEvents = joinedRoom.accountData?.events
+						if (accountEvents != null) {
+							for (event in accountEvents) {
+								utils.updateAccountData(roomId, event.type, event.content)
+							}
 						}
 					}
 				}
