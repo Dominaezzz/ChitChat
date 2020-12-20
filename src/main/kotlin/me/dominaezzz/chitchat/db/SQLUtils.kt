@@ -106,33 +106,6 @@ var Connection.version: Int
     get() = usingStatement { stmt -> stmt.executeQuery("PRAGMA user_version;").use { check(it.next()); it.getInt(1) } }
     set(value) { usingStatement { stmt -> stmt.executeUpdate("PRAGMA user_version = $value;") } }
 
-fun Connection.getValue(key: String): String? {
-    return prepareStatement("SELECT value FROM key_value_store WHERE key = ?;").use { stmt ->
-        stmt.setString(1, key)
-        stmt.executeQuery().use { rs ->
-            if (rs.next()) {
-                rs.getString(1)
-            } else {
-                null
-            }
-        }
-    }
-}
-
-fun Connection.setValue(key: String, value: String?) {
-    prepareStatement(
-        """
-            INSERT INTO key_value_store(key, value)
-            VALUES (?, ?)
-            ON CONFLICT(key) DO UPDATE SET value=excluded.value;
-        """
-    ).use {
-        it.setString(1, key)
-        it.setString(2, value)
-        it.executeUpdate()
-    }
-}
-
 fun ResultSet.getJsonElement(columnLabel: String): JsonElement? {
     val content = getString(columnLabel)
     return if (content != null) {
