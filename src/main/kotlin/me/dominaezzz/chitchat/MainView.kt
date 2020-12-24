@@ -12,7 +12,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -116,7 +115,6 @@ fun MainView() {
 			val room by derivedStateOf { rooms.single { it.id == selectedRoom } }
 			RoomView(
 				room,
-				appViewModel,
 				Modifier.fillMaxWidth()
 			)
 		}
@@ -219,10 +217,9 @@ fun RoomListView(
 @Composable
 fun RoomView(
 	roomHeader: RoomHeader,
-	appViewModel: AppViewModel,
 	modifier: Modifier = Modifier
 ) {
-	val room = appViewModel.syncClient.joinedRooms.collectAsState(emptyMap()).value[roomHeader.id] ?: return
+	val room = roomHeader.room
 
 	Column(modifier) {
 		TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {

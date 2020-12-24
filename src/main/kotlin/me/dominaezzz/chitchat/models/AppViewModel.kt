@@ -37,7 +37,8 @@ class AppViewModel(
 							room.id,
 							displayName,
 							memberCount,
-							displayAvatar
+							displayAvatar,
+							room
 						)
 					}
 				}
