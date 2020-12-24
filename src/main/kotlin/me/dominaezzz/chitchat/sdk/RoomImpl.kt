@@ -1,6 +1,7 @@
 package me.dominaezzz.chitchat.sdk
 
 import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.models.events.contents.TypingContent
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.models.sync.Event
@@ -130,6 +131,9 @@ class RoomImpl(
 		.map { MatrixJson.decodeFromJsonElement(TypingContent.serializer(), it.content) }
 		.map { it.userIds }
 		.shareIn(scope, shareConfig, 1)
+
+	override val tags: Flow<Map<String, TagContent.Tag>> = getAccountData("m.tag", TagContent.serializer())
+		.map { it?.tags ?: emptyMap() }
 
 	override fun createTimelineView(): RoomTimeline {
 		val timeline = RoomTimeline(id, syncFlow, client, dbSemaphore)

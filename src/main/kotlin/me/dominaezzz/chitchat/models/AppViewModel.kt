@@ -25,24 +25,33 @@ class AppViewModel(
 
 	@OptIn(ExperimentalCoroutinesApi::class)
 	fun getRooms(): Flow<List<RoomHeader>> {
+		val comparator = compareByDescending<RoomHeader> { it.favourite != null }
+			.then(nullsLast(compareBy { it.favourite?.order }))
+			.thenBy { it.lowPriority != null }
+			.then(nullsLast(compareBy { it.lowPriority?.order }))
+			.thenBy { it.displayName }
+
 		return syncClient.joinedRooms
 			.flatMapLatest { joinedRooms ->
 				val roomHeaders = joinedRooms.values.map { room ->
 					combine(
 						room.getDisplayName(session.userId),
 						room.getDisplayAvatar(session.userId),
-						room.joinedMembers.map { it.size }
-					) { displayName, displayAvatar, memberCount ->
+						room.joinedMembers.map { it.size },
+						room.tags
+					) { displayName, displayAvatar, memberCount, tags ->
 						RoomHeader(
 							room.id,
+							room,
 							displayName,
 							memberCount,
 							displayAvatar,
-							room
+							tags["m.favourite"],
+							tags["m.lowpriority"]
 						)
 					}
 				}
-				combine(roomHeaders) { headers -> headers.sortedBy { it.displayName } }
+				combine(roomHeaders) { headers -> headers.sortedWith(comparator) }
 			}
 	}
 }

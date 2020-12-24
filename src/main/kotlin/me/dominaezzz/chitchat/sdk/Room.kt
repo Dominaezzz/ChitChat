@@ -1,5 +1,6 @@
 package me.dominaezzz.chitchat.sdk
 
+import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.models.events.contents.room.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.KSerializer
@@ -35,6 +36,8 @@ interface Room {
 	// val accountData: Flow<Map<String, JsonObject>>
 
 	val typingUsers: Flow<List<String>>
+
+	val tags: Flow<Map<String, TagContent.Tag>>
 
 	fun createTimelineView(): RoomTimeline
 }
