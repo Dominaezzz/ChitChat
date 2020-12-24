@@ -81,8 +81,9 @@ fun AppView() {
 @Composable
 fun MainView() {
 	val client = ClientAmbient.current
+	val session = SessionAmbient.current
 
-	val appViewModel = remember { AppViewModel(client, databaseWriteSemaphore) }
+	val appViewModel = remember { AppViewModel(client, databaseWriteSemaphore, session) }
 
 	LaunchedEffect(appViewModel) {
 		while (isActive) {
@@ -94,8 +95,7 @@ fun MainView() {
 		}
 	}
 
-	val rooms = remember { mutableStateListOf<RoomHeader>() }
-	LaunchedEffect(appViewModel) { appViewModel.rooms(rooms) }
+	val rooms by remember { appViewModel.getRooms() }.collectAsState(emptyList())
 	var selectedRoom by remember { mutableStateOf<String?>(null) }
 
 	Row(Modifier.fillMaxSize()) {
@@ -125,7 +125,7 @@ fun MainView() {
 
 @Composable
 fun RoomListView(
-	rooms: SnapshotStateList<RoomHeader>,
+	rooms: List<RoomHeader>,
 	selectedRoom: String?,
 	onSelectedRoomChanged: (String?) -> Unit,
 	modifier: Modifier = Modifier
@@ -218,16 +218,18 @@ fun RoomListView(
 
 @Composable
 fun RoomView(
-	room: RoomHeader,
+	roomHeader: RoomHeader,
 	appViewModel: AppViewModel,
 	modifier: Modifier = Modifier
 ) {
+	val room = appViewModel.syncClient.joinedRooms.collectAsState(emptyMap()).value[roomHeader.id] ?: return
+
 	Column(modifier) {
 		TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {
 
 			Spacer(Modifier.width(16.dp))
 
-			val image = room.avatarUrl?.let { loadIcon(URI(it)) }
+			val image = roomHeader.avatarUrl?.let { loadIcon(URI(it)) }
 
 			if (image != null) {
 				Image(
@@ -243,7 +245,7 @@ fun RoomView(
 
 			Providers(AmbientContentAlpha provides ContentAlpha.high) {
 				Text(
-					text = room.displayName,
+					text = roomHeader.displayName,
 					modifier = Modifier.align(Alignment.CenterVertically),
 					style = MaterialTheme.typography.h5,
 					maxLines = 1,
@@ -253,7 +255,7 @@ fun RoomView(
 
 			Spacer(Modifier.width(24.dp))
 
-			val topic = room.topic
+			val topic = room.topic.collectAsState(null).value?.topic
 			if (topic != null) {
 				Providers(AmbientContentAlpha provides ContentAlpha.high) {
 					Text(
@@ -274,7 +276,7 @@ fun RoomView(
 		}
 
 		// Timeline
-		Conversation(room.id, appViewModel, Modifier.weight(1f))
+		Conversation(room, Modifier.weight(1f))
 
 		Spacer(Modifier.fillMaxWidth().height(8.dp))
 

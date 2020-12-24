@@ -3,7 +3,6 @@ package me.dominaezzz.chitchat.models
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Direction
 import io.github.matrixkt.models.events.UnsignedData
-import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.sync.SyncResponse
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -20,11 +19,9 @@ class RoomTimeline(
 	private val dbSemaphore: Semaphore
 ) {
 	private val _events = MutableStateFlow<List<TimelineItem>>(emptyList())
-	private val _relevantMembers = MutableStateFlow<Map<String, MemberContent>>(emptyMap())
 
 	val shouldBackPaginate = MutableStateFlow(false)
 	val events: StateFlow<List<TimelineItem>> get() = _events
-	val relevantMembers: StateFlow<Map<String, MemberContent>> get() = _relevantMembers
 
 	suspend fun run() {
 		initialLoad()
@@ -36,28 +33,24 @@ class RoomTimeline(
 
 	private suspend fun initialLoad() {
 		val events: List<TimelineItem>
-		val members: List<Pair<String, MemberContent>>
 		withContext(Dispatchers.IO) {
 			usingConnection { conn ->
 				events = conn.getEventsBetween(roomId, 1, Int.MAX_VALUE)
-				members = conn.getRelevantMembersBetween(roomId, 1, Int.MAX_VALUE)
 			}
 		}
-		_relevantMembers.value = members.toMap()
 		_events.value = events
 	}
 
 	private suspend fun loadFutureEvents() {
 		syncFlow.mapNotNull { it.rooms?.join?.get(roomId) }
 			.filterNot { it.timeline?.events.isNullOrEmpty() }
-			.map { Unit }
+			.map { }
 			.collect {
 				val item = _events.value.last()
 				val lastEvent = item.event
 				val eventId = lastEvent.eventId
 
 				val events: List<TimelineItem>
-				val members: List<Pair<String, MemberContent>>
 				withContext(Dispatchers.IO) {
 					usingConnection { conn ->
 						val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(roomId, eventId)
@@ -68,12 +61,9 @@ class RoomTimeline(
 						}
 
 						events = conn.getEventsBetween(roomId, timelineOrder + 1, Int.MAX_VALUE)
-						ensureActive()
-						members = conn.getRelevantMembersBetween(roomId, timelineOrder + 1, Int.MAX_VALUE)
 					}
 				}
 
-				_relevantMembers.value += members
 				_events.value += events
 			}
 	}
@@ -93,24 +83,15 @@ class RoomTimeline(
 				println("Past events downloaded")
 
 				var events: List<TimelineItem>
-				var members: List<Pair<String, MemberContent>>
 				withContext(Dispatchers.IO) {
 					usingConnection { conn ->
 						val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(roomId, eventId)
 						if (timelineId != 0) { TODO("The timeline we just back-filled was disconnected from the latest timeline. RIP.") }
 
 						events = conn.getEventsBetween(roomId, 1, timelineOrder - 1)
-						ensureActive()
-						members = conn.getRelevantMembersBetween(roomId, 1, timelineOrder - 1)
 					}
 				}
 
-				val next = relevantMembers.value.toMutableMap()
-				for ((member, content) in members) {
-					next.putIfAbsent(member, content)
-				}
-
-				_relevantMembers.value = next
 				_events.value = events + _events.value
 			}
 	}
