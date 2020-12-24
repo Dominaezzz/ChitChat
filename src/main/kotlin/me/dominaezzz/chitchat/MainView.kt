@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
@@ -27,6 +28,7 @@ import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.models.AppViewModel
 import me.dominaezzz.chitchat.models.RoomHeader
 import me.dominaezzz.chitchat.room.timeline.Conversation
+import me.dominaezzz.chitchat.sdk.Room
 import me.dominaezzz.chitchat.util.IconCache
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
@@ -277,7 +279,36 @@ fun RoomView(
 
 		Spacer(Modifier.fillMaxWidth().height(8.dp))
 
+		TypingUsers(room, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+
 		UserMessageInput(room.id, Modifier.fillMaxWidth())
+	}
+}
+
+@Composable
+fun TypingUsers(
+	room: Room,
+	modifier: Modifier = Modifier
+) {
+	val users by room.typingUsers.collectAsState(emptyList())
+	if (users.isEmpty()) return
+
+	@Composable
+	fun getName(userId: String): String {
+		val memberFlow = remember(userId) { room.getState("m.room.member", userId, MemberContent.serializer()) }
+		val member by memberFlow.collectAsState(null)
+		return member?.displayName ?: userId
+	}
+
+	val typingNotification = when (users.size) {
+		1 -> "${getName(users.single())} is typing ..."
+		2 -> "${getName(users[0])} and ${getName(users[1])} are typing ..."
+		3 -> "${getName(users[0])}, ${getName(users[1])} and ${getName(users[2])} are typing ..."
+		else -> "${getName(users[0])}, ${getName(users[1])} and ${users.size - 2} others are typing ..."
+	}
+
+	Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+		Text(typingNotification, modifier)
 	}
 }
 
