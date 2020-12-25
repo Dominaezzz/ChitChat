@@ -4,6 +4,7 @@ import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.UnsignedData
+import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.sync.RoomSummary
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.utils.MatrixJson
@@ -68,6 +69,10 @@ private class InsertUtils(connection: Connection): Closeable {
 	private val deviceEventStmt = connection.prepareStatement("INSERT INTO device_events(type, content, sender) VALUES (?, ?, ?);")
 	private val trackedUsersStmt = connection.prepareStatement("UPDATE tracked_users SET deviceListState = 0 WHERE userId = ?;")
 	private val removeTrackedUserStmt = connection.prepareStatement("DELETE FROM tracked_users WHERE userId = ?;")
+	private val updateReceipt = connection.prepareStatement("""
+		INSERT OR REPLACE INTO room_receipts(roomId, userId, type, eventId, content)
+		VALUES (?, ?, ?, ?, ?); 
+	""")
 
 	fun updateRoomSummary(roomId: String, summary: RoomSummary): Int {
 		roomSummaryStmt.setString(1, roomId)
@@ -139,6 +144,15 @@ private class InsertUtils(connection: Connection): Closeable {
 		return removeTrackedUserStmt.executeUpdate()
 	}
 
+	fun updateReceipt(roomId: String, userId: String, type: String, eventId: String, receipt: ReceiptContent.Receipt): Int {
+		updateReceipt.setString(1, roomId)
+		updateReceipt.setString(2, userId)
+		updateReceipt.setString(3, type)
+		updateReceipt.setString(4, eventId)
+		updateReceipt.setSerializable(5, ReceiptContent.Receipt.serializer(), receipt)
+		return updateReceipt.executeUpdate()
+	}
+
 	override fun close() {
 		removeTrackedUserStmt.close()
 		trackedUsersStmt.close()
@@ -203,6 +217,23 @@ private fun storeSyncResponse(sync: SyncResponse, syncToken: String?) {
 						if (accountEvents != null) {
 							for (event in accountEvents) {
 								utils.updateAccountData(roomId, event.type, event.content)
+							}
+						}
+
+						val ephemeral = joinedRoom.ephemeral
+						if (ephemeral != null) {
+							for (event in ephemeral.events) {
+								if (event.type == "m.receipt") {
+									val receipt = MatrixJson.decodeFromJsonElement(ReceiptContent.serializer(), event.content)
+									for ((eventId, receipts) in receipt) {
+										val read = receipts.read
+										if (read != null) {
+											for ((userId, readReceipt) in read) {
+												utils.updateReceipt(roomId, userId, "m.read", eventId, readReceipt)
+											}
+										}
+									}
+								}
 							}
 						}
 					}

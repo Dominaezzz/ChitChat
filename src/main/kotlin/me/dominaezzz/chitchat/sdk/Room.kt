@@ -1,5 +1,6 @@
 package me.dominaezzz.chitchat.sdk
 
+import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.models.events.contents.room.*
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +39,9 @@ interface Room {
 	val typingUsers: Flow<List<String>>
 
 	val tags: Flow<Map<String, TagContent.Tag>>
+
+	// Needs more thought about what data structure to expose here.
+	val readReceipts: Flow<Map<String, List<Pair<String, ReceiptContent.Receipt>>>>
 
 	fun createTimelineView(): RoomTimeline
 }

@@ -93,6 +93,19 @@ CREATE TABLE room_pagination_tokens
         ON DELETE CASCADE
 );
 
+CREATE TABLE room_receipts
+(
+    roomId  TEXT NOT NULL,
+    userId  TEXT NOT NULL,
+    type    TEXT NOT NULL,
+    eventId TEXT NOT NULL,
+    content TEXT NOT NULL,
+
+    PRIMARY KEY (roomId, userId, type, eventId),
+    FOREIGN KEY (roomId) REFERENCES room_metadata (roomId)
+        ON DELETE CASCADE
+);
+
 CREATE TABLE olm_sessions
 (
     sessionId         TEXT    PRIMARY KEY NOT NULL,

@@ -1,6 +1,7 @@
 package me.dominaezzz.chitchat.sdk
 
 import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.models.events.contents.TypingContent
 import io.github.matrixkt.models.events.contents.room.*
@@ -135,6 +136,13 @@ class RoomImpl(
 	override val tags: Flow<Map<String, TagContent.Tag>> = getAccountData("m.tag", TagContent.serializer())
 		.map { it?.tags ?: emptyMap() }
 
+	override val readReceipts: Flow<Map<String, List<Pair<String, ReceiptContent.Receipt>>>> = ephemeralEvents
+		.filter { it.type == "m.receipt" }
+		.map {}
+		.onStart { emit(Unit) }
+		.map { getReadReceiptsFromDb().groupBy({ it.eventId }, { it.userId to it.receipt }) }
+		.shareIn(scope, shareConfig, 1)
+
 	override fun createTimelineView(): RoomTimeline {
 		val timeline = RoomTimeline(id, syncFlow, client, dbSemaphore)
 		scope.launch { timeline.run() }
@@ -209,6 +217,35 @@ class RoomImpl(
 						buildSet<String> {
 							while (rs.next()) {
 								add(rs.getString(1))
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private class ReadReceipt(val userId: String, val eventId: String, val receipt: ReceiptContent.Receipt)
+	private suspend fun getReadReceiptsFromDb(): List<ReadReceipt> {
+		return withContext(Dispatchers.IO) {
+			usingConnection { conn ->
+				val query = """
+					SELECT userId, eventId, content
+					FROM room_receipts
+					WHERE roomId = ? AND type = ?;
+				"""
+				conn.prepareStatement(query).use { stmt ->
+					stmt.setString(1, id)
+					stmt.setString(2, "m.read")
+					stmt.executeQuery().use { rs ->
+						@OptIn(ExperimentalStdlibApi::class)
+						buildList {
+							while (rs.next()) {
+								add(ReadReceipt(
+									rs.getString(1),
+									rs.getString(2),
+									rs.getSerializable(3, ReceiptContent.Receipt.serializer())!!
+								))
 							}
 						}
 					}
