@@ -48,6 +48,7 @@ fun Conversation(
 
 	Row(modifier) {
 		val state = rememberLazyListState()
+		val roomReceipts by room.readReceipts.collectAsState(emptyMap())
 
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
 			itemsIndexed(timelineEvents) { idx, item ->
@@ -60,15 +61,52 @@ fun Conversation(
 					}
 				}
 
-				if (item.event.type == "m.room.message") {
-					val sender = item.event.sender
-					val prev = timelineEvents.getOrNull(idx + 1)?.event
-					val next = timelineEvents.getOrNull(idx - 1)?.event
-					val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
-					val isNotLast = next != null && next.sender == sender && next.type == "m.room.message"
-					MessageEvent(room, item, !isNotFirst, !isNotLast)
-				} else {
-					ChatItem(room, item)
+				Column {
+					if (item.event.type == "m.room.message") {
+						val sender = item.event.sender
+						val prev = timelineEvents.getOrNull(idx + 1)?.event
+						val next = timelineEvents.getOrNull(idx - 1)?.event
+						val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
+						val isNotLast = next != null && next.sender == sender && next.type == "m.room.message"
+						MessageEvent(room, item, !isNotFirst, !isNotLast)
+					} else {
+						ChatItem(room, item)
+					}
+
+					val eventReceipts = roomReceipts[item.event.eventId]
+					if (!eventReceipts.isNullOrEmpty()) {
+						Row(
+							Modifier.padding(4.dp).align(Alignment.End),
+							verticalAlignment = Alignment.CenterVertically
+						) {
+							val limit = 10
+
+							if (eventReceipts.size > limit) {
+								Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+									Text(
+										"${eventReceipts.size - limit}+",
+										style = MaterialTheme.typography.caption
+									)
+								}
+							}
+
+							for ((userId, _) in eventReceipts.take(limit)) {
+								Spacer(Modifier.width(1.dp))
+
+								val member = room.member(userId)
+								val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
+
+								@Suppress("NAME_SHADOWING")
+								val modifier = Modifier.preferredSize(16.dp)
+									.clip(CircleShape)
+								if (avatar != null) {
+									Image(avatar, modifier, contentScale = ContentScale.Crop)
+								} else {
+									Image(Icons.Filled.Person, modifier, contentScale = ContentScale.Crop)
+								}
+							}
+						}
+					}
 				}
 			}
 		}
