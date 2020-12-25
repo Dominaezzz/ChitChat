@@ -171,6 +171,7 @@ class RoomTimeline(
 						shiftTimelineStmt.executeUpdate()
 
 						var timelineOrder = newEvents.size
+						var overlappingEvents = 0 // kludge for when synapse returns event out of bounds.
 
 						for (event in newEvents) {
 							eventStmt.setString(1, roomId)
@@ -186,12 +187,30 @@ class RoomTimeline(
 							eventStmt.setInt(11, timelineOrder)
 							val changes = eventStmt.executeUpdate()
 							if (changes == 0) {
+								val (id, _) = conn.getTimelineIdAndOrder(roomId, event.eventId)
+								// If server returned overlapping event ... we skip it.
+								if (id == timelineId) {
+									check(newEvents.size == (timelineOrder - overlappingEvents)) {
+										"Server returned inconsistent duplicate message events!"
+									}
+									println("Overlap!!!")
+									overlappingEvents++
+									continue
+								}
+
 								// If no rows were inserted, then there was a conflict between two timeline events.
 								// which means we have to stitch two timeline chunks together.
 								break
 								// By just breaking here, we assume we already have all the skipped events stored in earlier timeline.
 							}
 							timelineOrder--
+						}
+
+						if (overlappingEvents > 0) {
+							// Deallocate the space for the duplicate events
+							shiftTimelineStmt.setInt(1, -overlappingEvents)
+							shiftTimelineStmt.executeUpdate()
+							timelineOrder -= overlappingEvents
 						}
 
 						if (timelineOrder > 0) {
