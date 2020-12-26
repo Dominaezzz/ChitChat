@@ -101,7 +101,7 @@ CREATE TABLE room_receipts
     eventId TEXT NOT NULL,
     content TEXT NOT NULL,
 
-    PRIMARY KEY (roomId, userId, type, eventId),
+    PRIMARY KEY (roomId, userId, type),
     FOREIGN KEY (roomId) REFERENCES room_metadata (roomId)
         ON DELETE CASCADE
 );
