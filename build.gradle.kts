@@ -18,7 +18,7 @@ repositories {
 val ktorVersion = "1.4.3"
 val coroutinesVersion = "1.4.2"
 val serializationVersion = "1.0.1"
-val matrixKtVersion = "0.1.0"
+val matrixKtVersion = "0.1.1"
 val sqliteVersion = "3.32.3.2"
 
 dependencies {

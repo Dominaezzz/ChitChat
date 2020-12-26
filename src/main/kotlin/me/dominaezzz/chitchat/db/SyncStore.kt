@@ -3,7 +3,6 @@ package me.dominaezzz.chitchat.db
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.events.MatrixEvent
-import io.github.matrixkt.models.events.UnsignedData
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.sync.RoomSummary
 import io.github.matrixkt.models.sync.SyncResponse
@@ -87,7 +86,7 @@ private class InsertUtils(connection: Connection): Closeable {
 		eventStmt.setString(4, MatrixJson.encodeToString(JsonElement.serializer(), event.content))
 		eventStmt.setString(5, event.sender)
 		eventStmt.setString(6, event.unsigned?.let { MatrixJson.encodeToString(
-			UnsignedData.serializer(), it) })
+			JsonElement.serializer(), it) })
 		eventStmt.setString(7, event.stateKey)
 		eventStmt.setString(8, event.prevContent?.let { MatrixJson.encodeToString(
 			JsonElement.serializer(), it) })

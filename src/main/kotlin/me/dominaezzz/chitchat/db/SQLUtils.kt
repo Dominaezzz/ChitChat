@@ -158,7 +158,7 @@ fun ResultSet.getEvent(): MatrixEvent {
         getString("eventId"),
         getString("sender"),
         getLong("timestamp"),
-        getSerializable("unsigned", UnsignedData.serializer()),
+        getJsonElement("unsigned")?.jsonObject,
         getString("roomId"),
         getString("stateKey"),
         getJsonElement("prevContent")?.jsonObject
