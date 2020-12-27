@@ -1,7 +1,6 @@
 package me.dominaezzz.chitchat.db
 
 import io.github.matrixkt.models.events.MatrixEvent
-import io.github.matrixkt.models.events.UnsignedData
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
