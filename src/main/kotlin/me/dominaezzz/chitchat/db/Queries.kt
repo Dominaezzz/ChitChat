@@ -18,6 +18,7 @@ DELETE FROM room_events;
 DELETE FROM room_pagination_tokens;
 DELETE FROM room_metadata;
 DELETE FROM account_data;
+DELETE FROM tracked_users;
 END;
 """
 

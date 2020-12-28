@@ -151,23 +151,28 @@ CREATE UNIQUE INDEX room_account_data_index ON account_data(roomId, type) WHERE 
 
 CREATE TABLE tracked_users
 (
-    userId          TEXT    NOT NULL PRIMARY KEY,
-    deviceListState INTEGER NOT NULL CHECK (deviceListState IN (0, 1, 2)) DEFAULT 0
-    -- 0 means outdated, 1 means updating, 2 means updated
+    userId     TEXT    NOT NULL PRIMARY KEY,
+    isOutdated BOOLEAN NOT NULL DEFAULT FALSE,
+    sync_token TEXT
 );
 
 CREATE TABLE device_list
 (
     userId            TEXT    NOT NULL,
     deviceId          TEXT    NOT NULL,
-    version           INTEGER NOT NULL,
     algorithms        TEXT    NOT NULL,
     keys              TEXT    NOT NULL,
     signatures        TEXT    NOT NULL,
     unsigned          TEXT    NOT NULL,
-    hadValidSignature BOOLEAN NOT NULL,
-    isVerified        BOOLEAN NOT NULL,
-    PRIMARY KEY (userId, deviceId, version),
+    json              TEXT AS (JSON_OBJECT(
+        'user_id', userId,
+        'device_id', deviceId,
+        'algorithms', JSON(algorithms),
+        'keys', JSON(keys),
+        'signatures', JSON(signatures),
+        'unsigned', JSON(unsigned)
+    )),
+    PRIMARY KEY (userId, deviceId),
     FOREIGN KEY (userId) REFERENCES tracked_users (userId)
 );
 

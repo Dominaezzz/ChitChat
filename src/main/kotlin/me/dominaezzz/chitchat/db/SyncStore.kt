@@ -66,7 +66,7 @@ private class InsertUtils(connection: Connection): Closeable {
 	""")
 	private val newTimelineStmt = connection.prepareStatement("UPDATE room_events SET timelineId = timelineId + 1 WHERE roomId = ?;")
 	private val deviceEventStmt = connection.prepareStatement("INSERT INTO device_events(type, content, sender) VALUES (?, ?, ?);")
-	private val trackedUsersStmt = connection.prepareStatement("UPDATE tracked_users SET deviceListState = 0 WHERE userId = ?;")
+	private val trackedUsersStmt = connection.prepareStatement("UPDATE tracked_users SET isOutdated = TRUE, sync_token = ? WHERE userId = ?;")
 	private val removeTrackedUserStmt = connection.prepareStatement("DELETE FROM tracked_users WHERE userId = ?;")
 	private val updateReceipt = connection.prepareStatement("""
 		INSERT OR REPLACE INTO room_receipts(roomId, userId, type, eventId, content)
@@ -133,8 +133,9 @@ private class InsertUtils(connection: Connection): Closeable {
 		return deviceEventStmt.executeUpdate()
 	}
 
-	fun resetTrackedUser(userId: String): Int {
-		trackedUsersStmt.setString(1, userId)
+	fun resetTrackedUser(userId: String, syncToken: String?): Int {
+		trackedUsersStmt.setString(1, syncToken)
+		trackedUsersStmt.setString(2, userId)
 		return trackedUsersStmt.executeUpdate()
 	}
 
@@ -256,14 +257,11 @@ private fun storeSyncResponse(sync: SyncResponse, syncToken: String?) {
 			val deviceLists = sync.deviceLists
 			if (deviceLists != null) {
 				for (userId in deviceLists.changed) {
-					utils.resetTrackedUser(userId)
+					utils.resetTrackedUser(userId, syncToken)
 				}
-				// for (userId in deviceLists.left) {
-				// 	val updateCount = utils.deleteTrackedUser(userId)
-				// 	if (updateCount == 0) {
-				// 		println("User with id $userId left but we were not tracking them...")
-				// 	}
-				// }
+				for (userId in deviceLists.left) {
+					utils.deleteTrackedUser(userId)
+				}
 			}
 		}
 
