@@ -8,6 +8,10 @@ import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.LoginSession
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.*
+import me.dominaezzz.chitchat.sdk.crypto.CryptoManager
+import me.dominaezzz.chitchat.sdk.crypto.SQLiteCryptoStore
+import java.security.SecureRandom
+import kotlin.random.asKotlinRandom
 
 class AppViewModel(
 	private val client: MatrixClient,
@@ -17,6 +21,32 @@ class AppViewModel(
 	private val _syncFlow = MutableSharedFlow<SyncResponse>()
 	val syncClient: SyncClient = SyncClientImpl(
 		_syncFlow, CoroutineScope(SupervisorJob()), session, client, dbSemaphore)
+
+	private val random = SecureRandom().asKotlinRandom()
+	private val cryptoStore = SQLiteCryptoStore(dbSemaphore, random)
+	val cryptoManager = CryptoManager(client, session, cryptoStore, random)
+
+	init {
+		val scope = CoroutineScope(SupervisorJob())
+
+		_syncFlow.mapNotNull { it.deviceOneTimeKeysCount }
+			.mapNotNull { it["signed_curve25519"] }
+			.onEach { remaining ->
+				if (remaining < 20) {
+					cryptoManager.uploadOneTimeKeys(20 - remaining.toInt())
+				}
+			}
+			.launchIn(scope)
+
+		_syncFlow.mapNotNull { it.toDevice }
+			.transform { it.events.forEach { event -> emit(event) } }
+			.onEach { event ->
+				if (event.type == "m.room.encrypted") {
+					cryptoManager.receiveEncryptedDeviceEvent(event, syncClient)
+				}
+			}
+			.launchIn(scope)
+	}
 
 	suspend fun sync() {
 		val sync = sync(client, dbSemaphore)
