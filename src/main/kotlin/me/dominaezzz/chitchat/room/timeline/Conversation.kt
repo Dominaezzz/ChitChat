@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -15,11 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
@@ -48,7 +47,6 @@ fun Conversation(
 
 	Row(modifier) {
 		val state = rememberLazyListState()
-		val roomReceipts by room.readReceipts.collectAsState(emptyMap())
 
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
 			itemsIndexed(timelineEvents) { idx, item ->
@@ -73,40 +71,7 @@ fun Conversation(
 						ChatItem(room, item)
 					}
 
-					val eventReceipts = roomReceipts[item.event.eventId]
-					if (!eventReceipts.isNullOrEmpty()) {
-						Row(
-							Modifier.padding(4.dp).align(Alignment.End),
-							verticalAlignment = Alignment.CenterVertically
-						) {
-							val limit = 10
-
-							if (eventReceipts.size > limit) {
-								Providers(AmbientContentAlpha provides ContentAlpha.medium) {
-									Text(
-										"${eventReceipts.size - limit}+",
-										style = MaterialTheme.typography.caption
-									)
-								}
-							}
-
-							for ((userId, _) in eventReceipts.take(limit)) {
-								Spacer(Modifier.width(1.dp))
-
-								val member = room.member(userId)
-								val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
-
-								@Suppress("NAME_SHADOWING")
-								val modifier = Modifier.preferredSize(16.dp)
-									.clip(CircleShape)
-								if (avatar != null) {
-									Image(avatar, modifier, contentScale = ContentScale.Crop)
-								} else {
-									Image(Icons.Filled.Person, modifier, contentScale = ContentScale.Crop)
-								}
-							}
-						}
-					}
+					ReadReceipts(room, item.event.eventId, Modifier.align(Alignment.End))
 				}
 			}
 		}
@@ -122,13 +87,13 @@ fun Conversation(
 }
 
 @Composable
-fun Room.member(userId: String): MemberContent? {
+private fun Room.member(userId: String): MemberContent? {
 	return remember(this, userId) { getState("m.room.member", userId, MemberContent.serializer()) }
 		.collectAsState(null).value
 }
 
 @Composable
-fun ChatItem(room: Room, item: TimelineItem) {
+private fun ChatItem(room: Room, item: TimelineItem) {
 	val event = item.event
 	val sender = room.member(event.sender)
 
@@ -255,13 +220,52 @@ fun ChatItem(room: Room, item: TimelineItem) {
 }
 
 @Composable
+private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modifier) {
+	val roomReceipts by room.readReceipts.collectAsState(emptyMap())
+	val limit = 10
+
+	val eventReceipts = roomReceipts[eventId]
+	if (!eventReceipts.isNullOrEmpty()) {
+		Row(
+			modifier.padding(4.dp),
+			verticalAlignment = Alignment.CenterVertically
+		) {
+			if (eventReceipts.size > limit) {
+				Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+					Text(
+						"${eventReceipts.size - limit}+",
+						style = MaterialTheme.typography.caption
+					)
+				}
+			}
+
+			for ((userId, _) in eventReceipts.take(limit)) {
+				Spacer(Modifier.width(1.dp))
+
+				val member = room.member(userId)
+				val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
+
+				@Suppress("NAME_SHADOWING")
+				val modifier = Modifier.preferredSize(16.dp)
+					.clip(CircleShape)
+				if (avatar != null) {
+					Image(avatar, modifier, contentScale = ContentScale.Crop)
+				} else {
+					Image(Icons.Filled.Person, modifier, contentScale = ContentScale.Crop)
+				}
+			}
+		}
+	}
+}
+
+@Composable
 private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolean, isLastByAuthor: Boolean) {
 	val event = item.event
-	val sender = room.member(event.sender)
 
 	Row(Modifier.padding(top = if(isFirstByAuthor) 8.dp else 0.dp)) {
 		// Render author image on the left
 		if (isFirstByAuthor) {
+			val sender = room.member(event.sender)
 			val authorAvatar = sender?.avatarUrl?.let { loadIcon(URI(it)) }
 
 			val modifier = Modifier.padding(horizontal = 16.dp)
@@ -284,7 +288,7 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 			}
 
 			val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
-			Message(content, isLastByAuthor)
+			Message(room, content, event.sender)
 
 			if (isLastByAuthor) {
 				Spacer(Modifier.preferredHeight(8.dp))
@@ -303,6 +307,7 @@ private fun AuthorAndTimeStamp(room: Room, senderUserId: String, originServerTim
 		Text(
 			text = sender?.displayName ?: senderUserId,
 			style = MaterialTheme.typography.subtitle1,
+			fontWeight = FontWeight.Bold,
 			modifier = Modifier.alignBy(LastBaseline)
 				.paddingFrom(LastBaseline, after = 8.dp) // Space to 1st bubble
 		)
@@ -320,38 +325,46 @@ private fun AuthorAndTimeStamp(room: Room, senderUserId: String, originServerTim
 }
 
 @Composable
-private fun Message(content: MessageContent, isLastByAuthor: Boolean) {
-	val bubbleColor = Color(0xFFF5F5F5)
-	val bubbleShape = if (isLastByAuthor) {
-		RoundedCornerShape(0.dp, 8.dp, 8.dp, 8.dp)
-	} else {
-		RoundedCornerShape(0.dp, 8.dp, 8.dp, 0.dp)
+private fun Message(room: Room, content: MessageContent, senderUserId: String) {
+	@Composable
+	fun formatting(format: String?, formattedBody: String?): AnnotatedString {
+		return if (format == "org.matrix.custom.html") {
+			val typography = MaterialTheme.typography
+			try {
+				parseMatrixCustomHtml(formattedBody!!, typography)
+			} catch (e: Exception) {
+				AnnotatedString(content.body)
+			}
+		} else {
+			AnnotatedString(content.body)
+		}
 	}
 
 	when (content) {
 		is MessageContent.Text -> {
-			Surface(color = bubbleColor, shape = bubbleShape) {
-				if (content.format == "org.matrix.custom.html") {
-					val typography = MaterialTheme.typography
-					val body = remember(content.formattedBody) {
-						runCatching { parseMatrixCustomHtml(content.formattedBody!!, typography) }
-					}
-					Text(
-						text = body.getOrElse { AnnotatedString(content.body) },
-						style = MaterialTheme.typography.body1,
-						modifier = Modifier.padding(8.dp)
-					)
-				} else {
-					Text(
-						text = content.body,
-						style = MaterialTheme.typography.body1,
-						modifier = Modifier.padding(8.dp)
-					)
-				}
+			Surface {
+				Text(
+					text = formatting(content.format, content.formattedBody),
+					style = MaterialTheme.typography.body1
+				)
+			}
+		}
+		is MessageContent.Emote -> {
+			Surface {
+				Text(
+					text = buildAnnotatedString {
+						append("* ")
+						val sender = room.member(senderUserId)
+						append(sender?.displayName ?: senderUserId)
+						append(" ")
+						append(formatting(content.format, content.formattedBody))
+					},
+					style = MaterialTheme.typography.body1
+				)
 			}
 		}
 		is MessageContent.Image -> {
-			Surface(color = bubbleColor, shape = bubbleShape) {
+			Surface {
 				val image = loadImage(URI(content.url))
 				val width = content.info?.width
 				val height = content.info?.height
