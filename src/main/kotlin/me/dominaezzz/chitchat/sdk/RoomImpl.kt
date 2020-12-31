@@ -11,7 +11,6 @@ import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.RoomTimeline
@@ -21,7 +20,6 @@ class RoomImpl(
 	private val scope: CoroutineScope,
 	private val syncFlow: Flow<SyncResponse>,
 	private val client: MatrixClient,
-	private val dbSemaphore: Semaphore,
 	private val store: SyncStore
 ) : Room {
 	private val shareConfig = SharingStarted.WhileSubscribed(1000)
@@ -139,7 +137,7 @@ class RoomImpl(
 		.shareIn(scope, shareConfig, 1)
 
 	override fun createTimelineView(): RoomTimeline {
-		val timeline = RoomTimeline(id, syncFlow, client, dbSemaphore)
+		val timeline = RoomTimeline(id, syncFlow, client, store)
 		scope.launch { timeline.run() }
 		return timeline
 	}

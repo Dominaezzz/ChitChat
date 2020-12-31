@@ -1,6 +1,7 @@
 package me.dominaezzz.chitchat.sdk
 
 import io.github.matrixkt.models.DeviceKeys
+import io.github.matrixkt.models.MessagesResponse
 import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.Membership
@@ -446,6 +447,178 @@ class SQLiteSyncStore(
 					}
 				}
 			}
+		}
+	}
+
+
+	override suspend fun storeTimelineEvents(roomId: String, response: MessagesResponse): Int {
+		// BUG: Overlap in state and timeline events adds offset to timelineOrder.
+		// BUG: Pagination token is stored against the first timeline event in the response,
+		//  which may have been downgraded to state due to above.
+
+		return usingWriteConnection { conn ->
+			val getEventIdQuery = "SELECT eventId FROM room_pagination_tokens WHERE roomId = ? AND token = ?"
+			val eventId = conn.prepareStatement(getEventIdQuery).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.setString(2, response.start)
+				stmt.executeQuery().use { rs ->
+					if (rs.next()) {
+						rs.getString(1)
+					} else {
+						throw NoSuchElementException(
+							"Pagination token '${response.start}' not in Room($roomId) timelines.")
+					}
+				}
+			}
+
+			conn.prepareStatement("DELETE FROM room_pagination_tokens WHERE roomId = ? AND eventId = ?;").use {
+				it.setString(1, roomId)
+				it.setString(2, eventId)
+				val changes = it.executeUpdate()
+				check(changes == 1)
+			}
+
+			val timelineId = run {
+				val (id, order) = conn.getTimelineIdAndOrder(roomId, eventId)
+				check(order == 1) { "Edge of timeline should be at idx 1 but was at idx $order." }
+				id
+			}
+
+			val timelineEvents = response.chunk
+			if (timelineEvents.isNullOrEmpty()) {
+				// check(response.state.isNullOrEmpty())
+				conn.commit()
+				return@usingWriteConnection timelineId
+			}
+
+			val shiftTimelineStmt = conn.prepareStatement("UPDATE room_events SET timelineOrder = timelineOrder + ? WHERE roomId = ? AND timelineId = ?;")
+			shiftTimelineStmt.setString(2, roomId)
+			shiftTimelineStmt.setInt(3, timelineId)
+
+			val eventStmt = conn.prepareStatement("""
+				INSERT INTO room_events(
+					roomId, eventId, type, content, sender, stateKey, prevContent, timestamp, unsigned,
+					timelineId, timelineOrder
+				)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				ON CONFLICT(roomId, eventId) DO UPDATE
+					SET timelineOrder = excluded.timelineOrder, prevContent = excluded.prevContent, unsigned = excluded.unsigned
+					WHERE timelineOrder IS NULL;
+			""")
+
+			try {
+				shiftTimelineStmt.setInt(1, timelineEvents.size)
+				shiftTimelineStmt.executeUpdate()
+
+				var timelineOrder = timelineEvents.size
+				var overlappingEvents = 0 // kludge for when synapse returns event out of bounds.
+
+				for (event in timelineEvents) {
+					eventStmt.setString(1, roomId)
+					eventStmt.setString(2, event.eventId)
+					eventStmt.setString(3, event.type)
+					eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
+					eventStmt.setString(5, event.sender)
+					eventStmt.setString(6, event.stateKey)
+					eventStmt.setSerializable(7, JsonElement.serializer(), event.prevContent)
+					eventStmt.setLong(8, event.originServerTimestamp)
+					eventStmt.setSerializable(9, JsonElement.serializer(), event.unsigned)
+					eventStmt.setInt(10, timelineId)
+					eventStmt.setInt(11, timelineOrder)
+					val changes = eventStmt.executeUpdate()
+					if (changes == 0) {
+						val (id, _) = conn.getTimelineIdAndOrder(roomId, event.eventId)
+						// If server returned overlapping event ... we skip it.
+						if (id == timelineId) {
+							check(timelineEvents.size == (timelineOrder - overlappingEvents)) {
+								"Server returned inconsistent duplicate message events!"
+							}
+							overlappingEvents++
+							continue
+						}
+
+						// If no rows were inserted, then there was a conflict between two timeline events.
+						// which means we have to stitch two timeline chunks together.
+						break
+						// By just breaking here, we assume we already have all the skipped events stored in earlier timeline.
+					}
+					timelineOrder--
+				}
+
+				if (overlappingEvents > 0) {
+					// Deallocate the space for the duplicate events
+					shiftTimelineStmt.setInt(1, -overlappingEvents)
+					shiftTimelineStmt.executeUpdate()
+					timelineOrder -= overlappingEvents
+				}
+
+				if (timelineOrder > 0) {
+					// Will throw if server is not compliant.
+					// check(response.state.isNullOrEmpty()) { "There shouldn't be any compressed state events if we have to stitch." }
+
+					// We're stitching.
+					println("Stitching timeline $timelineId with ${timelineId + 1}")
+
+					// Get highest order from next youngest timeline
+					val maxOrderOfPreviousTimeline = conn.prepareStatement("SELECT MAX(timelineOrder) FROM room_events WHERE roomId = ? AND timelineId = ?").use { stmt ->
+						stmt.setString(1, roomId)
+						stmt.setInt(2, timelineId + 1)
+						stmt.executeQuery().use { rs ->
+							check(rs.next())
+							rs.getInt(1)
+						}
+					}
+
+					// Shift all our events forward to accommodate older timeline.
+					shiftTimelineStmt.setInt(1, maxOrderOfPreviousTimeline - timelineOrder)
+					shiftTimelineStmt.executeUpdate()
+
+					// Merge timelines (and maintain contiguous timelineIds).
+					conn.withoutIndex("room_events", "compressed_state") {
+						conn.prepareStatement("UPDATE room_events SET timelineId = timelineId - 1 WHERE roomId = ? AND timelineId > ?;").use { stmt ->
+							stmt.setString(1, roomId)
+							stmt.setInt(2, timelineId)
+							stmt.executeUpdate()
+						}
+					}
+				} else {
+					val stateEvents = response.state
+					if (stateEvents != null) {
+						for (event in stateEvents) {
+							eventStmt.setString(1, roomId)
+							eventStmt.setString(2, event.eventId)
+							eventStmt.setString(3, event.type)
+							eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
+							eventStmt.setString(5, event.sender)
+							eventStmt.setString(6, event.stateKey)
+							eventStmt.setSerializable(7, JsonElement.serializer(), event.prevContent)
+							eventStmt.setLong(8, event.originServerTimestamp)
+							eventStmt.setSerializable(9, JsonElement.serializer(), event.unsigned)
+							eventStmt.setInt(10, timelineId)
+							eventStmt.setNull(11, Types.INTEGER)
+							val changes = eventStmt.executeUpdate()
+							if (changes == 0) {
+								// If this state event already existed, then server is not compliant.
+								break
+							}
+						}
+					}
+					if (response.end != null) {
+						conn.prepareStatement("INSERT INTO room_pagination_tokens(roomId, eventId, token) VALUES (?, ?, ?);").use { stmt ->
+							stmt.setString(1, roomId)
+							stmt.setString(2, timelineEvents.last().eventId)
+							stmt.setString(3, response.end)
+							stmt.executeUpdate()
+						}
+					}
+				}
+			} finally {
+				eventStmt.close()
+				shiftTimelineStmt.close()
+			}
+			conn.commit()
+
+			timelineId
 		}
 	}
 }

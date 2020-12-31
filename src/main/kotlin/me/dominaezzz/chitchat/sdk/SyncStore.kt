@@ -1,6 +1,7 @@
 package me.dominaezzz.chitchat.sdk
 
 import io.github.matrixkt.models.DeviceKeys
+import io.github.matrixkt.models.MessagesResponse
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.SyncResponse
@@ -19,6 +20,8 @@ interface SyncStore {
 	suspend fun getAccountData(roomId: String, type: String): JsonObject?
 	suspend fun getMembers(roomId: String, membership: Membership): Set<String>
 	suspend fun getReadReceipts(roomId: String): List<ReadReceipt>
+
+	suspend fun storeTimelineEvents(roomId: String, response: MessagesResponse): Int
 
 	class ReadReceipt(val userId: String, val eventId: String, val receipt: ReceiptContent.Receipt)
 }

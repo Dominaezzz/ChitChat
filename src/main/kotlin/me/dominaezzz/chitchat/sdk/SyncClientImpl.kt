@@ -58,7 +58,7 @@ class SyncClientImpl(
 	}.shareIn(scope, shareConfig, 1)
 
 	private fun createRoom(roomId: String): Room {
-		return RoomImpl(roomId, scope, syncFlow, client, dbSemaphore, store)
+		return RoomImpl(roomId, scope, syncFlow, client, store)
 	}
 
 
