@@ -28,12 +28,13 @@ class SyncClientImpl(
 	private val scope: CoroutineScope,
 	private val loginSession: LoginSession,
 	private val client: MatrixClient,
-	private val dbSemaphore: Semaphore
+	private val dbSemaphore: Semaphore,
+	private val store: SyncStore
 ) : SyncClient {
 	private val shareConfig = SharingStarted.WhileSubscribed(1000)
 
 	override val joinedRooms: Flow<Map<String, Room>> = flow {
-		var rooms = getJoinedRoomsFromDb().associateWith { createRoom(it) }
+		var rooms = store.getJoinedRooms(loginSession.userId).associateWith { createRoom(it) }
 		emit(rooms)
 
 		syncFlow.mapNotNull { it.rooms }.collect { updates ->
@@ -57,7 +58,7 @@ class SyncClientImpl(
 	}.shareIn(scope, shareConfig, 1)
 
 	private fun createRoom(roomId: String): Room {
-		return RoomImpl(roomId, scope, syncFlow, client, dbSemaphore)
+		return RoomImpl(roomId, scope, syncFlow, client, dbSemaphore, store)
 	}
 
 
@@ -67,7 +68,7 @@ class SyncClientImpl(
 			.filter { it.type == type }
 			.map { it.content.takeIf { true } }
 			.onStart {
-				val content = getAccountDataFromDb(type)
+				val content = store.getAccountData(type)
 				emit(content)
 			}
 			.shareIn(scope, shareConfig, 1)
@@ -79,7 +80,7 @@ class SyncClientImpl(
 
 
 	override suspend fun getUserDevices(userId: String): List<DeviceKeys>? {
-		val userDevices = getUserDevicesFromDb(userId)
+		val userDevices = store.getUserDevices(userId)
 		if (userDevices == null) {
 			// This mean we're not tracking this user, at least not yet.
 			val response = client.keysApi.queryKeys(QueryKeysRequest(deviceKeys = mapOf(userId to emptyList())))
@@ -96,11 +97,11 @@ class SyncClientImpl(
 
 		updateUserDevices(setOf(userId))
 
-		return getUserDevicesFromDb(userId)?.first
+		return store.getUserDevices(userId)?.first
 	}
 
 	override suspend fun getUserDevice(userId: String, deviceId: String): DeviceKeys? {
-		val userDevice = getUserDeviceFromDb(userId, deviceId)
+		val userDevice = store.getUserDevice(userId, deviceId)
 		if (userDevice == null) {
 			// This mean we're not tracking this user, at least not yet.
 			val response = client.keysApi.queryKeys(QueryKeysRequest(deviceKeys = mapOf(userId to listOf(deviceId))))
@@ -116,7 +117,7 @@ class SyncClientImpl(
 
 		updateUserDevices(setOf(userId))
 
-		return getUserDeviceFromDb(userId, deviceId)?.first
+		return store.getUserDevice(userId, deviceId)?.first
 	}
 
 	private class DeviceInsertUtils(conn: Connection) {
@@ -244,118 +245,5 @@ class SyncClientImpl(
 			DeviceKeys.serializer(),
 			deviceKeys
 		)
-	}
-
-	// ------------------- Database accessors (to be injected) -----------------------
-
-	private suspend fun getRoomIdsFromDb(): Set<String> {
-		return withContext(Dispatchers.IO) {
-			usingStatement { stmt ->
-				val query = """SELECT roomId FROM room_metadata;"""
-				stmt.executeQuery(query).use { rs ->
-					@OptIn(ExperimentalStdlibApi::class)
-					buildSet {
-						while (rs.next()) {
-							add(rs.getString(1))
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private suspend fun getJoinedRoomsFromDb(): Set<String> {
-		return withContext(Dispatchers.IO) {
-			val query = """
-				SELECT room_metadata.roomId
-				FROM room_metadata
-				JOIN room_events state
-				  ON room_metadata.roomId = state.roomId AND isLatestState
-				   AND type = 'm.room.member' AND stateKey = ?
-				   AND JSON_EXTRACT(content, '${'$'}.membership') = 'join';
-			"""
-			usingConnection { conn ->
-				conn.prepareStatement(query).use { stmt ->
-					stmt.setString(1, loginSession.userId)
-					stmt.executeQuery().use { rs ->
-						@OptIn(ExperimentalStdlibApi::class)
-						buildSet {
-							while (rs.next()) {
-								add(rs.getString(1))
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private suspend fun getAccountDataFromDb(type: String): JsonObject? {
-		return withContext(Dispatchers.IO) {
-			usingConnection { conn ->
-				val query = "SELECT content FROM account_data WHERE roomId IS NULL AND type = ?;"
-				conn.prepareStatement(query).use { stmt ->
-					stmt.setString(1, type)
-					stmt.executeQuery().use { rs ->
-						if (rs.next()) {
-							rs.getSerializable(1, JsonObject.serializer())
-						} else {
-							null
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private suspend fun getUserDeviceFromDb(userId: String, deviceId: String): Pair<DeviceKeys?, Boolean>? {
-		return withContext(Dispatchers.IO) {
-			usingConnection { conn ->
-				val query = """
-					SELECT json, isOutdated
-					FROM tracked_users
-					LEFT JOIN device_list dl ON tracked_users.userId = dl.userId AND dl.deviceId = ?
-					WHERE tracked_users.userId = ?
-				"""
-				conn.prepareStatement(query).use { stmt ->
-					stmt.setString(1, userId)
-					stmt.setString(2, deviceId)
-					stmt.executeQuery().use { rs ->
-						if (rs.next()) {
-							val deviceKeys = rs.getSerializable(1, DeviceKeys.serializer())
-							val isOutdated = rs.getBoolean(2)
-							deviceKeys to isOutdated
-						} else {
-							null // no user
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private suspend fun getUserDevicesFromDb(userId: String): Pair<List<DeviceKeys>, Boolean>? {
-		return withContext(Dispatchers.IO) {
-			usingConnection { conn ->
-				val query = """
-					SELECT JSON_GROUP_ARRAY(JSON(json)) FILTER (WHERE dl.userId IS NOT NULL), isOutdated
-					FROM tracked_users
-					LEFT JOIN device_list dl USING (userId)
-					WHERE userId = ?
-				"""
-				conn.prepareStatement(query).use { stmt ->
-					stmt.setString(1, userId)
-					stmt.executeQuery().use { rs ->
-						if (rs.next()) {
-							val deviceKeys = rs.getSerializable(1, ListSerializer(DeviceKeys.serializer()))!!
-							val isOutdated = rs.getBoolean(2)
-							deviceKeys to isOutdated
-						} else {
-							null // no user
-						}
-					}
-				}
-			}
-		}
 	}
 }

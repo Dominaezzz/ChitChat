@@ -1,12 +1,12 @@
 package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.sync.SyncResponse
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.LoginSession
-import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.*
 import me.dominaezzz.chitchat.sdk.crypto.CryptoManager
 import me.dominaezzz.chitchat.sdk.crypto.SQLiteCryptoStore
@@ -19,8 +19,10 @@ class AppViewModel(
 	private val session: LoginSession
 ) {
 	private val _syncFlow = MutableSharedFlow<SyncResponse>()
+
+	private val syncStore = SQLiteSyncStore(dbSemaphore)
 	val syncClient: SyncClient = SyncClientImpl(
-		_syncFlow, CoroutineScope(SupervisorJob()), session, client, dbSemaphore)
+		_syncFlow, CoroutineScope(SupervisorJob()), session, client, dbSemaphore, syncStore)
 
 	private val random = SecureRandom().asKotlinRandom()
 	private val cryptoStore = SQLiteCryptoStore(dbSemaphore, random)
@@ -49,7 +51,14 @@ class AppViewModel(
 	}
 
 	suspend fun sync() {
-		val sync = sync(client, dbSemaphore)
+		val syncToken = syncStore.getSyncToken()
+
+		println("Syncing with '$syncToken' as token")
+		val sync = client.eventApi.sync(since = syncToken, setPresence = Presence.OFFLINE, timeout = 100000)
+		println("Saving sync response")
+		syncStore.storeSync(sync, syncToken)
+		println("Saved sync response")
+
 		_syncFlow.emit(sync)
 	}
 
