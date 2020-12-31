@@ -102,7 +102,8 @@ class RoomImpl(
 		return getAccountData(type).decodeJson(serializer)
 	}
 
-	override val create: Flow<CreateContent> get() = TODO("Not yet implemented")
+	override val create: Flow<CreateContent> = getState("m.room.create", "", CreateContent.serializer())
+		.map { checkNotNull(it) { "Rooms must have a `m.room.create` event." } }
 
 	override val name: Flow<NameContent?> = getState("m.room.name", "", NameContent.serializer())
 	override val canonicalAlias: Flow<CanonicalAliasContent?> = getState("m.room.canonical_alias", "", CanonicalAliasContent.serializer())
