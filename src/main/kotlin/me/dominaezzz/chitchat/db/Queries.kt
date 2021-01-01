@@ -1,7 +1,6 @@
 package me.dominaezzz.chitchat.db
 
 import io.github.matrixkt.models.events.MatrixEvent
-import io.github.matrixkt.models.events.contents.room.MemberContent
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
@@ -9,18 +8,6 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.sql.Connection
-
-// language=sql
-const val CLEAR_SYNC_CACHE = """
-BEGIN;
-DELETE FROM key_value_store WHERE key = 'SYNC_TOKEN';
-DELETE FROM room_events;
-DELETE FROM room_pagination_tokens;
-DELETE FROM room_metadata;
-DELETE FROM account_data;
-DELETE FROM tracked_users;
-END;
-"""
 
 fun Connection.getValue(key: String): String? {
 	return prepareStatement("SELECT value FROM key_value_store WHERE key = ?;").use { stmt ->
@@ -154,34 +141,6 @@ fun Connection.getEventsBetween(roomId: String, from: Int, to: Int, eventTypes: 
 					val reactions = rs.getSerializable(2, MapSerializer(String.serializer(), Int.serializer())).orEmpty()
 					val msgUpdates = rs.getSerializable(3, ListSerializer(JsonObject.serializer())).orEmpty()
 					add(TimelineItem(event, msgUpdates, reactions))
-				}
-			}
-		}
-	}
-}
-
-@OptIn(ExperimentalStdlibApi::class)
-fun Connection.getRelevantMembersBetween(roomId: String, from: Int, to: Int): List<Pair<String, MemberContent>> {
-	val sql = """
-		SELECT stateKey, content
-		FROM room_events
-		WHERE isLatestState AND roomId = ?1 AND type = 'm.room.member' AND stateKey IN (
-			SELECT sender
-			FROM room_events
-			WHERE roomId = ?1 AND timelineId = 0 AND timelineOrder BETWEEN ? AND ?
-		);
-	"""
-
-	return prepareStatement(sql).use { stmt ->
-		stmt.setString(1, roomId)
-		stmt.setInt(2, from)
-		stmt.setInt(3, to)
-		stmt.executeQuery().use { rs ->
-			buildList {
-				while (rs.next()) {
-					val memberUserId = rs.getString(1)!!
-					val memberContent = rs.getSerializable(2, MemberContent.serializer())!!
-					add(memberUserId to memberContent)
 				}
 			}
 		}

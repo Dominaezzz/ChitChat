@@ -650,4 +650,19 @@ class SQLiteSyncStore(
 			timelineId
 		}
 	}
+
+	suspend fun clear() {
+		usingWriteConnection { conn ->
+			conn.usingStatement { stmt ->
+				stmt.execute("DELETE FROM key_value_store WHERE key = 'SYNC_TOKEN';")
+				stmt.execute("DELETE FROM key_value_store WHERE key = 'ONE_TIME_KEYS_COUNT';")
+				stmt.execute("DELETE FROM room_metadata;")
+				stmt.execute("DELETE FROM room_events;")
+				stmt.execute("DELETE FROM room_pagination_tokens;")
+				stmt.execute("DELETE FROM account_data;")
+				stmt.execute("DELETE FROM room_receipts;")
+				stmt.execute("UPDATE tracked_users SET isOutdated = TRUE, sync_token = NULL;")
+			}
+		}
+	}
 }
