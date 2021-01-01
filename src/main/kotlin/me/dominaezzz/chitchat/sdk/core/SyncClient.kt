@@ -11,6 +11,8 @@ interface SyncClient {
 	val syncFlow: SharedFlow<SyncResponse>
 	suspend fun sync(timeout: Long? = null, setPresence: Presence? = null)
 
+	val oneTimeKeysCount: Flow<Map<String, Long>>
+
 	val joinedRooms: Flow<Map<String, Room>>
 
 	fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?>

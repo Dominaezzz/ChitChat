@@ -13,6 +13,9 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.db.*
@@ -80,6 +83,11 @@ class SQLiteSyncStore(
 		private val updateReceipt = connection.prepareStatement("""
 			INSERT OR REPLACE INTO room_receipts(roomId, userId, type, eventId, content)
 			VALUES (?, ?, ?, ?, ?); 
+		""")
+		private val oneTimeKeysStmt = connection.prepareStatement("""
+			INSERT INTO key_value_store(key, value)
+			VALUES ('ONE_TIME_KEYS_COUNT', ?)
+			ON CONFLICT(key) DO UPDATE SET value=JSON_PATCH(value, excluded.value);
 		""")
 
 		fun updateRoomSummary(roomId: String, summary: RoomSummary): Int {
@@ -160,6 +168,11 @@ class SQLiteSyncStore(
 			updateReceipt.setString(4, eventId)
 			updateReceipt.setSerializable(5, ReceiptContent.Receipt.serializer(), receipt)
 			return updateReceipt.executeUpdate()
+		}
+
+		fun updateOneTimeKeys(oneTimeKeysCount: Map<String, Long>) {
+			oneTimeKeysStmt.setSerializable(1, MapSerializer(String.serializer(), Long.serializer()), oneTimeKeysCount)
+			oneTimeKeysStmt.executeUpdate()
 		}
 
 		override fun close() {
@@ -270,9 +283,25 @@ class SQLiteSyncStore(
 						utils.deleteTrackedUser(userId)
 					}
 				}
+
+				val oneTimeKeysCount = sync.deviceOneTimeKeysCount
+				if (oneTimeKeysCount != null) {
+					utils.updateOneTimeKeys(oneTimeKeysCount)
+				}
 			}
 
 			conn.commit()
+		}
+	}
+
+	override suspend fun getOneTimeKeysCount(): Map<String, Long> {
+		return usingReadConnection { conn ->
+			val count = conn.getValue("ONE_TIME_KEYS_COUNT")
+			if (count != null) {
+				Json.decodeFromString(MapSerializer(String.serializer(), Long.serializer()), count)
+			} else {
+				emptyMap()
+			}
 		}
 	}
 

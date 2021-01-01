@@ -11,6 +11,8 @@ interface SyncStore {
 	suspend fun getSyncToken(): String?
 	suspend fun storeSync(sync: SyncResponse, token: String?)
 
+	suspend fun getOneTimeKeysCount(): Map<String, Long>
+
 	suspend fun getJoinedRooms(userId: String): Set<String>
 	suspend fun getAccountData(type: String): JsonObject?
 	suspend fun getUserDevice(userId: String, deviceId: String): Pair<DeviceKeys?, Boolean>?

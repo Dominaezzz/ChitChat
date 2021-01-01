@@ -26,8 +26,7 @@ class AppViewModel(
 	val cryptoManager = CryptoManager(client, session, cryptoStore, random)
 
 	init {
-		syncClient.syncFlow
-			.mapNotNull { it.deviceOneTimeKeysCount }
+		syncClient.oneTimeKeysCount
 			.mapNotNull { it["signed_curve25519"] }
 			.onEach { remaining ->
 				if (remaining < 20) {

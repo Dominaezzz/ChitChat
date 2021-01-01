@@ -51,6 +51,18 @@ class SyncClientImpl(
 		_syncFlow.emit(sync)
 	}
 
+	override val oneTimeKeysCount: Flow<Map<String, Long>> = flow {
+		var counts = store.getOneTimeKeysCount()
+		emit(counts)
+
+		syncFlow.mapNotNull { it.deviceOneTimeKeysCount }
+			.filter { it.isNotEmpty() }
+			.collect { newCounts ->
+				counts += newCounts
+				emit(counts)
+			}
+	}.shareIn(scope, shareConfig, 1)
+
 	override val joinedRooms: Flow<Map<String, Room>> = flow {
 		var rooms = store.getJoinedRooms(loginSession.userId).associateWith { createRoom(it) }
 		emit(rooms)
