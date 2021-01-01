@@ -2,15 +2,14 @@ package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Direction
-import io.github.matrixkt.models.sync.SyncResponse
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.db.*
+import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SyncStore
 
 class RoomTimeline(
-	private val roomId: String,
-	private val syncFlow: Flow<SyncResponse>,
+	private val room: Room,
 	private val client: MatrixClient,
 	private val store: SyncStore
 ) {
@@ -31,15 +30,14 @@ class RoomTimeline(
 		val events: List<TimelineItem>
 		withContext(Dispatchers.IO) {
 			usingConnection { conn ->
-				events = conn.getEventsBetween(roomId, 1, Int.MAX_VALUE)
+				events = conn.getEventsBetween(room.id, 1, Int.MAX_VALUE)
 			}
 		}
 		_events.value = events
 	}
 
 	private suspend fun loadFutureEvents() {
-		syncFlow.mapNotNull { it.rooms?.join?.get(roomId) }
-			.filterNot { it.timeline?.events.isNullOrEmpty() }
+		room.timelineEvents
 			.map { }
 			.collect {
 				val item = _events.value.last()
@@ -49,14 +47,14 @@ class RoomTimeline(
 				val events: List<TimelineItem>
 				withContext(Dispatchers.IO) {
 					usingConnection { conn ->
-						val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(roomId, eventId)
+						val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(room.id, eventId)
 						if (timelineId != 0) {
 							TODO("Our timeline was disconnected from the latest timeline. RIP.")
 							// Probably best to clear everything and start again in
 							// this case or attempt to restitch the separate timelines.
 						}
 
-						events = conn.getEventsBetween(roomId, timelineOrder + 1, Int.MAX_VALUE)
+						events = conn.getEventsBetween(room.id, timelineOrder + 1, Int.MAX_VALUE)
 					}
 				}
 
@@ -75,16 +73,16 @@ class RoomTimeline(
 				val eventId = targetEvent.eventId
 
 				println("Back paginating")
-				backFill(roomId, eventId)
+				backFill(room.id, eventId)
 				println("Past events downloaded")
 
 				var events: List<TimelineItem>
 				withContext(Dispatchers.IO) {
 					usingConnection { conn ->
-						val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(roomId, eventId)
+						val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(room.id, eventId)
 						if (timelineId != 0) { TODO("The timeline we just back-filled was disconnected from the latest timeline. RIP.") }
 
-						events = conn.getEventsBetween(roomId, 1, timelineOrder - 1)
+						events = conn.getEventsBetween(room.id, 1, timelineOrder - 1)
 					}
 				}
 

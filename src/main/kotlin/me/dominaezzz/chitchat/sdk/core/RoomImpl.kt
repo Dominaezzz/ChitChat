@@ -1,6 +1,7 @@
 package me.dominaezzz.chitchat.sdk.core
 
 import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.models.events.contents.TypingContent
@@ -10,7 +11,6 @@ import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.RoomTimeline
@@ -23,6 +23,12 @@ class RoomImpl(
 	private val store: SyncStore
 ) : Room {
 	private val shareConfig = SharingStarted.WhileSubscribed(1000)
+
+	override val timelineEvents: Flow<MatrixEvent> = syncFlow.mapNotNull { it.rooms }
+		.transform { rooms ->
+			emitList(rooms.join[id]?.timeline?.events)
+			emitList(rooms.leave[id]?.timeline?.events)
+		}
 
 	private val stateFlow = syncFlow.mapNotNull { it.rooms }
 		.transform { rooms ->
@@ -138,9 +144,7 @@ class RoomImpl(
 		.shareIn(scope, shareConfig, 1)
 
 	override fun createTimelineView(): RoomTimeline {
-		val timeline = RoomTimeline(id, syncFlow, client, store)
-		scope.launch { timeline.run() }
-		return timeline
+		return RoomTimeline(this, client, store)
 	}
 
 	// ------------------- Utilities -----------------------

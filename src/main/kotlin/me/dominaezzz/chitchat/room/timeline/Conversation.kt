@@ -40,6 +40,7 @@ fun Conversation(
 	modifier: Modifier = Modifier
 ) {
 	val timeline = remember(room) { room.createTimelineView() }
+	LaunchedEffect(timeline) { timeline.run() }
 	val shouldBackPaginate = timeline.shouldBackPaginate
 
 	@OptIn(ExperimentalCoroutinesApi::class)

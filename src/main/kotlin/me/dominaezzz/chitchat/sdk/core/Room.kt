@@ -1,5 +1,6 @@
 package me.dominaezzz.chitchat.sdk.core
 
+import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.models.events.contents.room.*
@@ -9,6 +10,8 @@ import me.dominaezzz.chitchat.models.RoomTimeline
 
 interface Room {
 	val id: String
+
+	val timelineEvents: Flow<MatrixEvent>
 
 	val joinedMembers: Flow<Set<String>>
 	val invitedMembers: Flow<Set<String>>
