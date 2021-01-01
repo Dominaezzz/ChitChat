@@ -2,6 +2,7 @@ package me.dominaezzz.chitchat.sdk.core
 
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.DeviceKeys
+import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.QueryKeysRequest
 import io.github.matrixkt.models.UnsignedDeviceInfo
 import io.github.matrixkt.models.sync.SyncResponse
@@ -24,7 +25,6 @@ import me.dominaezzz.chitchat.sdk.crypto.verifyEd25519Signature
 import java.sql.Connection
 
 class SyncClientImpl(
-	private val syncFlow: Flow<SyncResponse>,
 	private val scope: CoroutineScope,
 	private val loginSession: LoginSession,
 	private val client: MatrixClient,
@@ -32,6 +32,24 @@ class SyncClientImpl(
 	private val store: SyncStore
 ) : SyncClient {
 	private val shareConfig = SharingStarted.WhileSubscribed(1000)
+
+	private val _syncFlow = MutableSharedFlow<SyncResponse>()
+	override val syncFlow: SharedFlow<SyncResponse> = _syncFlow
+
+	override suspend fun sync(timeout: Long?, setPresence: Presence?) {
+		val syncToken = store.getSyncToken()
+
+		println("Syncing with '$syncToken' as token")
+		val sync = client.eventApi.sync(since = syncToken, setPresence = setPresence, timeout = timeout)
+
+		println("Saving sync response")
+		store.storeSync(sync, syncToken)
+		println("Saved sync response")
+
+		// Should cancellation be disabled here?
+		// We don't really want to miss a sync if it's been persisted.
+		_syncFlow.emit(sync)
+	}
 
 	override val joinedRooms: Flow<Map<String, Room>> = flow {
 		var rooms = store.getJoinedRooms(loginSession.userId).associateWith { createRoom(it) }

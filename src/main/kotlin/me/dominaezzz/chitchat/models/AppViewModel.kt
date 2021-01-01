@@ -2,7 +2,6 @@ package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Presence
-import io.github.matrixkt.models.sync.SyncResponse
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
@@ -18,11 +17,8 @@ class AppViewModel(
 	private val dbSemaphore: Semaphore,
 	private val session: LoginSession
 ) {
-	private val _syncFlow = MutableSharedFlow<SyncResponse>()
-
 	private val syncStore = SQLiteSyncStore(dbSemaphore)
-	val syncClient: SyncClient = SyncClientImpl(
-		_syncFlow, CoroutineScope(SupervisorJob()), session, client, dbSemaphore, syncStore)
+	val syncClient: SyncClient = SyncClientImpl(CoroutineScope(SupervisorJob()), session, client, dbSemaphore, syncStore)
 
 	private val random = SecureRandom().asKotlinRandom()
 	private val cryptoStore = SQLiteCryptoStore(dbSemaphore, random)
@@ -31,7 +27,8 @@ class AppViewModel(
 	init {
 		val scope = CoroutineScope(SupervisorJob())
 
-		_syncFlow.mapNotNull { it.deviceOneTimeKeysCount }
+		syncClient.syncFlow
+			.mapNotNull { it.deviceOneTimeKeysCount }
 			.mapNotNull { it["signed_curve25519"] }
 			.onEach { remaining ->
 				if (remaining < 20) {
@@ -40,7 +37,8 @@ class AppViewModel(
 			}
 			.launchIn(scope)
 
-		_syncFlow.mapNotNull { it.toDevice }
+		syncClient.syncFlow
+			.mapNotNull { it.toDevice }
 			.transform { it.events.forEach { event -> emit(event) } }
 			.onEach { event ->
 				if (event.type == "m.room.encrypted") {
@@ -51,15 +49,7 @@ class AppViewModel(
 	}
 
 	suspend fun sync() {
-		val syncToken = syncStore.getSyncToken()
-
-		println("Syncing with '$syncToken' as token")
-		val sync = client.eventApi.sync(since = syncToken, setPresence = Presence.OFFLINE, timeout = 100000)
-		println("Saving sync response")
-		syncStore.storeSync(sync, syncToken)
-		println("Saved sync response")
-
-		_syncFlow.emit(sync)
+		syncClient.sync(timeout = 100000, setPresence = Presence.OFFLINE)
 	}
 
 	@OptIn(ExperimentalCoroutinesApi::class)
