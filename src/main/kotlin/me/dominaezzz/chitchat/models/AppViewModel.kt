@@ -17,16 +17,15 @@ class AppViewModel(
 	private val dbSemaphore: Semaphore,
 	private val session: LoginSession
 ) {
+	private val scope = CoroutineScope(SupervisorJob())
 	private val syncStore = SQLiteSyncStore(dbSemaphore)
-	val syncClient: SyncClient = SyncClientImpl(CoroutineScope(SupervisorJob()), session, client, dbSemaphore, syncStore)
+	val syncClient: SyncClient = SyncClientImpl(scope, session, client, dbSemaphore, syncStore)
 
 	private val random = SecureRandom().asKotlinRandom()
 	private val cryptoStore = SQLiteCryptoStore(dbSemaphore, random)
 	val cryptoManager = CryptoManager(client, session, cryptoStore, random)
 
 	init {
-		val scope = CoroutineScope(SupervisorJob())
-
 		syncClient.syncFlow
 			.mapNotNull { it.deviceOneTimeKeysCount }
 			.mapNotNull { it["signed_curve25519"] }
