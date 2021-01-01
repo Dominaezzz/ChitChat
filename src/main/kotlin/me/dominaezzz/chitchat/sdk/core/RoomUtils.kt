@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.sdk
+package me.dominaezzz.chitchat.sdk.core
 
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import kotlinx.coroutines.ExperimentalCoroutinesApi

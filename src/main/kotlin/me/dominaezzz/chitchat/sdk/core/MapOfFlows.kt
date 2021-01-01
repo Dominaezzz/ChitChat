@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.sdk
+package me.dominaezzz.chitchat.sdk.core
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow

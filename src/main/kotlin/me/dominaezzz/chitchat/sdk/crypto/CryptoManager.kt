@@ -14,7 +14,7 @@ import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.dominaezzz.chitchat.LoginSession
-import me.dominaezzz.chitchat.sdk.SyncClient
+import me.dominaezzz.chitchat.sdk.core.SyncClient
 import kotlin.random.Random
 
 class CryptoManager(

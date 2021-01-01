@@ -24,7 +24,7 @@ import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import me.dominaezzz.chitchat.db.TimelineItem
-import me.dominaezzz.chitchat.sdk.Room
+import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage
 import me.dominaezzz.chitchat.util.formatting.parseMatrixCustomHtml

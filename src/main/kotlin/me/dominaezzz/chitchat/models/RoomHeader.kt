@@ -1,7 +1,7 @@
 package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.models.events.contents.TagContent
-import me.dominaezzz.chitchat.sdk.Room
+import me.dominaezzz.chitchat.sdk.core.Room
 
 class RoomHeader(
 	val id: String,

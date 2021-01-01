@@ -6,7 +6,7 @@ import io.github.matrixkt.models.sync.SyncResponse
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.db.*
-import me.dominaezzz.chitchat.sdk.SyncStore
+import me.dominaezzz.chitchat.sdk.core.SyncStore
 
 class RoomTimeline(
 	private val roomId: String,

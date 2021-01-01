@@ -7,7 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.LoginSession
-import me.dominaezzz.chitchat.sdk.*
+import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.sdk.crypto.CryptoManager
 import me.dominaezzz.chitchat.sdk.crypto.SQLiteCryptoStore
 import java.security.SecureRandom
