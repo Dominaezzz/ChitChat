@@ -350,6 +350,16 @@ private fun Message(room: Room, content: MessageContent, senderUserId: String) {
 				)
 			}
 		}
+		is MessageContent.Notice -> {
+			Surface {
+				Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+					Text(
+						text = formatting(content.format, content.formattedBody),
+						style = MaterialTheme.typography.body1
+					)
+				}
+			}
+		}
 		is MessageContent.Emote -> {
 			Surface {
 				Text(
