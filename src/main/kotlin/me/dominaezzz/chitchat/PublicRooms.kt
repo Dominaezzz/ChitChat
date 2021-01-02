@@ -28,19 +28,12 @@ import java.net.URI
 
 @Composable
 fun PublicRoomsPopup(onDismissRequest: (() -> Unit)? = null) {
-	val client = ClientAmbient.current
-	val contentRepo = ContentRepoAmbient.current
-
 	Popup(Alignment.Center, onDismissRequest = onDismissRequest, isFocusable = true) {
-		Providers(ClientAmbient provides client, ContentRepoAmbient provides contentRepo) {
-			IconCache {
-				Card(
-					modifier = Modifier.fillMaxSize(0.7f),
-					elevation = 20.dp
-				) {
-					PublicRooms()
-				}
-			}
+		Card(
+			modifier = Modifier.fillMaxSize(0.7f),
+			elevation = 20.dp
+		) {
+			PublicRooms()
 		}
 	}
 }
