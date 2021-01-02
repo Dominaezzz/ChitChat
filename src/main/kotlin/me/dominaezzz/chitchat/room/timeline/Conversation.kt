@@ -343,52 +343,44 @@ private fun Message(room: Room, content: MessageContent, senderUserId: String) {
 
 	when (content) {
 		is MessageContent.Text -> {
-			Surface {
+			Text(
+				text = formatting(content.format, content.formattedBody),
+				style = MaterialTheme.typography.body1
+			)
+		}
+		is MessageContent.Notice -> {
+			Providers(AmbientContentAlpha provides ContentAlpha.medium) {
 				Text(
 					text = formatting(content.format, content.formattedBody),
 					style = MaterialTheme.typography.body1
 				)
 			}
 		}
-		is MessageContent.Notice -> {
-			Surface {
-				Providers(AmbientContentAlpha provides ContentAlpha.medium) {
-					Text(
-						text = formatting(content.format, content.formattedBody),
-						style = MaterialTheme.typography.body1
-					)
-				}
-			}
-		}
 		is MessageContent.Emote -> {
-			Surface {
-				Text(
-					text = buildAnnotatedString {
-						append("* ")
-						val sender = room.member(senderUserId)
-						append(sender?.displayName ?: senderUserId)
-						append(" ")
-						append(formatting(content.format, content.formattedBody))
-					},
-					style = MaterialTheme.typography.body1
-				)
-			}
+			Text(
+				text = buildAnnotatedString {
+					append("* ")
+					val sender = room.member(senderUserId)
+					append(sender?.displayName ?: senderUserId)
+					append(" ")
+					append(formatting(content.format, content.formattedBody))
+				},
+				style = MaterialTheme.typography.body1
+			)
 		}
 		is MessageContent.Image -> {
-			Surface {
-				val image = loadImage(URI(content.url))
-				val width = content.info?.width
-				val height = content.info?.height
-				val specifiedSize = if (width != null && height != null) {
-					Modifier.preferredSize(width.toInt().dp, height.toInt().dp)
-				} else {
-					Modifier
-				}
-				if (image != null) {
-					Image(image, specifiedSize)
-				} else {
-					Image(Icons.Outlined.BrokenImage, specifiedSize)
-				}
+			val image = loadImage(URI(content.url))
+			val width = content.info?.width
+			val height = content.info?.height
+			val specifiedSize = if (width != null && height != null) {
+				Modifier.preferredSize(width.toInt().dp, height.toInt().dp)
+			} else {
+				Modifier
+			}
+			if (image != null) {
+				Image(image, specifiedSize)
+			} else {
+				Image(Icons.Outlined.BrokenImage, specifiedSize)
 			}
 		}
 		is MessageContent.Redacted -> {
