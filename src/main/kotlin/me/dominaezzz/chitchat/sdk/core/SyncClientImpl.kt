@@ -5,6 +5,7 @@ import io.github.matrixkt.models.DeviceKeys
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.QueryKeysRequest
 import io.github.matrixkt.models.UnsignedDeviceInfo
+import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.olm.Utility
 import kotlinx.coroutines.CoroutineScope
@@ -85,6 +86,24 @@ class SyncClientImpl(
 				emit(rooms)
 			}
 		}
+	}.shareIn(scope, shareConfig, 1)
+
+	override val invitedRooms: Flow<Map<String, List<StrippedState>>> = flow {
+		var invites = store.getInvitations()
+		emit(invites)
+
+		syncFlow.mapNotNull { it.rooms }
+			.transform { updates ->
+				val hasNewInvites = updates.invite.keys.any { it !in invites.keys }
+				val invitesWereDeleted = updates.leave.keys.any { it in invites.keys }
+				if (hasNewInvites || invitesWereDeleted) {
+					emit(Unit)
+				}
+			}
+			.collect {
+				invites = store.getInvitations()
+				emit(invites)
+			}
 	}.shareIn(scope, shareConfig, 1)
 
 	private fun createRoom(roomId: String): Room {

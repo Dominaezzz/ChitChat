@@ -6,6 +6,7 @@ import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.RoomSummary
+import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.Dispatchers
@@ -89,6 +90,11 @@ class SQLiteSyncStore(
 			VALUES ('ONE_TIME_KEYS_COUNT', ?)
 			ON CONFLICT(key) DO UPDATE SET value=JSON_PATCH(value, excluded.value);
 		""")
+		private val insertInviteState = connection.prepareStatement("""
+			INSERT OR REPLACE INTO room_invitations(roomId, type, stateKey, sender, content)
+			VALUES (?, ?, ?, ?, ?);
+		""")
+		private val clearInviteState = connection.prepareStatement("DELETE FROM room_invitations WHERE roomId = ?;")
 
 		fun updateRoomSummary(roomId: String, summary: RoomSummary): Int {
 			roomSummaryStmt.setString(1, roomId)
@@ -175,6 +181,20 @@ class SQLiteSyncStore(
 			oneTimeKeysStmt.executeUpdate()
 		}
 
+		fun insertInviteRoomState(roomId: String, state: StrippedState) {
+			insertInviteState.setString(1, roomId)
+			insertInviteState.setString(2, state.type)
+			insertInviteState.setString(3, state.stateKey)
+			insertInviteState.setString(4, state.sender)
+			insertInviteState.setSerializable(5, JsonObject.serializer(), state.content)
+			insertInviteState.executeUpdate()
+		}
+
+		fun clearInvitedState(roomId: String) {
+			clearInviteState.setString(1, roomId)
+			clearInviteState.executeUpdate()
+		}
+
 		override fun close() {
 			removeTrackedUserStmt.close()
 			trackedUsersStmt.close()
@@ -258,6 +278,18 @@ class SQLiteSyncStore(
 							}
 						}
 					}
+
+					for (roomId in (rooms.leave.keys + rooms.join.keys)) {
+						utils.clearInvitedState(roomId)
+					}
+					for ((roomId, invitedRoom) in rooms.invite) {
+						val state = invitedRoom.inviteState
+						if (state != null) {
+							for (event in state.events.orEmpty()) {
+								utils.insertInviteRoomState(roomId, event)
+							}
+						}
+					}
 				}
 
 				val accountData = sync.accountData
@@ -323,6 +355,30 @@ class SQLiteSyncStore(
 						while (rs.next()) {
 							add(rs.getString(1))
 						}
+					}
+				}
+			}
+		}
+	}
+
+	override suspend fun getInvitations(): Map<String, List<StrippedState>> {
+		return usingReadConnection { conn ->
+			val query = """
+				SELECT JSON_OBJECT(roomId, JSON_GROUP_ARRAY(JSON_OBJECT(
+					'type', type,
+					'state_key', stateKey,
+					'sender', sender,
+					'content', JSON(content)
+				)))
+				FROM room_invitations
+				GROUP BY roomId;
+			"""
+			conn.usingStatement { stmt ->
+				stmt.executeQuery(query).use { rs ->
+					if (rs.next()) {
+						rs.getSerializable(1, MapSerializer(String.serializer(), ListSerializer(StrippedState.serializer())))!!
+					} else {
+						emptyMap()
 					}
 				}
 			}

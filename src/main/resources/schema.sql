@@ -82,6 +82,17 @@ BEGIN
     );
 END;
 
+CREATE TABLE room_invitations
+(
+    roomId   TEXT NOT NULL,
+    type     TEXT NOT NULL,
+    stateKey TEXT NOT NULL,
+    sender   TEXT NOT NULL,
+    content  TEXT NOT NULL,
+
+    PRIMARY KEY (roomId, type, stateKey)
+);
+
 CREATE TABLE room_pagination_tokens
 (
     roomId  TEXT NOT NULL,

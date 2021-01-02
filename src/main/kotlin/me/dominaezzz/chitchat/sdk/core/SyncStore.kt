@@ -4,6 +4,7 @@ import io.github.matrixkt.models.DeviceKeys
 import io.github.matrixkt.models.MessagesResponse
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.Membership
+import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import kotlinx.serialization.json.JsonObject
 
@@ -14,6 +15,7 @@ interface SyncStore {
 	suspend fun getOneTimeKeysCount(): Map<String, Long>
 
 	suspend fun getJoinedRooms(userId: String): Set<String>
+	suspend fun getInvitations(): Map<String, List<StrippedState>>
 	suspend fun getAccountData(type: String): JsonObject?
 	suspend fun getUserDevice(userId: String, deviceId: String): Pair<DeviceKeys?, Boolean>?
 	suspend fun getUserDevices(userId: String): Pair<List<DeviceKeys>, Boolean>?
