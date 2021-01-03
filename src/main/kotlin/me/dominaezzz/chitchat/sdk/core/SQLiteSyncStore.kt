@@ -196,6 +196,10 @@ class SQLiteSyncStore(
 		}
 
 		override fun close() {
+			clearInviteState.close()
+			insertInviteState.close()
+			oneTimeKeysStmt.close()
+			updateReceipt.close()
 			removeTrackedUserStmt.close()
 			trackedUsersStmt.close()
 			deviceEventStmt.close()
