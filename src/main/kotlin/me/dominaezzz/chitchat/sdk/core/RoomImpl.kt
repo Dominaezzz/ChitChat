@@ -3,7 +3,6 @@ package me.dominaezzz.chitchat.sdk.core
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
-import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.models.events.contents.TypingContent
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.models.sync.Event
@@ -108,22 +107,6 @@ class RoomImpl(
 		return getAccountData(type).decodeJson(serializer)
 	}
 
-	override val create: Flow<CreateContent> = getState("m.room.create", "", CreateContent.serializer())
-		.map { checkNotNull(it) { "Rooms must have a `m.room.create` event." } }
-
-	override val name: Flow<NameContent?> = getState("m.room.name", "", NameContent.serializer())
-	override val canonicalAlias: Flow<CanonicalAliasContent?> = getState("m.room.canonical_alias", "", CanonicalAliasContent.serializer())
-	override val topic: Flow<TopicContent?> = getState("m.room.topic", "", TopicContent.serializer())
-	override val avatar: Flow<AvatarContent?> = getState("m.room.avatar", "", AvatarContent.serializer())
-	override val guestAccess: Flow<GuestAccessContent?> = getState("m.room.guest_access", "", GuestAccessContent.serializer())
-	override val historyVisibility: Flow<HistoryVisibilityContent?> = getState("m.room.history_visibility", "", HistoryVisibilityContent.serializer())
-	override val joinRules: Flow<JoinRulesContent?> = getState("m.room.join_rules", "", JoinRulesContent.serializer())
-	override val pinnedEvents: Flow<PinnedEventsContent?> = getState("m.room.pinned_events", "", PinnedEventsContent.serializer())
-	override val encryption: Flow<EncryptionContent?> = getState("m.room.encryption", "", EncryptionContent.serializer())
-	override val powerLevels: Flow<PowerLevelsContent?> = getState("m.room.power_levels", "", PowerLevelsContent.serializer())
-	override val serverAcl: Flow<ServerAclContent?> = getState("m.room.server_acl", "", ServerAclContent.serializer())
-	override val tombstone: Flow<TombstoneContent?> = getState("m.room.tombstone", "", TombstoneContent.serializer())
-
 	private val joinedFlow = syncFlow.mapNotNull { it.rooms?.join?.get(id) }
 	private val ephemeralEvents: Flow<Event> = joinedFlow.mapNotNull { it.ephemeral }
 		.transform { for (event in it.events) emit(event) }
@@ -132,9 +115,6 @@ class RoomImpl(
 		.map { MatrixJson.decodeFromJsonElement(TypingContent.serializer(), it.content) }
 		.map { it.userIds }
 		.shareIn(scope, shareConfig, 1)
-
-	override val tags: Flow<Map<String, TagContent.Tag>> = getAccountData("m.tag", TagContent.serializer())
-		.map { it?.tags ?: emptyMap() }
 
 	override val readReceipts: Flow<Map<String, List<Pair<String, ReceiptContent.Receipt>>>> = ephemeralEvents
 		.filter { it.type == "m.receipt" }

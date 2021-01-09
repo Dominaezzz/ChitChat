@@ -29,6 +29,7 @@ import me.dominaezzz.chitchat.models.AppViewModel
 import me.dominaezzz.chitchat.models.RoomHeader
 import me.dominaezzz.chitchat.room.timeline.Conversation
 import me.dominaezzz.chitchat.sdk.core.Room
+import me.dominaezzz.chitchat.sdk.core.topic
 import me.dominaezzz.chitchat.util.IconCache
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
