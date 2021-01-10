@@ -172,7 +172,7 @@ class SyncClientImpl(
 	private class DeviceInsertUtils(conn: Connection) {
 		private val getStateStmt = conn.prepareStatement("SELECT isOutdated, sync_token FROM tracked_users WHERE userId = ?;")
 		private val updateStateStmt = conn.prepareStatement("UPDATE tracked_users SET isOutdated = FALSE, sync_token = NULL WHERE userId = ? AND sync_token IS ?;")
-		private val deleteDevicesStmt = conn.prepareStatement("DELETE FROM device_list WHERE userId = ? AND deviceId = ?;")
+		private val deleteDevicesStmt = conn.prepareStatement("DELETE FROM device_list WHERE userId = ?;")
 		private val addDeviceStmt = conn.prepareStatement("INSERT INTO device_list(userId, deviceId, algorithms, keys, signatures, unsigned) VALUES (?, ?, ?, ?, ?, ?)")
 
 		fun getDeviceListState(userId: String): Pair<Boolean, String?>? {
