@@ -1,7 +1,6 @@
 package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.MatrixClient
-import io.github.matrixkt.models.Direction
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.db.*
@@ -73,7 +72,9 @@ class RoomTimeline(
 				val eventId = targetEvent.eventId
 
 				println("Back paginating")
-				backFill(room.id, eventId)
+				if (!room.backPaginate(eventId, 20)) {
+					throw CancellationException("Can not back paginate any further.")
+				}
 				println("Past events downloaded")
 
 				var events: List<TimelineItem>
@@ -88,35 +89,5 @@ class RoomTimeline(
 
 				_events.value = events + _events.value
 			}
-	}
-
-	private suspend fun backFill(roomId: String, eventId: String) {
-		val token = withContext(Dispatchers.IO) {
-			usingConnection { conn ->
-				// Find first event in timeline and get corresponding token.
-				conn.prepareStatement("""
-					SELECT token
-					FROM room_pagination_tokens
-					JOIN room_events head_events USING(roomId, eventId)
-					JOIN room_events tail_events USING(roomId, timelineId)
-					WHERE roomId = ? AND tail_events.eventId = ?;
-				""").use { stmt ->
-					stmt.setString(1, roomId)
-					stmt.setString(2, eventId)
-					stmt.executeQuery().use { rs ->
-						if (!rs.next()) {
-							println("No token for back pagination")
-							// Cannot paginate backwards from this event
-							throw CancellationException("Can not back paginate any further.")
-						}
-						rs.getString(1)
-					}
-				}
-			}
-		}
-
-		val response = client.roomApi.getRoomEvents(roomId, token, null, Direction.B, 20)
-
-		store.storeTimelineEvents(roomId, response)
 	}
 }

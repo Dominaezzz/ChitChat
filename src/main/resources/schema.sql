@@ -147,8 +147,9 @@ CREATE TABLE device_events
 
 CREATE TABLE room_metadata
 (
-    roomId  TEXT PRIMARY KEY NOT NULL,
-    summary TEXT
+    roomId                TEXT PRIMARY KEY NOT NULL,
+    summary               TEXT,
+    loadedMembershipTypes TEXT NOT NULL CHECK (JSON_VALID(loadedMembershipTypes))
 );
 
 CREATE TABLE account_data

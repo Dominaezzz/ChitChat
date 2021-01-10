@@ -1,9 +1,12 @@
 package me.dominaezzz.chitchat.sdk.core
 
 import io.github.matrixkt.models.DeviceKeys
+import io.github.matrixkt.models.GetMembersResponse
 import io.github.matrixkt.models.MessagesResponse
 import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.models.events.UnsignedData
 import io.github.matrixkt.models.events.contents.ReceiptContent
+import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.RoomSummary
 import io.github.matrixkt.models.sync.StrippedState
@@ -15,6 +18,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.SetSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -53,8 +57,8 @@ class SQLiteSyncStore(
 
 	private class InsertUtils(connection: Connection): Closeable {
 		private val roomSummaryStmt = connection.prepareStatement("""
-			INSERT INTO room_metadata(roomId, summary)
-			VALUES (?, ?)
+			INSERT INTO room_metadata(roomId, summary, loadedMembershipTypes)
+			VALUES (?, ?, ?)
 			ON CONFLICT(roomId) DO UPDATE SET summary=JSON_PATCH(summary, excluded.summary);
 		""")
 		private val eventStmt = connection.prepareStatement("""
@@ -99,6 +103,7 @@ class SQLiteSyncStore(
 		fun updateRoomSummary(roomId: String, summary: RoomSummary): Int {
 			roomSummaryStmt.setString(1, roomId)
 			roomSummaryStmt.setString(2, MatrixJson.encodeToString(RoomSummary.serializer(), summary))
+			roomSummaryStmt.setSerializable(3, ListSerializer(Membership.serializer()), Membership.values().asList())
 			return roomSummaryStmt.executeUpdate()
 		}
 
@@ -242,18 +247,18 @@ class SQLiteSyncStore(
 								} else {
 									utils.getLastOrder(roomId) + 1
 								}
+
+								val stateEvents = joinedRoom.state?.events
+								if (stateEvents != null) {
+									for (event in stateEvents) {
+										utils.insertRoomEvent(roomId, event, null)
+									}
+								}
 								for (event in timeline.events) {
 									utils.insertRoomEvent(roomId, event, order++)
 								}
 								if (timeline.limited == true) {
 									utils.setPaginationToken(roomId, timeline.events.first().eventId, timeline.prevBatch!!)
-								}
-							}
-
-							val stateEvents = joinedRoom.state?.events
-							if (stateEvents != null) {
-								for (event in stateEvents) {
-									utils.insertRoomEvent(roomId, event, null)
 								}
 							}
 
@@ -539,11 +544,193 @@ class SQLiteSyncStore(
 		}
 	}
 
+	override suspend fun getSummary(roomId: String): RoomSummary {
+		return usingReadConnection { conn ->
+			val query = "SELECT summary FROM room_metadata WHERE roomId = ?;"
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.executeQuery().use { rs ->
+					if (rs.next()) {
+						rs.getSerializable(1, RoomSummary.serializer())!!
+					} else {
+						throw NoSuchElementException("No room with id '$roomId'")
+					}
+				}
+			}
+		}
+	}
 
-	override suspend fun storeTimelineEvents(roomId: String, response: MessagesResponse): Int {
+	override suspend fun getLazyLoadingState(roomId: String): SyncStore.LazyLoadingState {
+		return usingReadConnection { conn ->
+			val query = """
+				WITH
+					room_event_idx(roomId, eventId, idx) AS (
+						SELECT roomId, eventId, ROW_NUMBER() OVER (PARTITION BY roomId ORDER BY timelineId DESC, timelineOrder)
+						FROM room_events
+						WHERE timelineOrder IS NOT NULL
+					),
+					room_tokens(roomId, token) AS (
+					    SELECT roomId, token
+						FROM room_pagination_tokens
+						JOIN room_event_idx USING(roomId, eventId)
+						WHERE idx = 0
+					)
+				SELECT token, loadedMembershipTypes
+				FROM room_metadata
+				LEFT JOIN room_tokens USING (roomId) 
+				WHERE roomId = ?;
+			"""
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.executeQuery().use { rs ->
+					if (rs.next()) {
+						SyncStore.LazyLoadingState(
+							rs.getString(1),
+							rs.getSerializable(2, SetSerializer(Membership.serializer()))!!
+						)
+					} else {
+						throw NoSuchElementException("No room with id '$roomId'")
+					}
+				}
+			}
+		}
+	}
+
+	private fun Connection.getNewState(roomId: String, eventIds: Set<String>): List<MatrixEvent> {
+		val queryNewState = """
+				WITH new_events(eventId) AS (SELECT value FROM JSON_EACH(?2))
+				SELECT JSON_GROUP_ARRAY(JSON_OBJECT(
+					 'type', type,
+					 'content', JSON(content),
+					 'event_id', eventId,
+					 'sender', sender,
+					 'origin_server_ts', timestamp,
+					 'unsigned', JSON(unsigned),
+					 'room_id', roomId,
+					 'state_key', stateKey,
+					 'prev_content', JSON(prevContent)
+				 ))
+				FROM room_events
+				JOIN new_events USING(eventId)
+				WHERE roomId = ?1 AND isLatestState
+			"""
+		return prepareStatement(queryNewState).use { stmt ->
+			stmt.setString(1, roomId)
+			stmt.setSerializable(2, SetSerializer(String.serializer()), eventIds)
+			stmt.executeQuery().use { rs ->
+				check(rs.next())
+				rs.getSerializable(1, ListSerializer(MatrixEvent.serializer()))!!
+			}
+		}
+	}
+
+	override suspend fun storeMembers(roomId: String, response: GetMembersResponse): List<MatrixEvent> {
+		return usingWriteConnection { conn ->
+			val query = "SELECT MAX(timelineId) FROM room_events WHERE roomId = ?;"
+			val oldestTimelineId = conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.executeQuery().use { rs ->
+					if (rs.next()) {
+						rs.getInt(1)
+					} else {
+						throw NoSuchElementException("No room with id '$roomId'")
+					}
+				}
+			}
+
+			val insertedEventIds = mutableSetOf<String>()
+
+			val insert = """
+				INSERT OR IGNORE INTO room_events(roomId, eventId, type, content, sender, timestamp, unsigned, stateKey, prevContent, timelineId, timelineOrder)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL);
+			"""
+			conn.prepareStatement(insert).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.setInt(10, oldestTimelineId)
+
+				for (event in response.chunk) {
+					require(event.roomId == roomId)
+					require(event.type == "m.room.member")
+
+					stmt.setString(2, event.eventId)
+					stmt.setString(3, event.type)
+					stmt.setSerializable(4, MemberContent.serializer(), event.content)
+					stmt.setString(5, event.sender)
+					stmt.setLong(6, event.originServerTimestamp)
+					stmt.setSerializable(7, UnsignedData.serializer(), event.unsigned)
+					stmt.setString(8, event.stateKey!!)
+					stmt.setSerializable(9, MemberContent.serializer(), event.prevContent)
+					val changes = stmt.executeUpdate()
+					if (changes > 0) {
+						insertedEventIds.add(event.eventId)
+					}
+				}
+			}
+
+			val update = """
+				UPDATE room_metadata
+				SET loadedMembershipTypes = (
+					SELECT JSON_GROUP_ARRAY(value)
+					FROM (
+						SELECT value FROM JSON_EACH(loadedMembershipTypes)
+						UNION
+						SELECT value FROM JSON_EACH(?2)
+					)
+				)
+				WHERE roomId = ?1
+			"""
+			conn.prepareStatement(update).use { stmt ->
+				val memberships = response.chunk.asSequence()
+					.map { it.content.membership }.toSet()
+
+				stmt.setString(1, roomId)
+				stmt.setSerializable(2, SetSerializer(Membership.serializer()), memberships)
+				stmt.executeUpdate()
+			}
+
+			val newState = conn.getNewState(roomId, insertedEventIds)
+
+			conn.commit()
+
+			newState
+		}
+	}
+
+
+	override suspend fun getPaginationToken(roomId: String, eventId: String): String? {
+		return usingReadConnection { conn ->
+			// Find first event in timeline and get corresponding token.
+			val query = """
+				SELECT token
+				FROM room_pagination_tokens
+				JOIN room_events head_events USING(roomId, eventId)
+				JOIN room_events tail_events USING(roomId, timelineId)
+				WHERE roomId = ? AND tail_events.eventId = ?;
+			"""
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.setString(2, eventId)
+				stmt.executeQuery().use { rs ->
+					if (rs.next()) {
+						rs.getString(1)
+					} else {
+						null
+					}
+				}
+			}
+		}
+	}
+
+	override suspend fun storeTimelineEvents(roomId: String, response: MessagesResponse): List<MatrixEvent> {
 		// BUG: Overlap in state and timeline events adds offset to timelineOrder.
 		// BUG: Pagination token is stored against the first timeline event in the response,
 		//  which may have been downgraded to state due to above.
+
+		val timelineEvents = response.chunk
+		if (timelineEvents.isNullOrEmpty()) {
+			// check(response.state.isNullOrEmpty())
+			return emptyList()
+		}
 
 		return usingWriteConnection { conn ->
 			val getEventIdQuery = "SELECT eventId FROM room_pagination_tokens WHERE roomId = ? AND token = ?"
@@ -573,13 +760,6 @@ class SQLiteSyncStore(
 				id
 			}
 
-			val timelineEvents = response.chunk
-			if (timelineEvents.isNullOrEmpty()) {
-				// check(response.state.isNullOrEmpty())
-				conn.commit()
-				return@usingWriteConnection timelineId
-			}
-
 			val shiftTimelineStmt = conn.prepareStatement("UPDATE room_events SET timelineOrder = timelineOrder + ? WHERE roomId = ? AND timelineId = ?;")
 			shiftTimelineStmt.setString(2, roomId)
 			shiftTimelineStmt.setInt(3, timelineId)
@@ -595,6 +775,7 @@ class SQLiteSyncStore(
 					WHERE timelineOrder IS NULL;
 			""")
 
+			val insertedEventIds = mutableSetOf<String>()
 			try {
 				shiftTimelineStmt.setInt(1, timelineEvents.size)
 				shiftTimelineStmt.executeUpdate()
@@ -630,6 +811,8 @@ class SQLiteSyncStore(
 						// which means we have to stitch two timeline chunks together.
 						break
 						// By just breaking here, we assume we already have all the skipped events stored in earlier timeline.
+					} else {
+						insertedEventIds.add(event.eventId)
 					}
 					timelineOrder--
 				}
@@ -686,9 +869,8 @@ class SQLiteSyncStore(
 							eventStmt.setInt(10, timelineId)
 							eventStmt.setNull(11, Types.INTEGER)
 							val changes = eventStmt.executeUpdate()
-							if (changes == 0) {
-								// If this state event already existed, then server is not compliant.
-								break
+							if (changes > 0) {
+								insertedEventIds.add(event.eventId)
 							}
 						}
 					}
@@ -705,9 +887,12 @@ class SQLiteSyncStore(
 				eventStmt.close()
 				shiftTimelineStmt.close()
 			}
+
+			val newState = conn.getNewState(roomId, insertedEventIds)
+
 			conn.commit()
 
-			timelineId
+			newState
 		}
 	}
 

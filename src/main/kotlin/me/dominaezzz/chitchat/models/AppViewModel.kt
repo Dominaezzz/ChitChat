@@ -64,7 +64,7 @@ class AppViewModel(
 					combine(
 						room.getDisplayName(session.userId),
 						room.getDisplayAvatar(session.userId),
-						room.joinedMembers.map { it.size },
+						room.joinedMemberCount,
 						room.tags
 					) { displayName, displayAvatar, memberCount, tags ->
 						RoomHeader(
