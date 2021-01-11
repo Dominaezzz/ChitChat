@@ -1,6 +1,5 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.DeviceKeys
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
@@ -18,7 +17,4 @@ interface SyncClient {
 	val invitedRooms: Flow<Map<String, List<StrippedState>>>
 
 	fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?>
-
-	suspend fun getUserDevices(userId: String): List<DeviceKeys>?
-	suspend fun getUserDevice(userId: String, deviceId: String): DeviceKeys?
 }

@@ -222,7 +222,7 @@ class RoomImpl(
 	}
 
 	override fun createTimelineView(): RoomTimeline {
-		return RoomTimeline(this, client, store)
+		return RoomTimeline(this, store)
 	}
 
 	// ------------------- Utilities -----------------------

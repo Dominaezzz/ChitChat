@@ -1,6 +1,5 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.DeviceKeys
 import io.github.matrixkt.models.GetMembersResponse
 import io.github.matrixkt.models.MessagesResponse
 import io.github.matrixkt.models.events.MatrixEvent
@@ -20,8 +19,6 @@ interface SyncStore {
 	suspend fun getJoinedRooms(userId: String): Set<String>
 	suspend fun getInvitations(): Map<String, List<StrippedState>>
 	suspend fun getAccountData(type: String): JsonObject?
-	suspend fun getUserDevice(userId: String, deviceId: String): Pair<DeviceKeys?, Boolean>?
-	suspend fun getUserDevices(userId: String): Pair<List<DeviceKeys>, Boolean>?
 
 	suspend fun getState(roomId: String, type: String, stateKey: String): JsonObject?
 	suspend fun getAccountData(roomId: String, type: String): JsonObject?

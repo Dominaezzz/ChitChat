@@ -1,6 +1,5 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.DeviceKeys
 import io.github.matrixkt.models.GetMembersResponse
 import io.github.matrixkt.models.MessagesResponse
 import io.github.matrixkt.models.events.MatrixEvent
@@ -24,29 +23,46 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.db.*
+import org.sqlite.SQLiteConfig
 import java.io.Closeable
+import java.nio.file.Path
 import java.sql.Connection
+import java.sql.DriverManager
 import java.sql.Types
 
-class SQLiteSyncStore(
-	private val dbSemaphore: Semaphore
-) : SyncStore {
+class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
+	private val writeSemaphore = Semaphore(1)
+
+	private fun createConnection(): Connection {
+		val config = SQLiteConfig()
+		config.enforceForeignKeys(true)
+		config.setJournalMode(SQLiteConfig.JournalMode.WAL)
+		// config.setReadOnly()
+
+		return DriverManager.getConnection("jdbc:sqlite:${databaseFile.toAbsolutePath()}", config.toProperties())
+	}
+
 	private suspend inline fun <T> usingReadConnection(crossinline block: (Connection) -> T): T {
 		return withContext(Dispatchers.IO) {
-			usingConnection { conn ->
-				block(conn)
-			}
+			createConnection().use(block)
 		}
 	}
 	private suspend inline fun <T> usingWriteConnection(crossinline block: (Connection) -> T): T {
-		return dbSemaphore.withPermit {
+		return writeSemaphore.withPermit {
 			withContext(Dispatchers.IO) {
-				usingConnection { conn ->
+				createConnection().use { conn ->
 					conn.autoCommit = false
 					block(conn)
 				}
 			}
 		}
+	}
+
+	suspend fun <T> read(block: (Connection) -> T): T {
+		return usingReadConnection { block(it) }
+	}
+	suspend fun <T> write(block: (Connection) -> T): T {
+		return usingWriteConnection { block(it) }
 	}
 
 	override suspend fun getSyncToken(): String? {
@@ -62,18 +78,14 @@ class SQLiteSyncStore(
 			ON CONFLICT(roomId) DO UPDATE SET summary=JSON_PATCH(summary, excluded.summary);
 		""")
 		private val eventStmt = connection.prepareStatement("""
-			INSERT INTO room_events(
+			INSERT OR IGNORE INTO room_events(
 				roomId, eventId, type, content, sender, unsigned, stateKey, prevContent, timestamp,
-				timelineOrder
+				timelineId, timelineOrder
 			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
 			ON CONFLICT(roomId, eventId) DO UPDATE
 				SET timelineOrder = excluded.timelineOrder
-				WHERE excluded.timelineOrder IS NOT NULL;
-		""")
-		private val paginationTokenStmt = connection.prepareStatement("""
-			INSERT INTO room_pagination_tokens(roomId, eventId, token)
-			VALUES (?, ?, ?);
+				WHERE timelineId = excluded.timelineId AND excluded.timelineOrder IS NOT NULL;
 		""")
 		private val accountStmt = connection.prepareStatement("""
 			INSERT OR REPLACE INTO account_data(type, roomId, content) VALUES (?, ?, ?);
@@ -81,10 +93,10 @@ class SQLiteSyncStore(
 		private val lastOrderStmt = connection.prepareStatement("""
 			SELECT MAX(timelineOrder) FROM room_events WHERE roomId = ? AND timelineId = 0;
 		""")
-		private val newTimelineStmt = connection.prepareStatement("UPDATE room_events SET timelineId = timelineId + 1 WHERE roomId = ?;")
+		private val beginShiftTimelinesStmt = connection.prepareStatement("UPDATE room_timelines SET timelineId = -timelineId WHERE roomId = ?;")
+		private val endShiftTimelinesStmt = connection.prepareStatement("UPDATE room_timelines SET timelineId = -timelineId + 1 WHERE roomId = ?;")
+		private val newTimelineStmt = connection.prepareStatement("INSERT INTO room_timelines(roomId, timelineId, token) VALUES (?, 0, ?);")
 		private val deviceEventStmt = connection.prepareStatement("INSERT INTO device_events(type, content, sender) VALUES (?, ?, ?);")
-		private val trackedUsersStmt = connection.prepareStatement("UPDATE tracked_users SET isOutdated = TRUE, sync_token = ? WHERE userId = ?;")
-		private val removeTrackedUserStmt = connection.prepareStatement("DELETE FROM tracked_users WHERE userId = ?;")
 		private val updateReceipt = connection.prepareStatement("""
 			INSERT OR REPLACE INTO room_receipts(roomId, userId, type, eventId, content)
 			VALUES (?, ?, ?, ?, ?); 
@@ -111,13 +123,11 @@ class SQLiteSyncStore(
 			eventStmt.setString(1, roomId)
 			eventStmt.setString(2, event.eventId)
 			eventStmt.setString(3, event.type)
-			eventStmt.setString(4, MatrixJson.encodeToString(JsonElement.serializer(), event.content))
+			eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
 			eventStmt.setString(5, event.sender)
-			eventStmt.setString(6, event.unsigned?.let { MatrixJson.encodeToString(
-				JsonElement.serializer(), it) })
+			eventStmt.setSerializable(6, JsonElement.serializer(), event.unsigned)
 			eventStmt.setString(7, event.stateKey)
-			eventStmt.setString(8, event.prevContent?.let { MatrixJson.encodeToString(
-				JsonElement.serializer(), it) })
+			eventStmt.setSerializable(8, JsonElement.serializer(), event.prevContent)
 			eventStmt.setLong(9, event.originServerTimestamp)
 			if (timelineOrder != null) {
 				eventStmt.setLong(10, timelineOrder)
@@ -127,49 +137,46 @@ class SQLiteSyncStore(
 			return eventStmt.executeUpdate()
 		}
 
-		fun setPaginationToken(roomId: String, eventId: String, token: String): Int {
-			paginationTokenStmt.setString(1, roomId)
-			paginationTokenStmt.setString(2, eventId)
-			paginationTokenStmt.setString(3, token)
-			return paginationTokenStmt.executeUpdate()
-		}
-
 		fun updateAccountData(roomId: String?, type: String, content: JsonElement): Int {
 			accountStmt.setString(1, type)
 			accountStmt.setString(2, roomId)
-			accountStmt.setString(3, MatrixJson.encodeToString(JsonElement.serializer(), content))
+			accountStmt.setSerializable(3, JsonElement.serializer(), content)
 			return accountStmt.executeUpdate()
 		}
 
 		fun getLastOrder(roomId: String): Long {
 			lastOrderStmt.setString(1, roomId)
-			return lastOrderStmt.executeQuery().use { rs ->
+			val order = lastOrderStmt.executeQuery().use { rs ->
 				check(rs.next())
-				rs.getLong(1)
+				rs.getLong(1).takeUnless { rs.wasNull() }
 			}
+			// No timeline exist.
+			if (order == null) {
+				newTimelineStmt.setString(1, roomId)
+				newTimelineStmt.setString(2, null)
+				newTimelineStmt.executeUpdate()
+				return 0
+			}
+			return order
 		}
 
-		fun createNewTimeline(roomId: String) {
+		fun createNewTimeline(roomId: String, token: String?) {
+			beginShiftTimelinesStmt.setString(1, roomId)
+			beginShiftTimelinesStmt.executeUpdate()
+
+			endShiftTimelinesStmt.setString(1, roomId)
+			endShiftTimelinesStmt.executeUpdate()
+
 			newTimelineStmt.setString(1, roomId)
+			newTimelineStmt.setString(2, token)
 			newTimelineStmt.executeUpdate()
 		}
 
 		fun insertDeviceEvent(type: String, sender: String, content: JsonElement): Int {
 			deviceEventStmt.setString(1, type)
-			deviceEventStmt.setString(2, MatrixJson.encodeToString(JsonElement.serializer(), content))
+			deviceEventStmt.setSerializable(2, JsonElement.serializer(), content)
 			deviceEventStmt.setString(3, sender)
 			return deviceEventStmt.executeUpdate()
-		}
-
-		fun resetTrackedUser(userId: String, syncToken: String?): Int {
-			trackedUsersStmt.setString(1, syncToken)
-			trackedUsersStmt.setString(2, userId)
-			return trackedUsersStmt.executeUpdate()
-		}
-
-		fun deleteTrackedUser(userId: String): Int {
-			removeTrackedUserStmt.setString(1, userId)
-			return removeTrackedUserStmt.executeUpdate()
 		}
 
 		fun updateReceipt(roomId: String, userId: String, type: String, eventId: String, receipt: ReceiptContent.Receipt): Int {
@@ -205,13 +212,12 @@ class SQLiteSyncStore(
 			insertInviteState.close()
 			oneTimeKeysStmt.close()
 			updateReceipt.close()
-			removeTrackedUserStmt.close()
-			trackedUsersStmt.close()
 			deviceEventStmt.close()
 			newTimelineStmt.close()
+			endShiftTimelinesStmt.close()
+			beginShiftTimelinesStmt.close()
 			lastOrderStmt.close()
 			accountStmt.close()
-			paginationTokenStmt.close()
 			eventStmt.close()
 			roomSummaryStmt.close()
 		}
@@ -231,55 +237,52 @@ class SQLiteSyncStore(
 			InsertUtils(conn).use { utils ->
 				val rooms = sync.rooms
 				if (rooms != null) {
-					conn.withoutIndex("room_events", "compressed_state") {
-						for ((roomId, joinedRoom) in rooms.join) {
-							val summary = joinedRoom.summary
-							if (summary != null) {
-								utils.updateRoomSummary(roomId, summary)
-							}
+					for ((roomId, joinedRoom) in rooms.join) {
+						val summary = joinedRoom.summary
+						if (summary != null) {
+							utils.updateRoomSummary(roomId, summary)
+						}
 
-							val timeline = joinedRoom.timeline
-							if (timeline != null) {
+						val timeline = joinedRoom.timeline
+						if (timeline != null) {
+							var order = if (timeline.limited == true) {
 								// Create new batch
-								var order = if (timeline.limited == true) {
-									utils.createNewTimeline(roomId)
-									1
-								} else {
-									utils.getLastOrder(roomId) + 1
-								}
-
-								val stateEvents = joinedRoom.state?.events
-								if (stateEvents != null) {
-									for (event in stateEvents) {
-										utils.insertRoomEvent(roomId, event, null)
-									}
-								}
-								for (event in timeline.events) {
-									utils.insertRoomEvent(roomId, event, order++)
-								}
-								if (timeline.limited == true) {
-									utils.setPaginationToken(roomId, timeline.events.first().eventId, timeline.prevBatch!!)
-								}
+								utils.createNewTimeline(roomId, timeline.prevBatch!!)
+								1
+							} else {
+								utils.getLastOrder(roomId) + 1
 							}
 
-							val accountEvents = joinedRoom.accountData?.events
-							if (accountEvents != null) {
-								for (event in accountEvents) {
-									utils.updateAccountData(roomId, event.type, event.content)
+							val stateEvents = joinedRoom.state?.events
+							if (stateEvents != null) {
+								for (event in stateEvents) {
+									utils.insertRoomEvent(roomId, event, null)
 								}
 							}
+							for (event in timeline.events) {
+								val changes = utils.insertRoomEvent(roomId, event, order)
+								if (changes > 0) order++
+							}
+						}
+						// else { /* insert state events ? */ }
 
-							val ephemeral = joinedRoom.ephemeral
-							if (ephemeral != null) {
-								for (event in ephemeral.events) {
-									if (event.type == "m.receipt") {
-										val receipt = MatrixJson.decodeFromJsonElement(ReceiptContent.serializer(), event.content)
-										for ((eventId, receipts) in receipt) {
-											val read = receipts.read
-											if (read != null) {
-												for ((userId, readReceipt) in read) {
-													utils.updateReceipt(roomId, userId, "m.read", eventId, readReceipt)
-												}
+						val accountEvents = joinedRoom.accountData?.events
+						if (accountEvents != null) {
+							for (event in accountEvents) {
+								utils.updateAccountData(roomId, event.type, event.content)
+							}
+						}
+
+						val ephemeral = joinedRoom.ephemeral
+						if (ephemeral != null) {
+							for (event in ephemeral.events) {
+								if (event.type == "m.receipt") {
+									val receipt = MatrixJson.decodeFromJsonElement(ReceiptContent.serializer(), event.content)
+									for ((eventId, receipts) in receipt) {
+										val read = receipts.read
+										if (read != null) {
+											for ((userId, readReceipt) in read) {
+												utils.updateReceipt(roomId, userId, "m.read", eventId, readReceipt)
 											}
 										}
 									}
@@ -312,16 +315,6 @@ class SQLiteSyncStore(
 				if (deviceEvents != null) {
 					for (event in deviceEvents) {
 						utils.insertDeviceEvent(event.type, event.sender!!, event.content)
-					}
-				}
-
-				val deviceLists = sync.deviceLists
-				if (deviceLists != null) {
-					for (userId in deviceLists.changed) {
-						utils.resetTrackedUser(userId, token)
-					}
-					for (userId in deviceLists.left) {
-						utils.deleteTrackedUser(userId)
 					}
 				}
 
@@ -404,53 +397,6 @@ class SQLiteSyncStore(
 						rs.getSerializable(1, JsonObject.serializer())
 					} else {
 						null
-					}
-				}
-			}
-		}
-	}
-
-	override suspend fun getUserDevice(userId: String, deviceId: String): Pair<DeviceKeys?, Boolean>? {
-		return usingReadConnection { conn ->
-			val query = """
-					SELECT json, isOutdated
-					FROM tracked_users
-					LEFT JOIN device_list dl ON tracked_users.userId = dl.userId AND dl.deviceId = ?
-					WHERE tracked_users.userId = ?
-				"""
-			conn.prepareStatement(query).use { stmt ->
-				stmt.setString(1, userId)
-				stmt.setString(2, deviceId)
-				stmt.executeQuery().use { rs ->
-					if (rs.next()) {
-						val deviceKeys = rs.getSerializable(1, DeviceKeys.serializer())
-						val isOutdated = rs.getBoolean(2)
-						deviceKeys to isOutdated
-					} else {
-						null // no user
-					}
-				}
-			}
-		}
-	}
-
-	override suspend fun getUserDevices(userId: String): Pair<List<DeviceKeys>, Boolean>? {
-		return usingReadConnection { conn ->
-			val query = """
-					SELECT JSON_GROUP_ARRAY(JSON(json)) FILTER (WHERE dl.userId IS NOT NULL), isOutdated
-					FROM tracked_users
-					LEFT JOIN device_list dl USING (userId)
-					WHERE userId = ?
-				"""
-			conn.prepareStatement(query).use { stmt ->
-				stmt.setString(1, userId)
-				stmt.executeQuery().use { rs ->
-					if (rs.next()) {
-						val deviceKeys = rs.getSerializable(1, ListSerializer(DeviceKeys.serializer()))!!
-						val isOutdated = rs.getBoolean(2)
-						deviceKeys to isOutdated
-					} else {
-						null // no user
 					}
 				}
 			}
@@ -564,21 +510,14 @@ class SQLiteSyncStore(
 		return usingReadConnection { conn ->
 			val query = """
 				WITH
-					room_event_idx(roomId, eventId, idx) AS (
-						SELECT roomId, eventId, ROW_NUMBER() OVER (PARTITION BY roomId ORDER BY timelineId DESC, timelineOrder)
-						FROM room_events
-						WHERE timelineOrder IS NOT NULL
-					),
-					room_tokens(roomId, token) AS (
-					    SELECT roomId, token
-						FROM room_pagination_tokens
-						JOIN room_event_idx USING(roomId, eventId)
-						WHERE idx = 0
+					room_tokens(roomId, token, idx) AS (
+						SELECT roomId, token, ROW_NUMBER() OVER (PARTITION BY roomId ORDER BY timelineId DESC)
+						FROM room_timelines
 					)
 				SELECT token, loadedMembershipTypes
 				FROM room_metadata
 				LEFT JOIN room_tokens USING (roomId) 
-				WHERE roomId = ?;
+				WHERE roomId = ? AND idx = 1;
 			"""
 			conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, roomId)
@@ -702,10 +641,9 @@ class SQLiteSyncStore(
 			// Find first event in timeline and get corresponding token.
 			val query = """
 				SELECT token
-				FROM room_pagination_tokens
-				JOIN room_events head_events USING(roomId, eventId)
-				JOIN room_events tail_events USING(roomId, timelineId)
-				WHERE roomId = ? AND tail_events.eventId = ?;
+				FROM room_timelines
+				JOIN room_events USING(roomId, timelineId)
+				WHERE roomId = ? AND eventId = ?;
 			"""
 			conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, roomId)
@@ -722,10 +660,6 @@ class SQLiteSyncStore(
 	}
 
 	override suspend fun storeTimelineEvents(roomId: String, response: MessagesResponse): List<MatrixEvent> {
-		// BUG: Overlap in state and timeline events adds offset to timelineOrder.
-		// BUG: Pagination token is stored against the first timeline event in the response,
-		//  which may have been downgraded to state due to above.
-
 		val timelineEvents = response.chunk
 		if (timelineEvents.isNullOrEmpty()) {
 			// check(response.state.isNullOrEmpty())
@@ -733,13 +667,13 @@ class SQLiteSyncStore(
 		}
 
 		return usingWriteConnection { conn ->
-			val getEventIdQuery = "SELECT eventId FROM room_pagination_tokens WHERE roomId = ? AND token = ?"
-			val eventId = conn.prepareStatement(getEventIdQuery).use { stmt ->
+			val getTimelineIdQuery = "SELECT timelineId FROM room_timelines WHERE roomId = ? AND token = ?"
+			val timelineId = conn.prepareStatement(getTimelineIdQuery).use { stmt ->
 				stmt.setString(1, roomId)
 				stmt.setString(2, response.start)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						rs.getString(1)
+						rs.getInt(1)
 					} else {
 						throw NoSuchElementException(
 							"Pagination token '${response.start}' not in Room($roomId) timelines.")
@@ -747,17 +681,11 @@ class SQLiteSyncStore(
 				}
 			}
 
-			conn.prepareStatement("DELETE FROM room_pagination_tokens WHERE roomId = ? AND eventId = ?;").use {
+			conn.prepareStatement("UPDATE room_timelines SET token = NULL WHERE roomId = ? AND timelineId = ?;").use {
 				it.setString(1, roomId)
-				it.setString(2, eventId)
+				it.setInt(2, timelineId)
 				val changes = it.executeUpdate()
 				check(changes == 1)
-			}
-
-			val timelineId = run {
-				val (id, order) = conn.getTimelineIdAndOrder(roomId, eventId)
-				check(order == 1) { "Edge of timeline should be at idx 1 but was at idx $order." }
-				id
 			}
 
 			val shiftTimelineStmt = conn.prepareStatement("UPDATE room_events SET timelineOrder = timelineOrder + ? WHERE roomId = ? AND timelineId = ?;")
@@ -771,20 +699,24 @@ class SQLiteSyncStore(
 				)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				ON CONFLICT(roomId, eventId) DO UPDATE
-					SET timelineOrder = excluded.timelineOrder, prevContent = excluded.prevContent, unsigned = excluded.unsigned
-					WHERE timelineOrder IS NULL;
+					SET timelineOrder = excluded.timelineOrder
+					WHERE timelineOrder IS NULL AND timelineId = excluded.timelineId;
 			""")
 
 			val insertedEventIds = mutableSetOf<String>()
 			try {
-				shiftTimelineStmt.setInt(1, timelineEvents.size)
+				val duplicateState = response.state?.map { it.eventId }?.toSet().orEmpty()
+				val events = timelineEvents.dropLastWhile { it.eventId in duplicateState }
+
+				shiftTimelineStmt.setInt(1, events.size)
 				shiftTimelineStmt.executeUpdate()
 
-				var timelineOrder = timelineEvents.size
-				var overlappingEvents = 0 // kludge for when synapse returns event out of bounds.
+				var timelineOrder = events.size
+				var postInsertShift = 0
 
-				for (event in timelineEvents) {
-					eventStmt.setString(1, roomId)
+				for (event in events) {
+					check(roomId == event.roomId)
+					eventStmt.setString(1, event.roomId)
 					eventStmt.setString(2, event.eventId)
 					eventStmt.setString(3, event.type)
 					eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
@@ -796,32 +728,38 @@ class SQLiteSyncStore(
 					eventStmt.setInt(10, timelineId)
 					eventStmt.setInt(11, timelineOrder)
 					val changes = eventStmt.executeUpdate()
+					// If no rows were inserted/updated, then there was a conflict between two timeline events.
 					if (changes == 0) {
 						val (id, _) = conn.getTimelineIdAndOrder(roomId, event.eventId)
 						// If server returned overlapping event ... we skip it.
 						if (id == timelineId) {
-							check(timelineEvents.size == (timelineOrder - overlappingEvents)) {
-								"Server returned inconsistent duplicate message events!"
-							}
-							overlappingEvents++
+							postInsertShift++
 							continue
 						}
 
-						// If no rows were inserted, then there was a conflict between two timeline events.
-						// which means we have to stitch two timeline chunks together.
-						break
-						// By just breaking here, we assume we already have all the skipped events stored in earlier timeline.
+						// If event was from next oldest timeline,
+						// it means we have to stitch two timeline chunks together.
+						if (id == timelineId + 1) {
+							// By just breaking here we assume we already have all the
+							// skipped events stored in earlier timeline.
+							// TODO: This is not necessarily true, needs to be optimised.
+							break
+						}
+
+						// Duplicate event based on DAG ordering vs stream ordering.
+						postInsertShift++
+						continue
 					} else {
 						insertedEventIds.add(event.eventId)
 					}
 					timelineOrder--
 				}
 
-				if (overlappingEvents > 0) {
+				if (postInsertShift > 0) {
 					// Deallocate the space for the duplicate events
-					shiftTimelineStmt.setInt(1, -overlappingEvents)
+					shiftTimelineStmt.setInt(1, -postInsertShift)
 					shiftTimelineStmt.executeUpdate()
-					timelineOrder -= overlappingEvents
+					timelineOrder -= postInsertShift
 				}
 
 				if (timelineOrder > 0) {
@@ -841,17 +779,35 @@ class SQLiteSyncStore(
 						}
 					}
 
-					// Shift all our events forward to accommodate older timeline.
-					shiftTimelineStmt.setInt(1, maxOrderOfPreviousTimeline - timelineOrder)
-					shiftTimelineStmt.executeUpdate()
+					// Merge current timeline into older timeline
+					val sql = """
+						UPDATE room_events
+						SET timelineId = timelineId + 1, timelineOrder = timelineOrder + ?
+						WHERE roomId = ? AND timelineId = ?
+					"""
+					conn.prepareStatement(sql).use { stmt ->
+						// Shift all our events forward to accommodate older timeline.
+						stmt.setInt(1, maxOrderOfPreviousTimeline - timelineOrder)
+						stmt.setString(2, roomId)
+						stmt.setInt(3, timelineId)
+						stmt.executeUpdate()
+					}
+					conn.prepareStatement("DELETE FROM room_timelines WHERE roomId = ? AND timelineId = ?;").use { stmt ->
+						stmt.setString(1, roomId)
+						stmt.setInt(2, timelineId)
+						val changes = stmt.executeUpdate()
+						check(changes == 1) // Only this row should be deleted. No foreign key cascades should happen.
+					}
 
-					// Merge timelines (and maintain contiguous timelineIds).
-					conn.withoutIndex("room_events", "compressed_state") {
-						conn.prepareStatement("UPDATE room_events SET timelineId = timelineId - 1 WHERE roomId = ? AND timelineId > ?;").use { stmt ->
-							stmt.setString(1, roomId)
-							stmt.setInt(2, timelineId)
-							stmt.executeUpdate()
-						}
+					// Maintain contiguous timelineIds.
+					conn.prepareStatement("UPDATE room_timelines SET timelineId = -timelineId WHERE roomId = ? AND timelineId > ?;").use { stmt ->
+						stmt.setString(1, roomId)
+						stmt.setInt(2, timelineId)
+						stmt.executeUpdate()
+					}
+					conn.prepareStatement("UPDATE room_timelines SET timelineId = -timelineId - 1 WHERE roomId = ? AND timelineId < 0;").use { stmt ->
+						stmt.setString(1, roomId)
+						stmt.executeUpdate()
 					}
 				} else {
 					val stateEvents = response.state
@@ -875,10 +831,11 @@ class SQLiteSyncStore(
 						}
 					}
 					if (response.end != null) {
-						conn.prepareStatement("INSERT INTO room_pagination_tokens(roomId, eventId, token) VALUES (?, ?, ?);").use { stmt ->
-							stmt.setString(1, roomId)
-							stmt.setString(2, timelineEvents.last().eventId)
-							stmt.setString(3, response.end)
+						val sql = "UPDATE room_timelines SET token = ? WHERE roomId = ? AND timelineId = ?;"
+						conn.prepareStatement(sql).use { stmt ->
+							stmt.setString(1, response.end)
+							stmt.setString(2, roomId)
+							stmt.setInt(3, timelineId)
 							stmt.executeUpdate()
 						}
 					}
@@ -899,14 +856,9 @@ class SQLiteSyncStore(
 	suspend fun clear() {
 		usingWriteConnection { conn ->
 			conn.usingStatement { stmt ->
-				stmt.execute("DELETE FROM key_value_store WHERE key = 'SYNC_TOKEN';")
-				stmt.execute("DELETE FROM key_value_store WHERE key = 'ONE_TIME_KEYS_COUNT';")
+				stmt.execute("DELETE FROM key_value_store;")
 				stmt.execute("DELETE FROM room_metadata;")
-				stmt.execute("DELETE FROM room_events;")
-				stmt.execute("DELETE FROM room_pagination_tokens;")
 				stmt.execute("DELETE FROM account_data;")
-				stmt.execute("DELETE FROM room_receipts;")
-				stmt.execute("UPDATE tracked_users SET isOutdated = TRUE, sync_token = NULL;")
 			}
 		}
 	}

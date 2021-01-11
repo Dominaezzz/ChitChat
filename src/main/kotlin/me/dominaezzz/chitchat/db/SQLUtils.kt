@@ -40,14 +40,6 @@ inline fun <T> Connection.usingStatement(block: (Statement) -> T): T {
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun <T> usingStatement(block: (Statement) -> T): T {
-    contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-    }
-    return usingConnection { it.usingStatement(block) }
-}
-
-@OptIn(ExperimentalContracts::class)
 inline fun <T> Connection.savepoint(block: () -> T): T {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)

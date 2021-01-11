@@ -19,6 +19,22 @@ class SQLiteCryptoStore(
 ) : CryptoStore {
 	private val emptyByteArray = byteArrayOf()
 
+	private suspend inline fun <T> usingReadConnection(crossinline block: (Connection) -> T): T {
+		return withContext(Dispatchers.IO) {
+			usingConnection { block(it) }
+		}
+	}
+	private suspend inline fun <T> usingWriteConnection(crossinline block: (Connection) -> T): T {
+		return dbSemaphore.withPermit {
+			withContext(Dispatchers.IO) {
+				usingConnection { conn ->
+					conn.autoCommit = false
+					block(conn)
+				}
+			}
+		}
+	}
+
 	private fun Connection.getAccount(): Account {
 		val pickle = getValue("ACCOUNT")
 		return if (pickle != null) {
@@ -32,9 +48,7 @@ class SQLiteCryptoStore(
 	}
 
 	override suspend fun <T> usingAccount(block: (Account) -> T): T {
-		val account = withContext(Dispatchers.IO) {
-			usingConnection { it.getAccount() }
-		}
+		val account = usingReadConnection { it.getAccount() }
 		// NOTE: This will leak if `withContext` throws.
 		try {
 			return block(account)
@@ -44,48 +58,41 @@ class SQLiteCryptoStore(
 	}
 
 	override suspend fun <T> modifyAccount(block: (Account) -> T): T {
-		return dbSemaphore.withPermit {
-			withContext(Dispatchers.IO) {
-				usingConnection { conn ->
-					conn.autoCommit = false
-					val res = conn.savepoint {
-						val account = conn.getAccount()
-						try {
-							val res = block(account)
-							// Only save account if block finished.
-							conn.setValue("ACCOUNT", account.pickle(emptyByteArray))
-							res
-						} finally {
-							account.clear()
-						}
-					}
-					conn.commit()
+		return usingWriteConnection { conn ->
+			val res = conn.savepoint {
+				val account = conn.getAccount()
+				try {
+					val res = block(account)
+					// Only save account if block finished.
+					conn.setValue("ACCOUNT", account.pickle(emptyByteArray))
 					res
+				} finally {
+					account.clear()
 				}
 			}
+			conn.commit()
+			res
 		}
 	}
 
 	override suspend fun getInboundSessions(identityKey: String): List<Session> {
-		val query = """
-			SELECT pickle
-			FROM olm_sessions
-			WHERE identityKey = ? AND NOT isOutbound
-			ORDER BY lastSuccessfulUse DESC;
-		"""
-		return withContext(Dispatchers.IO) {
-			usingConnection { conn ->
-				conn.prepareStatement(query).use { stmt ->
-					stmt.setString(1, identityKey)
-					stmt.executeQuery().use { rs ->
-						@OptIn(ExperimentalStdlibApi::class)
-						buildList {
-							while (rs.next()) {
-								val pickle = rs.getString(1)
-								val session = Session.unpickle(emptyByteArray, pickle)
-								// NOTE: If one of these throws the previous ones will be leaked.
-								add(session)
-							}
+		return usingReadConnection { conn ->
+			val query = """
+				SELECT pickle
+				FROM olm_sessions
+				WHERE identityKey = ? AND NOT isOutbound
+				ORDER BY lastSuccessfulUse DESC;
+			"""
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, identityKey)
+				stmt.executeQuery().use { rs ->
+					@OptIn(ExperimentalStdlibApi::class)
+					buildList {
+						while (rs.next()) {
+							val pickle = rs.getString(1)
+							val session = Session.unpickle(emptyByteArray, pickle)
+							// NOTE: If one of these throws the previous ones will be leaked.
+							add(session)
 						}
 					}
 				}
@@ -94,32 +101,24 @@ class SQLiteCryptoStore(
 	}
 
 	override suspend fun storeInboundSession(identityKey: String, session: Session) {
-		dbSemaphore.withPermit {
-			withContext(Dispatchers.IO) {
-				usingConnection { conn ->
-					val query = "INSERT INTO olm_sessions(sessionId, identityKey, pickle, isOutbound) VALUES (?, ?, ?, ?);"
-					conn.prepareStatement(query).use { stmt ->
-						stmt.setString(1, session.sessionId)
-						stmt.setString(2, identityKey)
-						stmt.setString(3, session.pickle(emptyByteArray))
-						stmt.setBoolean(4, false)
-						stmt.executeUpdate()
-					}
-				}
+		usingWriteConnection { conn ->
+			val query = "INSERT INTO olm_sessions(sessionId, identityKey, pickle, isOutbound) VALUES (?, ?, ?, ?);"
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, session.sessionId)
+				stmt.setString(2, identityKey)
+				stmt.setString(3, session.pickle(emptyByteArray))
+				stmt.setBoolean(4, false)
+				stmt.executeUpdate()
 			}
 		}
 	}
 
 	override suspend fun markAsRecentlyUsed(sessionId: String): Boolean {
-		return dbSemaphore.withPermit {
-			withContext(Dispatchers.IO) {
-				usingConnection { conn ->
-					val query = "UPDATE olm_sessions SET lastSuccessfulUse = STRFTIME('%s', 'now') WHERE sessionId = ?;"
-					conn.prepareStatement(query).use { stmt ->
-						stmt.setString(1, sessionId)
-						stmt.executeUpdate() > 0
-					}
-				}
+		return usingWriteConnection { conn ->
+			val query = "UPDATE olm_sessions SET lastSuccessfulUse = STRFTIME('%s', 'now') WHERE sessionId = ?;"
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, sessionId)
+				stmt.executeUpdate() > 0
 			}
 		}
 	}
@@ -131,22 +130,19 @@ class SQLiteCryptoStore(
 		ed25119Key: String,
 		forwardingChain: List<String>
 	) {
-		dbSemaphore.withPermit {
-			withContext(Dispatchers.IO) {
-				usingConnection { conn ->
-					val query = """
-						INSERT INTO megolm_sessions(roomId, senderKey, sessionId, pickle, ed25519Key, forwardingChain) VALUES (?, ?, ?, ?, ?, ?);
-					"""
-					conn.prepareStatement(query).use { stmt ->
-						stmt.setString(1, roomId)
-						stmt.setString(2, senderKey)
-						stmt.setString(3, session.sessionId)
-						stmt.setString(4, session.pickle(emptyByteArray))
-						stmt.setString(5, ed25119Key)
-						stmt.setSerializable(6, ListSerializer(String.serializer()), forwardingChain)
-						stmt.executeUpdate()
-					}
-				}
+		usingWriteConnection { conn ->
+			val query = """
+				INSERT INTO megolm_sessions(roomId, senderKey, sessionId, pickle, ed25519Key, forwardingChain)
+				VALUES (?, ?, ?, ?, ?, ?);
+			"""
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.setString(2, senderKey)
+				stmt.setString(3, session.sessionId)
+				stmt.setString(4, session.pickle(emptyByteArray))
+				stmt.setString(5, ed25119Key)
+				stmt.setSerializable(6, ListSerializer(String.serializer()), forwardingChain)
+				stmt.executeUpdate()
 			}
 		}
 	}

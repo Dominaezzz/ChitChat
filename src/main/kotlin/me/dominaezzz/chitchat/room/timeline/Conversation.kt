@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.serialization.builtins.nullable
+import kotlinx.serialization.json.JsonNull
 import me.dominaezzz.chitchat.db.TimelineItem
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.util.loadIcon
@@ -101,7 +103,8 @@ private fun ChatItem(room: Room, item: TimelineItem) {
 	val text = when (event.type) {
 		"m.room.member" -> {
 			val content = MatrixJson.decodeFromJsonElement(MemberContent.serializer(), event.content)
-			val prevContent = event.prevContent?.let { MatrixJson.decodeFromJsonElement(MemberContent.serializer(), it) }
+			val prevContentJson = event.prevContent ?: event.unsigned?.get("prev_content") ?: JsonNull
+			val prevContent = MatrixJson.decodeFromJsonElement(MemberContent.serializer().nullable, prevContentJson)
 			val target = room.member(event.stateKey ?: return)
 
 			buildAnnotatedString {

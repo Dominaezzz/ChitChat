@@ -23,7 +23,6 @@ import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Semaphore
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.models.AppViewModel
 import me.dominaezzz.chitchat.models.RoomHeader
@@ -33,12 +32,10 @@ import me.dominaezzz.chitchat.sdk.core.topic
 import me.dominaezzz.chitchat.util.IconCache
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
-import java.nio.file.Path
-import java.nio.file.Paths
+import java.nio.file.*
 
 val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
-val databaseWriteSemaphore = Semaphore(1)
 
 data class LoginSession(
 	val accessToken: String,
@@ -49,7 +46,6 @@ data class LoginSession(
 val SessionAmbient = staticAmbientOf<LoginSession> { error("No login session provided") }
 val ClientAmbient = staticAmbientOf<MatrixClient> { error("No client provided") }
 val ContentRepoAmbient = staticAmbientOf<ContentRepository> { error("No content repo provided") }
-val DatabaseSemaphoreAmbient = staticAmbientOf<Semaphore> { error("No database semaphore provided") }
 
 @Composable
 fun AppView() {
@@ -85,7 +81,7 @@ fun MainView() {
 	val client = ClientAmbient.current
 	val session = SessionAmbient.current
 
-	val appViewModel = remember { AppViewModel(client, databaseWriteSemaphore, session) }
+	val appViewModel = remember { AppViewModel(client, session, appWorkingDir) }
 
 	LaunchedEffect(appViewModel) {
 		while (isActive) {

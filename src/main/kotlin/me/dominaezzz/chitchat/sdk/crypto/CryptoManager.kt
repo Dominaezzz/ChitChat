@@ -14,7 +14,6 @@ import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.dominaezzz.chitchat.LoginSession
-import me.dominaezzz.chitchat.sdk.core.SyncClient
 import kotlin.random.Random
 
 class CryptoManager(
@@ -147,15 +146,15 @@ class CryptoManager(
 		return decryptedPayload
 	}
 
-	suspend fun receiveEncryptedDeviceEvent(event: Event, syncClient: SyncClient) {
+	suspend fun receiveEncryptedDeviceEvent(event: Event, deviceManager: DeviceManager) {
 		try {
-			handleEncryptedDeviceEvent(event, syncClient)
+			handleEncryptedDeviceEvent(event, deviceManager)
 		} catch (e: Exception) {
 			e.printStackTrace()
 		}
 	}
 
-	private suspend fun handleEncryptedDeviceEvent(event: Event, syncClient: SyncClient) {
+	private suspend fun handleEncryptedDeviceEvent(event: Event, deviceManager: DeviceManager) {
 		val content = MatrixJson.decodeFromJsonElement(EncryptedContent.serializer(), event.content)
 
 		// Only support olm for to device events.
@@ -166,7 +165,7 @@ class CryptoManager(
 
 		check(olmPayload.sender == event.sender)
 
-		val senderDevices = syncClient.getUserDevices(olmPayload.sender) ?: return
+		val senderDevices = deviceManager.getUserDevices(olmPayload.sender) ?: return
 		val senderSigningKey = senderDevices.asSequence()
 			.filter { it.keys["curve25519:${it.deviceId}"] == content.senderKey }
 			.filter { "m.olm.v1.curve25519-aes-sha2" in it.algorithms }
