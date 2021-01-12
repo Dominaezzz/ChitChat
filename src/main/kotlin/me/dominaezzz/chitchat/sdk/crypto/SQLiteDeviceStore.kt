@@ -1,54 +1,63 @@
 package me.dominaezzz.chitchat.sdk.crypto
 
 import io.github.matrixkt.models.DeviceKeys
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import me.dominaezzz.chitchat.db.getSerializable
-import org.sqlite.SQLiteConfig
+import me.dominaezzz.chitchat.db.usingStatement
+import me.dominaezzz.chitchat.sdk.util.SQLiteHelper
 import java.nio.file.Path
 import java.sql.Connection
-import java.sql.DriverManager
 
 class SQLiteDeviceStore(private val databaseFile: Path): DeviceStore {
-	private val writeSemaphore = Semaphore(1)
-
-	private fun createConnection(): Connection {
-		val config = SQLiteConfig()
-		config.enforceForeignKeys(true)
-		config.setJournalMode(SQLiteConfig.JournalMode.WAL)
-		// config.setReadOnly()
-
-		return DriverManager.getConnection("jdbc:sqlite:${databaseFile.toAbsolutePath()}", config.toProperties())
-	}
-
-	private suspend inline fun <T> usingReadConnection(crossinline block: (Connection) -> T): T {
-		return withContext(Dispatchers.IO) {
-			createConnection().use(block)
-		}
-	}
-	private suspend inline fun <T> usingWriteConnection(crossinline block: (Connection) -> T): T {
-		return writeSemaphore.withPermit {
-			withContext(Dispatchers.IO) {
-				createConnection().use { conn ->
-					conn.autoCommit = false
-					block(conn)
-				}
+	private val helper = object : SQLiteHelper(databaseFile, 1) {
+		override fun onCreate(connection: Connection) {
+			connection.usingStatement { stmt ->
+				stmt.execute("""
+					CREATE TABLE tracked_users
+					(
+						userId     TEXT    NOT NULL PRIMARY KEY,
+						isOutdated BOOLEAN NOT NULL DEFAULT FALSE,
+						sync_token TEXT
+					);
+				""")
+				stmt.execute("""
+					CREATE TABLE device_list
+					(
+						userId     TEXT NOT NULL,
+						deviceId   TEXT NOT NULL,
+						algorithms TEXT NOT NULL CHECK (JSON_VALID(algorithms)),
+						keys       TEXT NOT NULL CHECK (JSON_VALID(keys)),
+						signatures TEXT NOT NULL CHECK (JSON_VALID(signatures)),
+						unsigned   TEXT NOT NULL CHECK (JSON_VALID(unsigned)),
+					
+						json       TEXT GENERATED ALWAYS AS (
+							JSON_OBJECT(
+								'user_id', userId,
+								'device_id', deviceId,
+								'algorithms', JSON(algorithms),
+								'keys', JSON(keys),
+								'signatures', JSON(signatures),
+								'unsigned', JSON(unsigned)
+							)
+						),
+					
+						PRIMARY KEY (userId, deviceId),
+						FOREIGN KEY (userId) REFERENCES tracked_users (userId)
+					);
+				""")
 			}
 		}
 	}
 
 	suspend fun <T> read(block: (Connection) -> T): T {
-		return usingReadConnection { block(it) }
+		return helper.usingReadConnection(block)
 	}
 	suspend fun <T> write(block: (Connection) -> T): T {
-		return usingWriteConnection { block(it) }
+		return helper.usingWriteConnection(block)
 	}
 
 	override suspend fun getUserDevice(userId: String, deviceId: String): Pair<DeviceKeys?, Boolean>? {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = """
 				SELECT json, isOutdated
 				FROM tracked_users
@@ -72,7 +81,7 @@ class SQLiteDeviceStore(private val databaseFile: Path): DeviceStore {
 	}
 
 	override suspend fun getUserDevices(userId: String): Pair<List<DeviceKeys>, Boolean>? {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = """
 				SELECT JSON_GROUP_ARRAY(JSON(json)) FILTER (WHERE dl.userId IS NOT NULL), isOutdated
 				FROM tracked_users

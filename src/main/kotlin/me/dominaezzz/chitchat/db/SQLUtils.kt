@@ -93,10 +93,6 @@ inline fun <T> Connection.withoutIndex(tableName: String, indexName: String, blo
     }
 }
 
-var Connection.version: Int
-    get() = usingStatement { stmt -> stmt.executeQuery("PRAGMA user_version;").use { check(it.next()); it.getInt(1) } }
-    set(value) { usingStatement { stmt -> stmt.executeUpdate("PRAGMA user_version = $value;") } }
-
 fun ResultSet.getJsonElement(columnLabel: String): JsonElement? {
     val content = getString(columnLabel)
     return if (content != null) {

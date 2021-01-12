@@ -11,10 +11,6 @@ import io.github.matrixkt.models.sync.RoomSummary
 import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.utils.MatrixJson
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.SetSerializer
@@ -23,50 +19,183 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.db.*
-import org.sqlite.SQLiteConfig
+import me.dominaezzz.chitchat.sdk.util.SQLiteHelper
 import java.io.Closeable
 import java.nio.file.Path
 import java.sql.Connection
-import java.sql.DriverManager
 import java.sql.Types
 
 class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
-	private val writeSemaphore = Semaphore(1)
+	private val helper = object : SQLiteHelper(databaseFile, 1) {
+		override fun onCreate(connection: Connection) {
+			connection.usingStatement { stmt ->
+				stmt.execute("""
+					CREATE TABLE key_value_store
+					(
+						key   TEXT PRIMARY KEY NOT NULL,
+						value TEXT
+					);
+				""")
+				stmt.execute("""
+					CREATE TABLE room_metadata
+					(
+						roomId                TEXT PRIMARY KEY NOT NULL,
+						summary               TEXT,
+						loadedMembershipTypes TEXT NOT NULL CHECK (JSON_VALID(loadedMembershipTypes))
+					);
+				""")
+				stmt.execute("""
+					CREATE TABLE room_timelines
+					(
+						roomId     TEXT    NOT NULL,
+						timelineId INTEGER NOT NULL,
+						token      TEXT,
+					
+						PRIMARY KEY (roomId, timelineId),
+						FOREIGN KEY (roomId) REFERENCES room_metadata(roomId)
+							ON DELETE CASCADE
+					);
+				""")
+				stmt.execute("""
+					CREATE TABLE room_events
+					(
+						roomId      TEXT    NOT NULL,
+						eventId     TEXT    NOT NULL,
+						type        TEXT    NOT NULL,
+						content     TEXT    NOT NULL CHECK (JSON_VALID(content)),
+						sender      TEXT    NOT NULL,
+						timestamp   INTEGER NOT NULL,
+						unsigned    TEXT    CHECK (unsigned IS NULL OR JSON_VALID(unsigned)),
+						stateKey    TEXT,
+						prevContent TEXT    CHECK (prevContent IS NULL OR JSON_VALID(prevContent)),
+					
+						json        TEXT GENERATED ALWAYS AS (
+							JSON_OBJECT(
+								'room_id', roomId,
+								'event_id', eventId,
+								'type', type,
+								'content', JSON(content),
+								'sender', sender,
+								'origin_server_ts', timestamp,
+								'unsigned', JSON(unsigned),
+								'state_key', stateKey,
+								'prev_content', JSON(prevContent)
+							)
+						),
+					
+						timelineId    INTEGER NOT NULL,
+						timelineOrder INTEGER CHECK (timelineOrder IS NOT NULL OR stateKey IS NOT NULL),
+					
+						isLatestState BOOLEAN NOT NULL DEFAULT FALSE CHECK (NOT isLatestState OR stateKey NOT NULL),
+					
+						PRIMARY KEY (roomId, eventId),
+						FOREIGN KEY (roomId, timelineId) REFERENCES room_timelines(roomId, timelineId)
+							ON UPDATE CASCADE,
+						FOREIGN KEY (roomId) REFERENCES room_metadata(roomId)
+							ON DELETE CASCADE
+					);
+				""")
+				stmt.execute("""
+					CREATE INDEX room_timeline ON room_events (roomId, timelineId, timelineOrder DESC, type, stateKey);
+				""")
+				stmt.execute("""
+					CREATE UNIQUE INDEX latest_room_state ON room_events (roomId, type, stateKey) WHERE isLatestState;
+				""")
+				stmt.execute("""
+					CREATE UNIQUE INDEX compressed_state ON room_events (roomId, timelineId, type, stateKey) WHERE timelineOrder IS NULL;
+				""")
+				stmt.execute("""
+					CREATE TRIGGER latest_room_state
+						AFTER INSERT ON room_events
+						WHEN NOT NEW.isLatestState AND NEW.stateKey NOT NULL
+					BEGIN
+						UPDATE room_events
+						SET isLatestState = FALSE
+						WHERE isLatestState
+							AND roomId = NEW.roomId
+							AND type = NEW.type
+							AND stateKey = NEW.stateKey
+							AND (timelineId, -COALESCE(timelineOrder, 0)) > (NEW.timelineId, -COALESCE(NEW.timelineOrder, 0));
+						UPDATE room_events
+						SET isLatestState = TRUE
+						WHERE roomId = NEW.roomId
+							AND eventId = NEW.eventId
+							AND NOT EXISTS(
+								SELECT 1
+								FROM room_events
+								WHERE isLatestState
+								AND roomId = NEW.roomId
+								AND type = NEW.type
+								AND stateKey = NEW.stateKey
+							);
+					END;
+				""")
+				stmt.execute("""
+					CREATE TABLE room_invitations
+					(
+						roomId   TEXT NOT NULL,
+						type     TEXT NOT NULL,
+						stateKey TEXT NOT NULL,
+						sender   TEXT NOT NULL,
+						content  TEXT NOT NULL CHECK (JSON_VALID(content)),
+					
+						PRIMARY KEY (roomId, type, stateKey)
+					);
+				""")
+				stmt.execute("""
+					CREATE TABLE account_data
+					(
+						type    TEXT NOT NULL,
+						roomId  TEXT,
+						content TEXT NOT NULL CHECK (JSON_VALID(content)),
+					
+						FOREIGN KEY (roomId) REFERENCES room_metadata(roomId)
+							ON DELETE CASCADE
+					);
+				""")
+				stmt.execute("""
+					CREATE UNIQUE INDEX global_account_data ON account_data(type) WHERE roomId IS NULL;
+				""")
+				stmt.execute("""
+					CREATE UNIQUE INDEX room_account_data ON account_data(roomId, type) WHERE roomId IS NOT NULL;
+				""")
+				stmt.execute("""
+					CREATE TABLE room_receipts
+					(
+						roomId  TEXT NOT NULL,
+						userId  TEXT NOT NULL,
+						type    TEXT NOT NULL,
+						eventId TEXT NOT NULL,
+						content TEXT NOT NULL CHECK (JSON_VALID(content)),
+					
+						PRIMARY KEY (roomId, userId, type),
+						FOREIGN KEY (roomId) REFERENCES room_metadata(roomId)
+							ON DELETE CASCADE
+					);					
+				""")
 
-	private fun createConnection(): Connection {
-		val config = SQLiteConfig()
-		config.enforceForeignKeys(true)
-		config.setJournalMode(SQLiteConfig.JournalMode.WAL)
-		// config.setReadOnly()
-
-		return DriverManager.getConnection("jdbc:sqlite:${databaseFile.toAbsolutePath()}", config.toProperties())
-	}
-
-	private suspend inline fun <T> usingReadConnection(crossinline block: (Connection) -> T): T {
-		return withContext(Dispatchers.IO) {
-			createConnection().use(block)
-		}
-	}
-	private suspend inline fun <T> usingWriteConnection(crossinline block: (Connection) -> T): T {
-		return writeSemaphore.withPermit {
-			withContext(Dispatchers.IO) {
-				createConnection().use { conn ->
-					conn.autoCommit = false
-					block(conn)
-				}
+				stmt.execute("""
+					CREATE TABLE device_events
+					(
+						id      INTEGER PRIMARY KEY AUTOINCREMENT,
+						type    TEXT NOT NULL,
+						content TEXT NOT NULL CHECK (JSON_VALID(content)),
+						sender  TEXT NOT NULL
+					);
+				""")
 			}
 		}
 	}
 
 	suspend fun <T> read(block: (Connection) -> T): T {
-		return usingReadConnection { block(it) }
+		return helper.usingReadConnection { block(it) }
 	}
 	suspend fun <T> write(block: (Connection) -> T): T {
-		return usingWriteConnection { block(it) }
+		return helper.usingWriteConnection { block(it) }
 	}
 
 	override suspend fun getSyncToken(): String? {
-		return usingReadConnection {
+		return helper.usingReadConnection {
 			it.getValue("SYNC_TOKEN")
 		}
 	}
@@ -224,7 +353,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun storeSync(sync: SyncResponse, token: String?) {
-		usingWriteConnection { conn ->
+		helper.usingWriteConnection { conn ->
 			// Ensure sync token hasn't changed while we calling the endpoint.
 			// May happen if multiple instances of app are running.
 			if (token != conn.getValue("SYNC_TOKEN")) {
@@ -329,7 +458,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getOneTimeKeysCount(): Map<String, Long> {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val count = conn.getValue("ONE_TIME_KEYS_COUNT")
 			if (count != null) {
 				Json.decodeFromString(MapSerializer(String.serializer(), Long.serializer()), count)
@@ -340,7 +469,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getJoinedRooms(userId: String): Set<String> {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = """
 				SELECT room_metadata.roomId
 				FROM room_metadata
@@ -364,7 +493,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getInvitations(): Map<String, List<StrippedState>> {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = """
 				SELECT JSON_OBJECT(roomId, JSON_GROUP_ARRAY(JSON_OBJECT(
 					'type', type,
@@ -388,7 +517,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getAccountData(type: String): JsonObject? {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = "SELECT content FROM account_data WHERE roomId IS NULL AND type = ?;"
 			conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, type)
@@ -405,7 +534,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 
 
 	override suspend fun getState(roomId: String, type: String, stateKey: String): JsonObject? {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = "SELECT content FROM room_events WHERE roomId = ? AND type = ? AND stateKey = ? AND isLatestState;"
 			conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, roomId)
@@ -423,7 +552,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getAccountData(roomId: String, type: String): JsonObject? {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = "SELECT content FROM account_data WHERE roomId = ? AND type = ?;"
 			conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, roomId)
@@ -440,7 +569,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getMembers(roomId: String, membership: Membership): Set<String> {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = """
 					SELECT stateKey
 					FROM room_events
@@ -463,7 +592,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getReadReceipts(roomId: String): List<SyncStore.ReadReceipt> {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = """
 				SELECT userId, eventId, content
 				FROM room_receipts
@@ -491,7 +620,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getSummary(roomId: String): RoomSummary {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = "SELECT summary FROM room_metadata WHERE roomId = ?;"
 			conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, roomId)
@@ -507,7 +636,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getLazyLoadingState(roomId: String): SyncStore.LazyLoadingState {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			val query = """
 				WITH
 					room_tokens(roomId, token, idx) AS (
@@ -564,7 +693,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun storeMembers(roomId: String, response: GetMembersResponse): List<MatrixEvent> {
-		return usingWriteConnection { conn ->
+		return helper.usingWriteConnection { conn ->
 			val query = "SELECT MAX(timelineId) FROM room_events WHERE roomId = ?;"
 			val oldestTimelineId = conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, roomId)
@@ -637,7 +766,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 
 
 	override suspend fun getPaginationToken(roomId: String, eventId: String): String? {
-		return usingReadConnection { conn ->
+		return helper.usingReadConnection { conn ->
 			// Find first event in timeline and get corresponding token.
 			val query = """
 				SELECT token
@@ -666,7 +795,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			return emptyList()
 		}
 
-		return usingWriteConnection { conn ->
+		return helper.usingWriteConnection { conn ->
 			val getTimelineIdQuery = "SELECT timelineId FROM room_timelines WHERE roomId = ? AND token = ?"
 			val timelineId = conn.prepareStatement(getTimelineIdQuery).use { stmt ->
 				stmt.setString(1, roomId)
@@ -854,7 +983,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	suspend fun clear() {
-		usingWriteConnection { conn ->
+		helper.usingWriteConnection { conn ->
 			conn.usingStatement { stmt ->
 				stmt.execute("DELETE FROM key_value_store;")
 				stmt.execute("DELETE FROM room_metadata;")
