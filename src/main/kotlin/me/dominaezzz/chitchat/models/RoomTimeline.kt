@@ -62,7 +62,7 @@ class RoomTimeline(
 			.conflate()
 			.collect {
 				// TODO: What if this is empty though... like if all the events in
-				// the database are not supported.
+				//  the database are not supported.
 				val item = _events.value.first()
 				val targetEvent = item.event
 				val eventId = targetEvent.eventId
