@@ -62,7 +62,7 @@ class AppViewModel(
 			.then(nullsLast(compareBy { it.favourite?.order }))
 			.thenBy { it.lowPriority != null }
 			.then(nullsLast(compareBy { it.lowPriority?.order }))
-			.thenBy { it.displayName }
+			.thenBy(String.CASE_INSENSITIVE_ORDER) { it.displayName }
 
 		return syncClient.joinedRooms
 			.flatMapLatest { joinedRooms ->
