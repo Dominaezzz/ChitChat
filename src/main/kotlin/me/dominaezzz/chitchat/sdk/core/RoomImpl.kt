@@ -60,11 +60,6 @@ class RoomImpl(
 			.shareIn(scope, shareConfig, 1)
 	}
 
-	private fun getState(type: String, stateKey: String): Flow<JsonObject?> {
-		return stateFlowMap.getFlow(type to stateKey)
-	}
-
-
 	private val accountDataFlowMap = MapOfFlows<String, JsonObject?> { type ->
 		syncFlow.mapNotNull { it.rooms }
 			.transform { rooms ->
@@ -78,10 +73,6 @@ class RoomImpl(
 				emit(content)
 			}
 			.shareIn(scope, shareConfig, 1)
-	}
-
-	private fun getAccountData(type: String): Flow<JsonObject?> {
-		return accountDataFlowMap.getFlow(type)
 	}
 
 
@@ -156,11 +147,11 @@ class RoomImpl(
 	}.shareIn(scope, shareConfig, 1)
 
 	override fun <T> getState(type: String, stateKey: String, serializer: KSerializer<T>): Flow<T?> {
-		return getState(type, stateKey).decodeJson(serializer)
+		return stateFlowMap.getFlow(type to stateKey).decodeJson(serializer)
 	}
 
 	override fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?> {
-		return getAccountData(type).decodeJson(serializer)
+		return accountDataFlowMap.getFlow(type).decodeJson(serializer)
 	}
 
 	private val lazyMemberMap = MapOfFlows<String, MemberContent?> { userId ->
