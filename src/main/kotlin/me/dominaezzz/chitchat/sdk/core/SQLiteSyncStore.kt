@@ -437,6 +437,37 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 							}
 						}
 					}
+					for ((roomId, room) in rooms.leave) {
+						val timeline = room.timeline
+						if (timeline != null) {
+							var order = if (timeline.limited == true) {
+								// Create new batch
+								utils.createNewTimeline(roomId, timeline.prevBatch!!)
+								1
+							} else {
+								utils.getLastOrder(roomId) + 1
+							}
+
+							val stateEvents = room.state?.events
+							if (stateEvents != null) {
+								for (event in stateEvents) {
+									utils.insertRoomEvent(roomId, event, null)
+								}
+							}
+							for (event in timeline.events) {
+								val changes = utils.insertRoomEvent(roomId, event, order)
+								if (changes > 0) order++
+							}
+						}
+						// else { /* insert state events ? */ }
+
+						val accountEvents = room.accountData?.events
+						if (accountEvents != null) {
+							for (event in accountEvents) {
+								utils.updateAccountData(roomId, event.type, event.content)
+							}
+						}
+					}
 
 					for (roomId in (rooms.leave.keys + rooms.join.keys)) {
 						utils.clearInvitedState(roomId)
