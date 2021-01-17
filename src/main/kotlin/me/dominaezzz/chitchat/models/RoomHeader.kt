@@ -7,7 +7,6 @@ class RoomHeader(
 	val id: String,
 	val room: Room,
 	val displayName: String,
-	val memberCount: Int,
 	val avatarUrl: String?,
 	val favourite: TagContent.Tag?,
 	val lowPriority: TagContent.Tag?

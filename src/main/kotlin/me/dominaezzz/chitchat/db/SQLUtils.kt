@@ -1,11 +1,8 @@
 package me.dominaezzz.chitchat.db
 
-import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.jsonObject
 import me.dominaezzz.chitchat.projectDir
 import org.sqlite.SQLiteConfig
 import java.nio.file.Path
@@ -93,24 +90,6 @@ inline fun <T> Connection.withoutIndex(tableName: String, indexName: String, blo
     }
 }
 
-fun ResultSet.getJsonElement(columnLabel: String): JsonElement? {
-    val content = getString(columnLabel)
-    return if (content != null) {
-        MatrixJson.parseToJsonElement(content)
-    } else {
-        null
-    }
-}
-
-fun ResultSet.getJsonElement(columnIndex: Int): JsonElement? {
-    val content = getString(columnIndex)
-    return if (content != null) {
-        MatrixJson.parseToJsonElement(content)
-    } else {
-        null
-    }
-}
-
 fun <T> ResultSet.getSerializable(columnLabel: String, deserializer: DeserializationStrategy<T>): T? {
     val content = getString(columnLabel)
     return if (content != null) {
@@ -136,18 +115,4 @@ fun <T> PreparedStatement.setSerializable(parameterIndex: Int, serializer: Seria
     } else {
         setString(parameterIndex, null)
     }
-}
-
-fun ResultSet.getEvent(): MatrixEvent {
-    return MatrixEvent(
-        getString("type"),
-        getJsonElement("content")!!.jsonObject,
-        getString("eventId"),
-        getString("sender"),
-        getLong("timestamp"),
-        getJsonElement("unsigned")?.jsonObject,
-        getString("roomId"),
-        getString("stateKey"),
-        getJsonElement("prevContent")?.jsonObject
-    )
 }

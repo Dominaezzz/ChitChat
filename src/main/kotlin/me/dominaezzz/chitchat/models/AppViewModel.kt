@@ -70,14 +70,12 @@ class AppViewModel(
 					combine(
 						room.getDisplayName(session.userId),
 						room.getDisplayAvatar(session.userId),
-						room.joinedMemberCount,
 						room.tags
-					) { displayName, displayAvatar, memberCount, tags ->
+					) { displayName, displayAvatar, tags ->
 						RoomHeader(
 							room.id,
 							room,
 							displayName,
-							memberCount,
 							displayAvatar,
 							tags["m.favourite"],
 							tags["m.lowpriority"]

@@ -195,7 +195,10 @@ fun RoomListView(
 							onClick = { onSelectedRoomChanged(room.id) }
 						),
 						text = { Text(room.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-						secondaryText = { Text("${room.memberCount} members") },
+						secondaryText = {
+							val count by room.room.joinedMemberCount.collectAsState(0)
+							Text("$count members")
+						},
 						singleLineSecondaryText = true,
 						icon = {
 							val image = room.avatarUrl?.let { loadIcon(URI(it)) }
