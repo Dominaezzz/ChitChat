@@ -54,7 +54,7 @@ fun Conversation(
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
 			itemsIndexed(timelineEvents) { idx, item ->
 				if (idx == timelineEvents.lastIndex) {
-					onActive {
+					DisposableEffect(item.event.eventId) {
 						shouldBackPaginate.value = true
 						onDispose {
 							shouldBackPaginate.value = false

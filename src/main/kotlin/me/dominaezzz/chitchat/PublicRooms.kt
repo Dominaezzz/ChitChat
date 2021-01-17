@@ -83,7 +83,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 				LazyColumn(Modifier.padding(end = 12.dp), state = state) {
 					itemsIndexed(rooms) { idx, room ->
 						if (idx == rooms.lastIndex) {
-							onActive {
+							DisposableEffect(room.roomId) {
 								shouldPaginate.value = true
 								onDispose {
 									shouldPaginate.value = false
