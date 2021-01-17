@@ -860,10 +860,10 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					roomId, eventId, type, content, sender, stateKey, prevContent, timestamp, unsigned,
 					timelineId, timelineOrder
 				)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
 				ON CONFLICT(roomId, eventId) DO UPDATE
-					SET timelineOrder = excluded.timelineOrder
-					WHERE timelineOrder IS NULL AND timelineId = excluded.timelineId;
+					SET timelineOrder = ?11
+					WHERE timelineOrder IS NULL AND timelineId = ?10;
 			""")
 
 			val insertedEventIds = mutableSetOf<String>()

@@ -1,0 +1,2505 @@
+{
+  "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+  "events": [
+    {
+      "type": "m.room.create",
+      "content": {
+        "room_version": "5",
+        "predecessor": {
+          "room_id": "!YkZelGRiqijtzXZODa:matrix.org",
+          "event_id": "$157437404434zqBPJ:matrix.org"
+        },
+        "creator": "@abuse:matrix.org"
+      },
+      "event_id": "$F6qMAZa1zo94Clw2ZlsC9h76rIZ-oLSo0i33XjRtElw",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374045022,
+      "unsigned": {
+        "age": 36475838605
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "join",
+        "displayname": "Abuse Management",
+        "avatar_url": "mxc://matrix.org/NZGChxcCXbBvgkCNZTLXlpux"
+      },
+      "event_id": "$1m8qhlfalofbzPbqp1FN9buRrH62753NpAu9OSphLS0",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374045141,
+      "unsigned": {
+        "age": 36475838486
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@abuse:matrix.org"
+    },
+    {
+      "type": "m.room.power_levels",
+      "content": {
+        "users": {
+          "@abuse:matrix.org": 100
+        },
+        "users_default": 0,
+        "events": {
+          "m.room.name": 50,
+          "m.room.power_levels": 100,
+          "m.room.history_visibility": 100,
+          "m.room.canonical_alias": 50,
+          "m.room.avatar": 50
+        },
+        "events_default": 0,
+        "state_default": 50,
+        "ban": 50,
+        "kick": 50,
+        "redact": 50,
+        "invite": 0
+      },
+      "event_id": "$1A2kqAYDOzgxuN51cmbRsUgIvLaTkcMgi7F61ZXygA0",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374045345,
+      "unsigned": {
+        "age": 36475838282
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.server_acl",
+      "content": {
+        "allow": [
+          "*"
+        ],
+        "allow_ip_literals": false,
+        "deny": [
+          "*.200acres.org",
+          "*.glowers.club",
+          "*.gossip.love",
+          "*.matrix.kiwifarms.net",
+          "*.nerdsin.space",
+          "*.ordoevangelistarum.com",
+          "*.zemos.net",
+          "200acres.org",
+          "ardaxi.com",
+          "c-24-11-108-182.hsd1.ut.comcast.net",
+          "glowers.club",
+          "gossip.love",
+          "matrix.kiwifarms.net",
+          "nerdsin.space",
+          "ordoevangelistarum.com",
+          "zemos.net"
+        ]
+      },
+      "event_id": "$wVp_L_8Q2TK7-pYpIbOpe7jTrqtmWEvL3USNZuT9AAE",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374045433,
+      "unsigned": {
+        "age": 36475838194
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.avatar",
+      "content": {
+        "url": "mxc://matrix.org/VfriqMsKIrczoEzaKRJOYvnH"
+      },
+      "event_id": "$TMDWqDqx4OJg8Yi5T03v3Mr2oDpBLHeVVNoPQEt_nTI",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374045530,
+      "unsigned": {
+        "age": 36475838097
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.guest_access",
+      "content": {
+        "guest_access": "can_join"
+      },
+      "event_id": "$D9VgXWXFSK99Lw6HFoygVrdwEOlBxF1cTt57ef6GImc",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374045672,
+      "unsigned": {
+        "age": 36475837955
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.history_visibility",
+      "content": {
+        "history_visibility": "world_readable"
+      },
+      "event_id": "$J7hlzs_dWW6UWGPT4oOFzTQHKmW_4xwvnNbYTxWnMZc",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374045766,
+      "unsigned": {
+        "age": 36475837861
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.join_rules",
+      "content": {
+        "join_rule": "public"
+      },
+      "event_id": "$hxyFtkeSYQ1WtHwZ6nEGY_vKTey2Wovr71s-Zu3Qk9I",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374045973,
+      "unsigned": {
+        "age": 36475837654
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.name",
+      "content": {
+        "name": "#matrix-spec"
+      },
+      "event_id": "$ptYNb71V-BwXWltCiGEOasdlrJ5pF0ihTU9pjHz9DDU",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374046167,
+      "unsigned": {
+        "age": 36475837460
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.related_groups",
+      "content": {
+        "groups": [
+          "+matrix:matrix.org",
+          "+community:matrix.org",
+          "+freenode:matrix.org"
+        ]
+      },
+      "event_id": "$ij84-jBull6-X7QWG7A2i_QBBVTSNDnnVOPyBqYPWvo",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374046361,
+      "unsigned": {
+        "age": 36475837266
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.topic",
+      "content": {
+        "topic": "Discussion of specific Matrix Spec Change proposals | https://matrix.org/docs/spec/proposals | Design draft folder at: https://drive.google.com/drive/folders/0B4wHq8qP86r2ck15MHEwMmlNVUk"
+      },
+      "event_id": "$yo7HD7S2W0iWT7Rq1X5RCJtJuPDzPKMtO8F3Ho8Ha8A",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374046449,
+      "unsigned": {
+        "age": 36475837178
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban"
+      },
+      "event_id": "$V032iQNGwvM_X-_k2FoOtISdipatAuCHGERB5fB8hq0",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374046838,
+      "unsigned": {
+        "age": 36475836789
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@anderson:matrix.heldscal.la"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "banned from the community for previous abuse"
+      },
+      "event_id": "$-ytm6x4UiNbWFNRg_l7tQlWc1yElkmFiCl4yPIqahEE",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374047180,
+      "unsigned": {
+        "age": 36475836447
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@calcatrix:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Banned from the community for previous abuse"
+      },
+      "event_id": "$Q8B_vURkLvMy-c-7_EqrAQhtFcuNAqG7HcD3gwEI-PU",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374047328,
+      "unsigned": {
+        "age": 36475836299
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@disruptivemember:beerfactory.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban"
+      },
+      "event_id": "$XRZ0h0SZV5VsLvTz0dE_xQMJTDAsp6WW_5Ht4U5GBVA",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374047534,
+      "unsigned": {
+        "age": 36475836093
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@erikj:tedomum.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Banned from the community for previous abuse"
+      },
+      "event_id": "$cF-q2h4OqzaqBXH-tBtxLj75xjwucV7lObeRBrG9fjU",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374047688,
+      "unsigned": {
+        "age": 36475835939
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@flubbergas:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Banned from the community for previous abuse"
+      },
+      "event_id": "$yHEE_RzxxReRmfImaBQ80JxcJJ57ErkwLaEKo3hXLz0",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374047921,
+      "unsigned": {
+        "age": 36475835706
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@flubbergas:tedomum.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Constant abusive behaviour"
+      },
+      "event_id": "$xkBhoK_MZTF3CXz5Ugl3Xa9gIl9Nma2ZFPQ3EvRWnjQ",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374048726,
+      "unsigned": {
+        "age": 36475834901
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@garrulous:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "abuse, impersonation, ban evasion"
+      },
+      "event_id": "$nKm8Yzabc8FBxzP5F6o6E1hBNkVP9ZSMn9PBSUO1xek",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374051139,
+      "unsigned": {
+        "age": 36475832488
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@hawkowl:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban"
+      },
+      "event_id": "$AVYyequiW_ZNHdcZjpMAAU7rdGgt4lWgg1tMMywzRMA",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374051969,
+      "unsigned": {
+        "age": 36475831658
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@heyzeus:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$zjvPeyEUG7U3QVe9T1GbDPRVxNCor1vkobiyHjBdK1k",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374053007,
+      "unsigned": {
+        "age": 36475830620
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@hornblower:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$BQRXen39KRVWI36shzeOIBdXn3efwDe3UTgqQS0xnkY",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374053290,
+      "unsigned": {
+        "age": 36475830337
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@iehova:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$7yb1_lckQaBTos11RabeysNnDZ3B_w6IAdrAcPXull4",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374053542,
+      "unsigned": {
+        "age": 36475830085
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@j:matrix.heldscal.la"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Constant abusive behaviour"
+      },
+      "event_id": "$cDkX8nwJ0Lu-BhgEcVHi-WE5zBcpaZJuQFxaVh9MpbA",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374053728,
+      "unsigned": {
+        "age": 36475829899
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@jason:zemos.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "impersonation"
+      },
+      "event_id": "$ous7eQMpHoRZ_EAtMXBl9wzyz_xUQF66ry0AfHMTI2g",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374053921,
+      "unsigned": {
+        "age": 36475829706
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@jcrowcroft:tedomum.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$XECiCwmG7flYCarDTW9_tW9gyX0a60_YnzfXHiSIjsM",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374054257,
+      "unsigned": {
+        "age": 36475829370
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@judenfrei:matrix.ordoevangelistarum.com"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Constant abusive behaviour"
+      },
+      "event_id": "$lQWpCHTMx1MdXMj4jXZdgSyZYbiHUWMWC0OA-4Kfg9g",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374058850,
+      "unsigned": {
+        "age": 36475824777
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@jzk1:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "banned from the community for previous abuse"
+      },
+      "event_id": "$Vyy_cnZC4GpQ8apZt36Dodavf9cqVurepU4kbIjJwC4",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374060088,
+      "unsigned": {
+        "age": 36475823539
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@jzk:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Constant abusive behaviour"
+      },
+      "event_id": "$nhxNp3UT5pyEGc5MsHvFn9iofnAlrqA6Zy6S0W1OoFI",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374060478,
+      "unsigned": {
+        "age": 36475823149
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@jzk:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Constant abusive behaviour"
+      },
+      "event_id": "$JH2meEAJGg-avy5UD4lIDr8_naL1aV0nqk4pSwWOpWI",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374061915,
+      "unsigned": {
+        "age": 36475821712
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@jzk:zemos.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "reason": "constantly obnoxious CoC violations",
+        "membership": "ban"
+      },
+      "event_id": "$OmHAV8XiyeyS4Ud7hhfVy2Xnz5Bakl2qbmWSY38hOXk",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374062576,
+      "unsigned": {
+        "age": 36475821051
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@lindalap:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Constant abusive behaviour"
+      },
+      "event_id": "$5_A60UTN5twmMpAOLKMmtNSy9gPjFvrVNhtCVUZdT2Y",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374063304,
+      "unsigned": {
+        "age": 36475820323
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@loquacious:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "banned from the community for previous abuse"
+      },
+      "event_id": "$WL78G_v8UqUqBc9sK42dEa70t64KfSN9bSTQ7KgaGF4",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374064100,
+      "unsigned": {
+        "age": 36475819527
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mandar_se:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "banned from the community for previous abuse"
+      },
+      "event_id": "$poqaYBeNodngGOvk2v4Li5PiLx3pYJ742x7CDDY7Utk",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374064463,
+      "unsigned": {
+        "age": 36475819164
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mandar_see_i_told_you:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "seriously"
+      },
+      "event_id": "$r4tQKR2QvNcFIJd89j3rb76Om3CRf9a9lmkcui9EzU0",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374064791,
+      "unsigned": {
+        "age": 36475818836
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@marschauf:perthchat.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban"
+      },
+      "event_id": "$Dq2kfYPJKu5BVmqDpK418Zd7SKx-Ku33QQmmQRF22Bw",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374065144,
+      "unsigned": {
+        "age": 36475818483
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@marschaufdiefeldherrnhalle:perthchat.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$HF4jg5lhCqRetXMGvfmM1qDDXsTIcXSTLGU4_H7xjs8",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374065494,
+      "unsigned": {
+        "age": 36475818133
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mastodon:hackerspaces.be"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Code of Conduct violations"
+      },
+      "event_id": "$PEnuco5vNxeBCyssLGCMIMu_IZIg1Njn3iutpRj9L4c",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374066178,
+      "unsigned": {
+        "age": 36475817449
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@max:kamax.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban"
+      },
+      "event_id": "$3BCKdrzKya6EcPi0SSdjZKM6yz9NYynLmlPdSDQNti8",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374066388,
+      "unsigned": {
+        "age": 36475817239
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@nazis:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "banned from the community for previous abuse"
+      },
+      "event_id": "$5yLN2WUOzpkgzOKjWgUaAD2FD175TNKL6NUrNW64bBA",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374066521,
+      "unsigned": {
+        "age": 36475817106
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@nopal:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "banned from the community for previous abuse"
+      },
+      "event_id": "$1wu8I4q0tdTKYaeNLeVy-AlQ0Y_mZXWkBdsjrQRYWxo",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374066673,
+      "unsigned": {
+        "age": 36475816954
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@parabens.:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$B6qxaWMrUG8CIk4_W40JWNi3XQ0yL74X_kVCzOiKzHI",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374066890,
+      "unsigned": {
+        "age": 36475816737
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@pill_cutter:perthchat.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$Bv0Gqb25pOF4z07N_Af956RGycChC34sQxk43BcABV4",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374067025,
+      "unsigned": {
+        "age": 36475816602
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@pill_popper:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Banned from the community for previous abuse"
+      },
+      "event_id": "$z1AQn9hcPoVuqWesiTtAWmu--TUdtNj6szxrU5-FciQ",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374067225,
+      "unsigned": {
+        "age": 36475816402
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@pinion:grin.hu"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$wlJtMbrPFoYKFbiCnAaveidRxXUfubjWCX24tt_aJHw",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374067485,
+      "unsigned": {
+        "age": 36475816142
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@putsch:perthchat.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "Ban evasion"
+      },
+      "event_id": "$8PfvrIigPCvepKSxCCefAQ5AeT_bsMjT3zWRhcKUGbE",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374067659,
+      "unsigned": {
+        "age": 36475815968
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@realjzk:hackerspaces.be"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$VlhDwnrHKYJHF8oCLWkfiygIZJgM1gFAG3frLkhwJvA",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374068148,
+      "unsigned": {
+        "age": 36475815479
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@redaction_is_censorship:perthchat.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "impersonation, sockpuppet, constant abusive behaviour"
+      },
+      "event_id": "$OBOWO1Ex4EFLUr9yC-Y7FCcd0hqTkubmcsskeMTDmvQ",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374068389,
+      "unsigned": {
+        "age": 36475815238
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@richvdh:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evaaion"
+      },
+      "event_id": "$EqgSYCdAzNIAMJIIGdW-i7JKwJ4PCI0yPFB-dU14OP8",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374068556,
+      "unsigned": {
+        "age": 36475815071
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@senora_acero:tedomum.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$3AsTWWYqIMXqakVaO1q1HCI7dvP3uV4_pMwFEuQBpo0",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374068691,
+      "unsigned": {
+        "age": 36475814936
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@skeet_skeet_skeet:tchncs.de"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "banned from the community for previous abuse"
+      },
+      "event_id": "$3Ijqbj830-7Sd93uD10kov5fdPP1JpFChcwevPABqpc",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374068887,
+      "unsigned": {
+        "age": 36475814740
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@svetlana_zolushka:matrix.allmende.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban",
+        "reason": "ban evasion"
+      },
+      "event_id": "$3h5Hz4UJzEkq1NYysrfOu4-6D-dhKdILdIHas2h8pvQ",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374069499,
+      "unsigned": {
+        "age": 36475814128
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@taocp:matrix.heldscal.la"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "ban"
+      },
+      "event_id": "$4gtIavtt23T8IOWP75VZd5R_jC5J-io88PwdvmB85vw",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374069678,
+      "unsigned": {
+        "age": 36475813949
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@ungabunga:tedomum.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": null,
+        "displayname": null,
+        "membership": "join"
+      },
+      "event_id": "$G_rubIUTkHdulk_uygborheTIwp_L2wsEiq1xJZtx6U",
+      "sender": "@appservice-irc:matrix.org",
+      "origin_server_ts": 1574374070535,
+      "unsigned": {
+        "age": 36475813092
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@appservice-irc:matrix.org"
+    },
+    {
+      "type": "m.room.canonical_alias",
+      "content": {
+        "alias": "#matrix-spec:matrix.org"
+      },
+      "event_id": "$__7862gHXDIZrpa9vwaWx7A52UqNhf5fTQxlHahnuCE",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374070928,
+      "unsigned": {
+        "age": 36475812699
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": ""
+    },
+    {
+      "type": "m.room.power_levels",
+      "content": {
+        "ban": 50,
+        "events": {
+          "im.vector.modular.widgets": 50,
+          "m.room.avatar": 50,
+          "m.room.canonical_alias": 50,
+          "m.room.history_visibility": 100,
+          "m.room.name": 50,
+          "m.room.power_levels": 100,
+          "m.room.topic": 50
+        },
+        "events_default": 0,
+        "invite": 0,
+        "kick": 50,
+        "redact": 50,
+        "state_default": 50,
+        "users": {
+          "@abuse:matrix.org": 50,
+          "@appservice-irc:matrix.org": 100,
+          "@freenode_Arathorn:matrix.org": 50,
+          "@matthew:matrix.org": 100,
+          "@richvdh:sw1v.org": 100,
+          "@travis:t2l.io": 50
+        },
+        "users_default": 0
+      },
+      "event_id": "$M4vDvC7DZChL7W3_VGwL7qGYPv6PIVuTCSTefvaciUI",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374078534,
+      "unsigned": {
+        "replaces_state": "$1A2kqAYDOzgxuN51cmbRsUgIvLaTkcMgi7F61ZXygA0",
+        "prev_content": {
+          "users": {
+            "@abuse:matrix.org": 100
+          },
+          "users_default": 0,
+          "events": {
+            "m.room.name": 50,
+            "m.room.power_levels": 100,
+            "m.room.history_visibility": 100,
+            "m.room.canonical_alias": 50,
+            "m.room.avatar": 50
+          },
+          "events_default": 0,
+          "state_default": 50,
+          "ban": 50,
+          "kick": 50,
+          "redact": 50,
+          "invite": 0
+        },
+        "prev_sender": "@abuse:matrix.org",
+        "age": 36475805093
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "",
+      "prev_content": {
+        "users": {
+          "@abuse:matrix.org": 100
+        },
+        "users_default": 0,
+        "events": {
+          "m.room.name": 50,
+          "m.room.power_levels": 100,
+          "m.room.history_visibility": 100,
+          "m.room.canonical_alias": 50,
+          "m.room.avatar": 50
+        },
+        "events_default": 0,
+        "state_default": 50,
+        "ban": 50,
+        "kick": 50,
+        "redact": 50,
+        "invite": 0
+      }
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://cadair.com/UzelpxcQNpsGDqiEQgOtJcEf",
+        "displayname": "Cadair",
+        "membership": "join"
+      },
+      "event_id": "$sYRnr94asU0AZisBISKJZJ_e64v9GSOUrKfBHju4rA4",
+      "sender": "@cadair:cadair.com",
+      "origin_server_ts": 1574374103195,
+      "unsigned": {
+        "age": 15
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@cadair:cadair.com"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://pixie.town/SSnnnFcxbgPdIlqJrxObTIbH",
+        "displayname": "Foks",
+        "membership": "join"
+      },
+      "event_id": "$4mDu9t-OgfWbk_p9Aha7qC4QYOD21aTB64li0szz7cI",
+      "sender": "@f0x:pixie.town",
+      "origin_server_ts": 1574374104271,
+      "unsigned": {
+        "age": 11
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@f0x:pixie.town"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://taylorbuchanan.com/VKPkUoCZUxFHbuoYSAeRbHwA",
+        "displayname": "Taylor Buchanan",
+        "membership": "join"
+      },
+      "event_id": "$UW6zL0lh5Pay39f1GAtvjGtlcGkjIk2OcRIRCaqTdbQ",
+      "sender": "@taylor:taylorbuchanan.com",
+      "origin_server_ts": 1574374105264,
+      "unsigned": {
+        "age": 11
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@taylor:taylorbuchanan.com"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://maunium.net/jdlSfvudiMSmcRrleeiYjjFO",
+        "displayname": "tulir",
+        "membership": "join"
+      },
+      "event_id": "$prhVoETmxgwlcVPigx9I0c3x02Pa9JdtMyypwbU_cUk",
+      "sender": "@tulir:maunium.net",
+      "origin_server_ts": 1574374106632,
+      "unsigned": {
+        "age": 9
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@tulir:maunium.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://sw1v.org/rARZrbDMGnNQOKKWZtCVxusq",
+        "displayname": "richvdh",
+        "membership": "join"
+      },
+      "event_id": "$c-V_PtcS-wVHCZat2Ud6LzREBHvIyYwjOc5OOzRMihU",
+      "sender": "@richvdh:sw1v.org",
+      "origin_server_ts": 1574374108982,
+      "unsigned": {
+        "age": 22
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@richvdh:sw1v.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://mayeul.net/nLTxYerPJBltgzpfqoNXfZGS",
+        "displayname": "MayeulC",
+        "membership": "join"
+      },
+      "event_id": "$SqcDAOAA60UM-dlM1Kk10VVeon00h5Suy1EE0bHDNAg",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374108984,
+      "unsigned": {
+        "age": 28
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mayeul:mayeul.net"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "🥳",
+        "msgtype": "m.text"
+      },
+      "event_id": "$tBIi1VLcc5CQMpDnqcycMqNvI8nIYxraa6BVrqtz9VM",
+      "sender": "@tulir:maunium.net",
+      "origin_server_ts": 1574374116613,
+      "unsigned": {
+        "age": 36475767014
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://t2l.io/fYhaPLjAZLwEYqaSGKwRpQgk",
+        "displayname": "TravisR",
+        "membership": "join"
+      },
+      "event_id": "$GjWpX7g32RHaVxyteTZxmUxqFogbjmf-_aSq5b7jSto",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574374110011,
+      "unsigned": {
+        "age": 32
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@travis:t2l.io"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://pixie.town/qBpNzYpOknBxnSdcbFWrbqWT",
+        "displayname": "joepie91",
+        "membership": "join"
+      },
+      "event_id": "$4yBCRDFhYnoLGFH6SIRkqOK8_EJYhf4_eJ_G_bPf10I",
+      "sender": "@joepie91:pixie.town",
+      "origin_server_ts": 1574374121238,
+      "unsigned": {
+        "age": 36475762389
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@joepie91:pixie.town"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://dodsorf.as/DHsAztrRUSjYseEodNKqRnCE",
+        "displayname": "Dandellion",
+        "membership": "join"
+      },
+      "event_id": "$BR4RHs_5pgxA-YSdjYtdugV0MoXWzVuHdozUyNmZiHM",
+      "sender": "@dandellion:dodsorf.as",
+      "origin_server_ts": 1574374130167,
+      "unsigned": {
+        "age": 12
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@dandellion:dodsorf.as"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://vector.modular.im/oGztPLmeVospzXFVswsfoleD",
+        "displayname": "Rick",
+        "membership": "join"
+      },
+      "event_id": "$q7JkCpsZy4vq0BJpwruwYK0sfZD4547Ggue7opiVPIQ",
+      "sender": "@rxl881:vector.modular.im",
+      "origin_server_ts": 1574374139917,
+      "unsigned": {
+        "age": 13
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@rxl881:vector.modular.im"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://kb1rd.net/tTxCjubJhxSGHqEnxkwywvNq",
+        "displayname": "KB1RD",
+        "membership": "join"
+      },
+      "event_id": "$Ld_eXUCB0Pr0eZI_ab27nWaXAUiBDyXfzBU-e6SQirw",
+      "sender": "@kb1rd:kb1rd.net",
+      "origin_server_ts": 1574374157302,
+      "unsigned": {
+        "age": 9
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@kb1rd:kb1rd.net"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "Hello from the other side. We did lose the MSC bot for now ^^",
+        "msgtype": "m.text"
+      },
+      "event_id": "$VVrLboPwseQH_5Fp2gq7oL8z7yknUcFwa9uV5Rt0HQc",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374176399,
+      "unsigned": {
+        "age": 36475707228
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://abolivier.bzh/cWLwioWMoPgoIFMpXWzKaTik",
+        "displayname": "Brendan Abolivier",
+        "membership": "join"
+      },
+      "event_id": "$O07ylW4DS_4WUo-fZA5nvuGmaZwe6aWNS2bsV9JyaMs",
+      "sender": "@brendan:abolivier.bzh",
+      "origin_server_ts": 1574374172309,
+      "unsigned": {
+        "age": 18
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@brendan:abolivier.bzh"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "first",
+        "msgtype": "m.text"
+      },
+      "event_id": "$WAJanzvPW-NmGeBH0hqQsHZsDwCf5zRk0mGfsGFizCc",
+      "sender": "@joepie91:pixie.town",
+      "origin_server_ts": 1574374208305,
+      "unsigned": {
+        "age": 36475675322
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.jojii.de/PZcaZvafQssQYDhUCsOqiXSz",
+        "displayname": "Jojii",
+        "membership": "join"
+      },
+      "event_id": "$w7vis96W6MqzbmaGxDrnbCkHnT4CszCkt3Q4ELS1_oI",
+      "sender": "@jojii:matrix.jojii.de",
+      "origin_server_ts": 1574374181341,
+      "unsigned": {
+        "age": 7
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@jojii:matrix.jojii.de"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "> <@mayeul:mayeul.net> Hello from the other side. We did lose the MSC bot for now ^^\n\nsomeone could just try inviting it",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<mx-reply><blockquote><a href=\"https://matrix.to/#/!NasysSDfxKxZBzJJoE:matrix.org/$VVrLboPwseQH_5Fp2gq7oL8z7yknUcFwa9uV5Rt0HQc\">In reply to</a><a href=\"https://matrix.to/#/@mayeul:mayeul.net\">@mayeul:mayeul.net</a><br />Hello from the other side. We did lose the MSC bot for now ^^</blockquote></mx-reply>someone could just try inviting it",
+        "m.relates_to": {
+          "m.in_reply_to": {
+            "event_id": "$VVrLboPwseQH_5Fp2gq7oL8z7yknUcFwa9uV5Rt0HQc"
+          }
+        },
+        "msgtype": "m.text"
+      },
+      "event_id": "$NXBQXjbNAw8KFprg948XVsevbVnf57bvMOSBiaw0e_I",
+      "sender": "@tulir:maunium.net",
+      "origin_server_ts": 1574374211213,
+      "unsigned": {
+        "age": 36475672414
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://pattle.im/RUhEokDKkJHGuRYxGNjIMJpI",
+        "displayname": "Wilko",
+        "membership": "join"
+      },
+      "event_id": "$MG9_yV7KenPY5v96hm_Le3wA2HHO7yBhPt8_QAbT5UY",
+      "sender": "@wilko:pattle.im",
+      "origin_server_ts": 1574374188955,
+      "unsigned": {
+        "age": 10
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@wilko:pattle.im"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "oh nevermind",
+        "msgtype": "m.text"
+      },
+      "event_id": "$A48-h26s_Mf8XMY6UWzEtCFgyJMA4DjS2LRJ9Js7hRU",
+      "sender": "@joepie91:pixie.town",
+      "origin_server_ts": 1574374211960,
+      "unsigned": {
+        "age": 36475671667
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://federator.dev/CtcSnfkQauhMFmVPuGlZBCQv",
+        "displayname": "jaywink",
+        "membership": "join"
+      },
+      "event_id": "$OC7XIcKZ7AHdB1uv5XAPqArf1hlECtc0Wvkw312w-Ck",
+      "sender": "@jaywink:federator.dev",
+      "origin_server_ts": 1574374197459,
+      "unsigned": {
+        "age": 15
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@jaywink:federator.dev"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "MayeulC: there's a whole plan in place to fix this and 27 other rooms. Give it about 4 hours and we should have things mostly sorted.",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<a href=\"https://matrix.to/#/@mayeul:mayeul.net\">MayeulC</a>: there's a whole plan in place to fix this and 27 other rooms. Give it about 4 hours and we should have things mostly sorted.",
+        "msgtype": "m.text"
+      },
+      "event_id": "$3z5Dm4HCklaX8Q6bo7ywoVjC7MrNKt4Z1S8JDlFAP_U",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574374228344,
+      "unsigned": {
+        "age": 36475655283
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://librepush.net/NiIBuCBrsDJQRWTGgaFKrMlZ",
+        "displayname": "reivilibre",
+        "membership": "join"
+      },
+      "event_id": "$mhjIJm0zASRT84xpjelY0B5HG3gK2_nAnekyCoz3t84",
+      "sender": "@reivilibre:librepush.net",
+      "origin_server_ts": 1574374254723,
+      "unsigned": {
+        "age": 12
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@reivilibre:librepush.net"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "TravisR: nice. Server-side, I guess?",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<a href=\"https://matrix.to/#/@travis:t2l.io\">TravisR</a>: nice. Server-side, I guess?",
+        "msgtype": "m.text"
+      },
+      "event_id": "$3KvVJyKr6zZ7c7eYOpwpvI4ykM0lA1nBmjd6IJwfxCo",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374254652,
+      "unsigned": {
+        "age": 36475628975
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://dmnd.sh/XnyxLhsULoKObXhtKRwVMHVB",
+        "displayname": "ZerataX",
+        "membership": "join"
+      },
+      "event_id": "$-w5aTaKm-lJQAgzssVsjRtqBcjG_yTJ2NLViY5AG8Ag",
+      "sender": "@zeratax:dmnd.sh",
+      "origin_server_ts": 1574374260269,
+      "unsigned": {
+        "age": 185
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@zeratax:dmnd.sh"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": null,
+        "displayname": "jochen",
+        "membership": "join"
+      },
+      "event_id": "$V1MtvTzk9tYDigiC8YcipqviVRvKGRiuZy-NTkMC-7Q",
+      "sender": "@colab3:colab.de",
+      "origin_server_ts": 1574374259326,
+      "unsigned": {
+        "age": 8
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@colab3:colab.de"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "well, I'm applying them manually but am monitoring for problems",
+        "msgtype": "m.text"
+      },
+      "event_id": "$-2COJ6cYfMQ5LLFVGTQ_Sx83OEx-IjBcYt3O2xJ2i18",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574374279575,
+      "unsigned": {
+        "age": 36475604052
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.freelock.com/gTjcIYcnayjkWFOjBzdQeIKK",
+        "displayname": "John",
+        "membership": "join"
+      },
+      "event_id": "$61pcXBxddtRXKry1twSFwUWKkcg31UVk5AatkbZ3DYk",
+      "sender": "@john:matrix.freelock.com",
+      "origin_server_ts": 1574374286845,
+      "unsigned": {
+        "age": 12
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@john:matrix.freelock.com"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.vgorcum.com/ZRlwJNjWFesIsuEjRevGtxkB",
+        "displayname": "Mathijs",
+        "membership": "join"
+      },
+      "event_id": "$SRW_EXrRUbTo49IGeyrB4zp0IX_rGC-nZvNRivGsCrQ",
+      "sender": "@mathijs:matrix.vgorcum.com",
+      "origin_server_ts": 1574374308214,
+      "unsigned": {
+        "age": 9
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mathijs:matrix.vgorcum.com"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://transformierende-gesellschaft.org/XBAsPqiCieuljWRwPZFvFItI",
+        "displayname": "maximilian",
+        "membership": "join"
+      },
+      "event_id": "$cosvqS1_Pbm_ISM8cYGpwK-wI8BF0EI0om7GdtYmQnM",
+      "sender": "@maximilian:transformierende-gesellschaft.org",
+      "origin_server_ts": 1574374372174,
+      "unsigned": {
+        "age": 11
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@maximilian:transformierende-gesellschaft.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "Oh. Are we still talking about updating communities with the new rooms?\nThat's a common issue, I personally think Synapse should do it automatically, but that's probably something to fix in the remaster :)",
+        "msgtype": "m.text"
+      },
+      "event_id": "$dmiKWMIKdDIYcAhqDhGulKEdUEvovUr5MjIHJxl34i0",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374383664,
+      "unsigned": {
+        "age": 36475499963
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": null,
+        "displayname": "mscbot_resolver2",
+        "membership": "invite"
+      },
+      "event_id": "$xK1VpUu9SsuP7Y5xWqaWehpO9MvmYv4tqfp2f0f4hxU",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374386058,
+      "unsigned": {
+        "age": 36475497569
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mscbot_resolver2:amorgan.xyz"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": null,
+        "displayname": "mscbot_resolver2",
+        "membership": "join"
+      },
+      "event_id": "$zzbez-_y1MvRHRcxdFTTEQtgaM80Wj0EXpfdklko26I",
+      "sender": "@mscbot_resolver2:amorgan.xyz",
+      "origin_server_ts": 1574374388134,
+      "unsigned": {
+        "age": 10,
+        "replaces_state": "$xK1VpUu9SsuP7Y5xWqaWehpO9MvmYv4tqfp2f0f4hxU",
+        "prev_content": {
+          "avatar_url": null,
+          "displayname": "mscbot_resolver2",
+          "membership": "invite"
+        },
+        "prev_sender": "@abuse:matrix.org"
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mscbot_resolver2:amorgan.xyz",
+      "prev_content": {
+        "avatar_url": null,
+        "displayname": "mscbot_resolver2",
+        "membership": "invite"
+      }
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "I thought anoa patched synapse to update communites",
+        "msgtype": "m.text"
+      },
+      "event_id": "$0Uxjul3ooPfbh5qPoARyOvCssyshomsrqVEcfDs7x8A",
+      "sender": "@cadair:cadair.com",
+      "origin_server_ts": 1574374403792,
+      "unsigned": {
+        "age": 36475479835
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://amorgan.xyz/1e30a700caf3c4fe7584478c1b2bd1c5edbab78d",
+        "displayname": "mscbot",
+        "membership": "join"
+      },
+      "event_id": "$SBqWpKYn16aPMNmAsjH6W96G6QYnEZvGMe5kP07DskI",
+      "sender": "@mscbot:amorgan.xyz",
+      "origin_server_ts": 1574374438186,
+      "unsigned": {
+        "age": 36475445441
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mscbot:amorgan.xyz"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "hi all!",
+        "msgtype": "m.text"
+      },
+      "event_id": "$6BvZXf87f8FJS_367Pk0O4Z4c_HYSJKkHZq0Oea4aEk",
+      "sender": "@mathijs:matrix.vgorcum.com",
+      "origin_server_ts": 1574374408276,
+      "unsigned": {
+        "age": 36475475351
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://amorgan.xyz/1e30a700caf3c4fe7584478c1b2bd1c5edbab78d",
+        "displayname": "mscbot",
+        "membership": "invite"
+      },
+      "event_id": "$2OoJySn21m3vjfaydOjm24yt934qFMJwW8qSy632hes",
+      "sender": "@abuse:matrix.org",
+      "origin_server_ts": 1574374405805,
+      "unsigned": {
+        "age": 36475477822
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@mscbot:amorgan.xyz"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "is this a good moment to discuss MSC2354?",
+        "msgtype": "m.text"
+      },
+      "event_id": "$El9mOX_TTZ30zcc9sEEA4aIewvDCyTQHJI2V3aBrV8E",
+      "sender": "@mathijs:matrix.vgorcum.com",
+      "origin_server_ts": 1574374417828,
+      "unsigned": {
+        "age": 36475465799,
+        "m.relations": {
+          "m.annotation": {
+            "chunk": [
+              {
+                "type": "m.reaction",
+                "key": "🤭",
+                "count": 1
+              }
+            ]
+          }
+        }
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.reaction",
+      "content": {
+        "m.relates_to": {
+          "event_id": "$El9mOX_TTZ30zcc9sEEA4aIewvDCyTQHJI2V3aBrV8E",
+          "key": "🤭",
+          "rel_type": "m.annotation"
+        }
+      },
+      "event_id": "$vOOJ3w-mfUVBukrOi4QHjgf90NeBn-A1U3hidt9sNTY",
+      "sender": "@cadair:cadair.com",
+      "origin_server_ts": 1574374425766,
+      "unsigned": {
+        "age": 36475457861
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "> <@mayeul:mayeul.net> Oh. Are we still talking about updating communities with the new rooms?\n> That's a common issue, I personally think Synapse should do it automatically, but that's probably something to fix in the remaster :)\n\nwe're almost certainly going to have to fix it manually, even with the patch. That's probably going to take a few days.",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<mx-reply><blockquote><a href=\"https://matrix.to/#/!NasysSDfxKxZBzJJoE:matrix.org/$dmiKWMIKdDIYcAhqDhGulKEdUEvovUr5MjIHJxl34i0?via=matrix.org&via=pixie.town&via=t2l.io\">In reply to</a> <a href=\"https://matrix.to/#/@mayeul:mayeul.net\">@mayeul:mayeul.net</a><br>Oh. Are we still talking about updating communities with the new rooms?<br/>That&#39;s a common issue, I personally think Synapse should do it automatically, but that&#39;s probably something to fix in the remaster :)</blockquote></mx-reply>we're almost certainly going to have to fix it manually, even with the patch. That's probably going to take a few days.",
+        "m.relates_to": {
+          "m.in_reply_to": {
+            "event_id": "$dmiKWMIKdDIYcAhqDhGulKEdUEvovUr5MjIHJxl34i0"
+          }
+        },
+        "msgtype": "m.text"
+      },
+      "event_id": "$0Xd29SlY5ndvE34CPr_AAGehY7ZXFAb26y_AkP4vMKI",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574374438020,
+      "unsigned": {
+        "age": 36475445607,
+        "m.relations": {
+          "m.annotation": {
+            "chunk": [
+              {
+                "type": "m.reaction",
+                "key": "👍️",
+                "count": 1
+              }
+            ]
+          }
+        }
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "https://github.com/matrix-org/matrix-doc/issues/2354",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<p>https://github.com/matrix-org/matrix-doc/issues/2354</p>",
+        "msgtype": "m.notice"
+      },
+      "event_id": "$MClTOZHdeVevXhR1yzLijWXY7BCmO-NfCZ5Qlaakt_E",
+      "sender": "@mscbot_resolver2:amorgan.xyz",
+      "origin_server_ts": 1574374452546,
+      "unsigned": {
+        "age": 36475431081
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "right, sorry if I miss people's messages. I'm focusing on the other upgrades now.",
+        "msgtype": "m.text"
+      },
+      "event_id": "$qTz6IT4vOxg5pUE-f3-n6BqvMLDHQqAAr3dcSPMjymA",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574374458520,
+      "unsigned": {
+        "age": 36475425107
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "> <@mscbot_resolver2:amorgan.xyz> https://github.com/matrix-org/matrix-doc/issues/2354\n\ngood bot",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<mx-reply><blockquote><a href=\"https://matrix.to/#/!NasysSDfxKxZBzJJoE:matrix.org/$MClTOZHdeVevXhR1yzLijWXY7BCmO-NfCZ5Qlaakt_E?via=matrix.org&via=pixie.town&via=cadair.com\">In reply to</a> <a href=\"https://matrix.to/#/@mscbot_resolver2:amorgan.xyz\">@mscbot_resolver2:amorgan.xyz</a><br><p>https://github.com/matrix-org/matrix-doc/issues/2354</p></blockquote></mx-reply>good bot",
+        "m.relates_to": {
+          "m.in_reply_to": {
+            "event_id": "$MClTOZHdeVevXhR1yzLijWXY7BCmO-NfCZ5Qlaakt_E"
+          }
+        },
+        "msgtype": "m.text"
+      },
+      "event_id": "$c0cxDJ0c2ahLYMlxjVgwJPw48YT3-UptQIVVVUxEHD0",
+      "sender": "@cadair:cadair.com",
+      "origin_server_ts": 1574374460991,
+      "unsigned": {
+        "age": 36475422636
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "yeah, it did its job :D",
+        "msgtype": "m.text"
+      },
+      "event_id": "$PBEGqI153TcBtIIkLv7EG2hknCITywrwzNO3ylLS8kE",
+      "sender": "@mathijs:matrix.vgorcum.com",
+      "origin_server_ts": 1574374471875,
+      "unsigned": {
+        "age": 36475411752
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.org/KfkLMomWWjVZMbgVCKisfFPy",
+        "displayname": "Github",
+        "membership": "invite"
+      },
+      "event_id": "$uGpbWOcApzCzZDAwPBfh6BNrFgPKZqaJEqlqeM2pZf8",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574374507965,
+      "unsigned": {
+        "age": 343
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@_neb_github:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.org/KfkLMomWWjVZMbgVCKisfFPy",
+        "displayname": "Github",
+        "inviter": "@travis:t2l.io",
+        "membership": "join"
+      },
+      "event_id": "$kKh00jWvpbcmoRlscQTTaWnRoeUbtDt11eBZL7b78kg",
+      "sender": "@_neb_github:matrix.org",
+      "origin_server_ts": 1574374509397,
+      "unsigned": {
+        "replaces_state": "$uGpbWOcApzCzZDAwPBfh6BNrFgPKZqaJEqlqeM2pZf8",
+        "prev_content": {
+          "avatar_url": "mxc://matrix.org/KfkLMomWWjVZMbgVCKisfFPy",
+          "displayname": "Github",
+          "membership": "invite"
+        },
+        "prev_sender": "@travis:t2l.io",
+        "age": 36475374230
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@_neb_github:matrix.org",
+      "prev_content": {
+        "avatar_url": "mxc://matrix.org/KfkLMomWWjVZMbgVCKisfFPy",
+        "displayname": "Github",
+        "membership": "invite"
+      }
+    },
+    {
+      "type": "m.room.bot.options",
+      "content": {
+        "github": {
+          "default_repo": "matrix-org/matrix-doc"
+        }
+      },
+      "event_id": "$7yN0Ou7okHUpvxzYUTxKwFKyJ2QGkfpxQ7BATCo2vlk",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574374518145,
+      "unsigned": {
+        "age": 36475365482
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "_@_neb_github:matrix.org"
+    },
+    {
+      "type": "m.reaction",
+      "content": {},
+      "event_id": "$8Yvg3kxWyPJ-Ewj3cDDWJusiCol2k9wcEQb67Une3h0",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374527499,
+      "unsigned": {
+        "redacted_by": "$0US98jRB4C2I2iiqNyf30co2hj0ckeM-JbsREdRImZY",
+        "redacted_because": {
+          "content": {},
+          "origin_server_ts": 1574374540000,
+          "redacts": "$8Yvg3kxWyPJ-Ewj3cDDWJusiCol2k9wcEQb67Une3h0",
+          "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+          "sender": "@mayeul:mayeul.net",
+          "type": "m.room.redaction",
+          "unsigned": {
+            "age": 36475343627
+          },
+          "event_id": "$0US98jRB4C2I2iiqNyf30co2hj0ckeM-JbsREdRImZY",
+          "user_id": "@mayeul:mayeul.net",
+          "age": 36475343627
+        },
+        "age": 36475356128
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.reaction",
+      "content": {
+        "m.relates_to": {
+          "event_id": "$0Xd29SlY5ndvE34CPr_AAGehY7ZXFAb26y_AkP4vMKI",
+          "key": "👍️",
+          "rel_type": "m.annotation"
+        }
+      },
+      "event_id": "$BrtpZ8--7fU5o7isvTiLONlbm_dD7AeQuLGbhhzvB5g",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374536194,
+      "unsigned": {
+        "age": 36475347433
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.redaction",
+      "content": {},
+      "event_id": "$0US98jRB4C2I2iiqNyf30co2hj0ckeM-JbsREdRImZY",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374540000,
+      "unsigned": {
+        "age": 36475343627
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://thebeckmeyers.xyz/MpWpOzvvdeSOsDPmkEVMmviz",
+        "displayname": "&Adam",
+        "membership": "join"
+      },
+      "event_id": "$67ZncUeIPLiyEIV6QaaCErXUO4r5fisEp4paM9s6wxE",
+      "sender": "@adam:thebeckmeyers.xyz",
+      "origin_server_ts": 1574374560852,
+      "unsigned": {
+        "age": 9
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@adam:thebeckmeyers.xyz"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "> <@travis:t2l.io> we're almost certainly going to have to fix it manually, even with the patch. That's probably going to take a few days.\n\nOkay. I was mostly wondering about communities on other homeservers, and if there was a script to perform that migration, or it was something that would be handled automatically.",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<mx-reply><blockquote><a href=\"https://matrix.to/#/!NasysSDfxKxZBzJJoE:matrix.org/$0Xd29SlY5ndvE34CPr_AAGehY7ZXFAb26y_AkP4vMKI?via=sw1v.org&via=matrix.org&via=pixie.town\">In reply to</a> <a href=\"https://matrix.to/#/@travis:t2l.io\">@travis:t2l.io</a><br>we're almost certainly going to have to fix it manually, even with the patch. That's probably going to take a few days.</blockquote></mx-reply>Okay. I was mostly wondering about communities on other homeservers, and if there was a script to perform that migration, or it was something that would be handled automatically.",
+        "m.relates_to": {
+          "m.in_reply_to": {
+            "event_id": "$0Xd29SlY5ndvE34CPr_AAGehY7ZXFAb26y_AkP4vMKI"
+          }
+        },
+        "msgtype": "m.text"
+      },
+      "event_id": "$ZftN49SjitIUJ9QQd33JRTVWeHnaIe9i8E9Gy4yj66s",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374593252,
+      "unsigned": {
+        "age": 36475290375
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "probably manually, sorry.",
+        "msgtype": "m.text"
+      },
+      "event_id": "$CymLJywWBOqI3T_PilhFg_C8d0X_LmsUd7-5yX7b-2I",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574374608119,
+      "unsigned": {
+        "age": 36475275508
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.org/iDUYBnQdiFnOiTUTiEHbxcAh",
+        "displayname": "Magnolia",
+        "membership": "join"
+      },
+      "event_id": "$YrOaf-NZnMxcZitajyaMKJlNIsuuwWNgz4dhEcTCRNI",
+      "sender": "@airin:matrix.org",
+      "origin_server_ts": 1574374621593,
+      "unsigned": {
+        "age": 36475262034
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@airin:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "All right, then, no worries :)",
+        "msgtype": "m.text"
+      },
+      "event_id": "$Pt--YXDCo1kVFeuT5dVfv1I2fT-ahAgOTsuKcPBeshs",
+      "sender": "@mayeul:mayeul.net",
+      "origin_server_ts": 1574374631045,
+      "unsigned": {
+        "age": 36475252582
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://sunbury.xyz/KKRgxsdAYsDHPDbXWGsDSdhZ",
+        "displayname": "Luca",
+        "membership": "join"
+      },
+      "event_id": "$g3Nto5pYM0TLtAB6in2bb2JyNOmRlG3y6HOIarKqHBo",
+      "sender": "@luca:sunbury.xyz",
+      "origin_server_ts": 1574374645956,
+      "unsigned": {
+        "age": 10
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@luca:sunbury.xyz"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://nasnotfound.de/hVtnwqqnffpLxfUrSjPsyxUU",
+        "displayname": "Kai",
+        "membership": "join"
+      },
+      "event_id": "$2sbBMc51gSZhW74-MQI3W_P-e_5Q82dAzTnEDIm26DU",
+      "sender": "@kai:nasnotfound.de",
+      "origin_server_ts": 1574374773781,
+      "unsigned": {
+        "age": 30
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@kai:nasnotfound.de"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://madduck.net/TUbYpcMleVNOjVEXmaozZgcB",
+        "displayname": "martin ➬",
+        "membership": "join"
+      },
+      "event_id": "$o4BidfGM-BT9RyDek07UP0tCOaSubVYfHKF5zUNPmHc",
+      "sender": "@madduck:madduck.net",
+      "origin_server_ts": 1574374889434,
+      "unsigned": {
+        "age": 9
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@madduck:madduck.net"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://atleastfornow.net/WEjZxvElfSkKkEJsqMQVUBlg",
+        "displayname": "hawkowl",
+        "membership": "join"
+      },
+      "event_id": "$tJwUii2exMhBMLyDxFgX4Kpoo77ZP8qQ52NE0CEYN2A",
+      "sender": "@hawkowl:atleastfornow.net",
+      "origin_server_ts": 1574375184478,
+      "unsigned": {
+        "age": 20
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@hawkowl:atleastfornow.net"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "has updated mscbot's config (so that it shouts in here and not in the old room)",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "has updated <a href=\"https://matrix.to/#/@mscbot:amorgan.xyz\">mscbot</a>'s config (so that it shouts in here and not in the old room)",
+        "msgtype": "m.emote"
+      },
+      "event_id": "$nCzG_qYcdzDIIhTwhOGuD1aLj1f10YmPFDu6wGnniG8",
+      "sender": "@brendan:abolivier.bzh",
+      "origin_server_ts": 1574375188005,
+      "unsigned": {
+        "age": 36474695622,
+        "m.relations": {
+          "m.annotation": {
+            "chunk": [
+              {
+                "type": "m.reaction",
+                "key": "👍",
+                "count": 2
+              }
+            ]
+          }
+        }
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.reaction",
+      "content": {
+        "m.relates_to": {
+          "event_id": "$nCzG_qYcdzDIIhTwhOGuD1aLj1f10YmPFDu6wGnniG8",
+          "key": "👍",
+          "rel_type": "m.annotation"
+        }
+      },
+      "event_id": "$xD9gZGnCU7zRhtvLWmlFr6Y04LTgGdINxKA2J4Ly-70",
+      "sender": "@kb1rd:kb1rd.net",
+      "origin_server_ts": 1574375218293,
+      "unsigned": {
+        "age": 36474665334
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.reaction",
+      "content": {
+        "m.relates_to": {
+          "event_id": "$nCzG_qYcdzDIIhTwhOGuD1aLj1f10YmPFDu6wGnniG8",
+          "key": "👍",
+          "rel_type": "m.annotation"
+        }
+      },
+      "event_id": "$Wr9ATqXsFbBDmgvhM5YPgd0bmVI7fSBIAPiRz8megXA",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574375294671,
+      "unsigned": {
+        "age": 36474588956
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "Brendan Abolivier: thanks, I forgot you ran it. I was told by anoa that it shouldn't need configuring.",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<a href=\"https://matrix.to/#/@brendan:abolivier.bzh\">Brendan Abolivier</a>: thanks, I forgot you ran it. I was told by anoa that it shouldn't need configuring.",
+        "msgtype": "m.text"
+      },
+      "event_id": "$Nbw8lyB_dpqNvE-F2E-2Q31p3bTkD_n27Nppo0wO0lw",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574375311391,
+      "unsigned": {
+        "age": 36474572236
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.org/oUxxDyzQOHdVDMxgwFzyCWEe",
+        "displayname": "Matthew",
+        "membership": "join"
+      },
+      "event_id": "$MB1Sy3y0hGFbbjZDpQnD-OIkGLIA0DIkq9hSy1ndeik",
+      "sender": "@matthew:matrix.org",
+      "origin_server_ts": 1574375389854,
+      "unsigned": {
+        "age": 36474493773
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@matthew:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "Well there are two bots running behind that account, and I run one of them (an instance of https://github.com/Informo/specs-bot) and it has the room IDs in its config",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "Well there are two bots running behind that account, and I run one of them (an instance of https://github.com/Informo/specs-bot) and it has the room IDs in its config",
+        "msgtype": "m.text",
+        "m.relates_to": {
+          "m.in_reply_to": {
+            "event_id": "$Nbw8lyB_dpqNvE-F2E-2Q31p3bTkD_n27Nppo0wO0lw"
+          }
+        }
+      },
+      "event_id": "$rXquvonMHdyjbeX8LXW3Pp8qnEnaYTr80tBFj2diKHM",
+      "sender": "@brendan:abolivier.bzh",
+      "origin_server_ts": 1574375426669,
+      "unsigned": {
+        "age": 36474456958,
+        "m.relations": {
+          "m.replace": {
+            "event_id": "$uAo33bIRDJ5n6yw8b0UHx45RtXUkiKczeFXkdaa_hDg",
+            "origin_server_ts": 1574375466815,
+            "sender": "@brendan:abolivier.bzh"
+          }
+        }
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "> <@travis:t2l.io> Brendan Abolivier: thanks, I forgot you ran it. I was told by anoa that it shouldn't need configuring.\n\n * Well there are two bots running behind that account, and I run one of them (an instance of https://github.com/Informo/specs-bot) and it has the room IDs in its config",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<mx-reply><blockquote><a href=\"https://matrix.to/#/!NasysSDfxKxZBzJJoE:matrix.org/$Nbw8lyB_dpqNvE-F2E-2Q31p3bTkD_n27Nppo0wO0lw?via=matrix.org&amp;via=pixie.town&amp;via=amorgan.xyz\">In reply to</a> <a href=\"https://matrix.to/#/@travis:t2l.io\">@travis:t2l.io</a><br><a href=\"https://matrix.to/#/@brendan:abolivier.bzh\">Brendan Abolivier</a>: thanks, I forgot you ran it. I was told by anoa that it shouldn't need configuring.</blockquote></mx-reply> * Well there are two bots running behind that account, and I run one of them (an instance of https://github.com/Informo/specs-bot) and it has the room IDs in its config",
+        "m.new_content": {
+          "body": "Well there are two bots running behind that account, and I run one of them (an instance of https://github.com/Informo/specs-bot) and it has the room IDs in its config",
+          "format": "org.matrix.custom.html",
+          "formatted_body": "Well there are two bots running behind that account, and I run one of them (an instance of https://github.com/Informo/specs-bot) and it has the room IDs in its config",
+          "msgtype": "m.text",
+          "m.relates_to": {
+            "m.in_reply_to": {
+              "event_id": "$Nbw8lyB_dpqNvE-F2E-2Q31p3bTkD_n27Nppo0wO0lw"
+            }
+          }
+        },
+        "m.relates_to": {
+          "event_id": "$rXquvonMHdyjbeX8LXW3Pp8qnEnaYTr80tBFj2diKHM",
+          "rel_type": "m.replace"
+        },
+        "msgtype": "m.text"
+      },
+      "event_id": "$uAo33bIRDJ5n6yw8b0UHx45RtXUkiKczeFXkdaa_hDg",
+      "sender": "@brendan:abolivier.bzh",
+      "origin_server_ts": 1574375466815,
+      "unsigned": {
+        "age": 36474416812
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "ah",
+        "msgtype": "m.text"
+      },
+      "event_id": "$Xl0jNtAo9gESRaujIr2JJtcU5yjRLRlDYaKIxNu0Ftk",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574375471222,
+      "unsigned": {
+        "age": 36474412405
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.org/cHiJyYSbAGwuKKSGNerGVDnW",
+        "displayname": "benpa",
+        "membership": "join"
+      },
+      "event_id": "$ZBRta9SWW8ieaum95bYHOPnwtvKeo6u-Ge4VFbMpeQk",
+      "sender": "@benpa:matrix.org",
+      "origin_server_ts": 1574375495949,
+      "unsigned": {
+        "age": 36474387678
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@benpa:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://fuwafuwatime.moe/OhUVUAommWrPXmnwHssYcEOS",
+        "displayname": "0xC0ncord",
+        "membership": "join"
+      },
+      "event_id": "$6Ubc8HA1bIUokVOI04ib0q5OUIGmvTq7O_UZK_TOkSA",
+      "sender": "@concord:fuwafuwatime.moe",
+      "origin_server_ts": 1574375694532,
+      "unsigned": {
+        "age": 11
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@concord:fuwafuwatime.moe"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://matrix.org/mHnvpcSNcqrrDQOCpdeEMcYG",
+        "displayname": "Gnuxie 💜🐝",
+        "membership": "join"
+      },
+      "event_id": "$qR2G144r54R5-vQ-QIIwbtM6KW4J3z3bnIBvHLMpSJY",
+      "sender": "@gnu_ponut:matrix.org",
+      "origin_server_ts": 1574376021728,
+      "unsigned": {
+        "age": 36473861899
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@gnu_ponut:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "IRC test",
+        "msgtype": "m.text"
+      },
+      "event_id": "$Dj0zBELqMKfy_OrQU5HWL2bJkaQojw69x-WJ7no3n9E",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574376219987,
+      "unsigned": {
+        "age": 36473663640
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://half-shot.uk/6fc3fb176d5246f1e7cf7d89ad4248b8",
+        "displayname": "Half-Shot",
+        "membership": "join"
+      },
+      "event_id": "$sGwkRZaXjqds96MUi_BJwdsdwKPq45KXMTcEm4Fz_hY",
+      "sender": "@Half-Shot:half-shot.uk",
+      "origin_server_ts": 1574376271766,
+      "unsigned": {
+        "age": 27
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@Half-Shot:half-shot.uk"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": null,
+        "displayname": "halfy",
+        "membership": "join"
+      },
+      "event_id": "$muljPJkqRIkucseGqxLWBFW55MZnjEzKs6NCfzXt5SE",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376394833,
+      "unsigned": {
+        "age": 36473488794
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@freenode_halfy:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "Hello spec",
+        "msgtype": "m.text"
+      },
+      "event_id": "$J5DzuKJdqWDkVSO_KwGRMO8kG46o8Vl0HWV7dxouu9M",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376398048,
+      "unsigned": {
+        "age": 36473485579
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "You are very naked",
+        "msgtype": "m.text"
+      },
+      "event_id": "$Wa-lwAfDZKSiNZmX2MUIL61ij6yKWPBgFt1xfs5cz84",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376409022,
+      "unsigned": {
+        "age": 36473474605
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "it's halfy",
+        "msgtype": "m.text"
+      },
+      "event_id": "$eA4sFeRidc-rsq0Y1QNi7gcBZNuLnuCykudprJ36Rqo",
+      "sender": "@mathijs:matrix.vgorcum.com",
+      "origin_server_ts": 1574376408938,
+      "unsigned": {
+        "age": 36473474689
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "\\o/",
+        "msgtype": "m.text"
+      },
+      "event_id": "$glhfb4GG-j6pxv8ukWm-mz5B6FuONfDLBbWH7BrdTAg",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574376409306,
+      "unsigned": {
+        "age": 36473474321
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "And lack a topic",
+        "msgtype": "m.text"
+      },
+      "event_id": "$Vq-u8c8uSPQKMNVH_6MC9Rx4D2-4_MctLNyeiPYPX50",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376411720,
+      "unsigned": {
+        "age": 36473471907
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "Someone should do a topic",
+        "msgtype": "m.text"
+      },
+      "event_id": "$JjvVWKoeECFChfk62qwrE_badIVhJMjke6yniij4WL8",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376418703,
+      "unsigned": {
+        "age": 36473464924
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "Hello adoring fans :)",
+        "msgtype": "m.text"
+      },
+      "event_id": "$9kdV-hdvFaVq3QH8ALSGaoo9g560PBmiYdq-l8mvnMI",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376425494,
+      "unsigned": {
+        "age": 36473458133
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "it still has a topic matrix-side",
+        "msgtype": "m.text"
+      },
+      "event_id": "$JB8jaVUV6CxtWi7MLOuL3Fsc1iwpDu-3R7TVu55fPjw",
+      "sender": "@mathijs:matrix.vgorcum.com",
+      "origin_server_ts": 1574376428082,
+      "unsigned": {
+        "age": 36473455545
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.topic",
+      "content": {
+        "topic": "Discussion of specific Matrix Spec Change proposals | https://matrix.org/docs/spec/proposals | Design draft folder at: https://drive.google.com/drive/folders/0B4wHq8qP86r2ck15MHEwMmlNVUk "
+      },
+      "event_id": "$b5aONv_YiGxZw41SAq17NpJgtDv7UJB9LdNZkVDOoZk",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574376432630,
+      "unsigned": {
+        "replaces_state": "$yo7HD7S2W0iWT7Rq1X5RCJtJuPDzPKMtO8F3Ho8Ha8A",
+        "prev_content": {
+          "topic": "Discussion of specific Matrix Spec Change proposals | https://matrix.org/docs/spec/proposals | Design draft folder at: https://drive.google.com/drive/folders/0B4wHq8qP86r2ck15MHEwMmlNVUk"
+        },
+        "prev_sender": "@abuse:matrix.org",
+        "age": 36473450997
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "",
+      "prev_content": {
+        "topic": "Discussion of specific Matrix Spec Change proposals | https://matrix.org/docs/spec/proposals | Design draft folder at: https://drive.google.com/drive/folders/0B4wHq8qP86r2ck15MHEwMmlNVUk"
+      }
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "Yeah, I think wheoever set this up didn't set it on the bridge :(",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "Yeah, I think wheoever set this up didn&#39;t set it on the bridge :(",
+        "msgtype": "m.text"
+      },
+      "event_id": "$fFe3ix_78Ot97HzRpYew2hkQv-p38amUpATcnL2MsVs",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376440881,
+      "unsigned": {
+        "age": 36473442746
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "And topic changes don't carry over",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "And topic changes don&#39;t carry over",
+        "msgtype": "m.text"
+      },
+      "event_id": "$h4Wyw6NpLex7LK2asSpmvFi1B6gZj4c_16eu90JAnAk",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376445084,
+      "unsigned": {
+        "age": 36473438543
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "But also matrix.org is damn fast wow",
+        "msgtype": "m.text"
+      },
+      "event_id": "$LzpO-aqWM_ZBRnMn8nWnhR8F6SLp6LT5j3DP0NUG-o8",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574376452635,
+      "unsigned": {
+        "age": 36473430992
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "> <@freenode_halfy:matrix.org> And topic changes don't carry over\n\ndamn, I tried.",
+        "format": "org.matrix.custom.html",
+        "formatted_body": "<mx-reply><blockquote><a href=\"https://matrix.to/#/!NasysSDfxKxZBzJJoE:matrix.org/$h4Wyw6NpLex7LK2asSpmvFi1B6gZj4c_16eu90JAnAk?via=matrix.org&via=pixie.town&via=amorgan.xyz\">In reply to</a> <a href=\"https://matrix.to/#/@freenode_halfy:matrix.org\">@freenode_halfy:matrix.org</a><br>And topic changes don&#39;t carry over</blockquote></mx-reply>damn, I tried.",
+        "m.relates_to": {
+          "m.in_reply_to": {
+            "event_id": "$h4Wyw6NpLex7LK2asSpmvFi1B6gZj4c_16eu90JAnAk"
+          }
+        },
+        "msgtype": "m.text"
+      },
+      "event_id": "$5NoUbcS1bWAHmhegYNOlXX6fcsooKPWb9CewbZEwjdY",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574376452065,
+      "unsigned": {
+        "age": 36473431562
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "design draft folder?",
+        "msgtype": "m.text"
+      },
+      "event_id": "$LLViRMC2ydEzkKcy4HrtsTE37aTKCRq1ioG-UHf1_sc",
+      "sender": "@mathijs:matrix.vgorcum.com",
+      "origin_server_ts": 1574376459400,
+      "unsigned": {
+        "age": 36473424227
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "that's not a thing anymore right?",
+        "msgtype": "m.text"
+      },
+      "event_id": "$r-ZuyKSgy0KmuiB3OyHfMINaTtps2rO2l7YxMVfJ4rw",
+      "sender": "@mathijs:matrix.vgorcum.com",
+      "origin_server_ts": 1574376480042,
+      "unsigned": {
+        "age": 36473403585
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "it's legacy stuff",
+        "msgtype": "m.text"
+      },
+      "event_id": "$iHR2ZwLZxlpKWNwWI1DJW4n8I3ST4RCRhkyRCp9t0x4",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574376547623,
+      "unsigned": {
+        "age": 36473336004
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.message",
+      "content": {
+        "body": "in case you want ancient architecture notes/ideas",
+        "msgtype": "m.text"
+      },
+      "event_id": "$W5adm33KrBAhI8e4UxJ-PS_Agdj5LkAq77gCfPA_lMo",
+      "sender": "@travis:t2l.io",
+      "origin_server_ts": 1574376559104,
+      "unsigned": {
+        "age": 36473324523
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "membership": "leave"
+      },
+      "event_id": "$P6r802vugI5vjx-fHc42pmNIhjPm7sBZdZtsbe7XWsc",
+      "sender": "@freenode_halfy:matrix.org",
+      "origin_server_ts": 1574377385604,
+      "unsigned": {
+        "replaces_state": "$muljPJkqRIkucseGqxLWBFW55MZnjEzKs6NCfzXt5SE",
+        "prev_content": {
+          "avatar_url": null,
+          "displayname": "halfy",
+          "membership": "join"
+        },
+        "prev_sender": "@freenode_halfy:matrix.org",
+        "age": 36472498023
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@freenode_halfy:matrix.org",
+      "prev_content": {
+        "avatar_url": null,
+        "displayname": "halfy",
+        "membership": "join"
+      }
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": null,
+        "displayname": "Ralith",
+        "membership": "join"
+      },
+      "event_id": "$YDQYcweY54mAP2wdsH2wl9as7AeRe4Ql6p2NcqsrB4Q",
+      "sender": "@ralith:ralith.com",
+      "origin_server_ts": 1574377496900,
+      "unsigned": {
+        "age": 15
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@ralith:ralith.com"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://raim.ist/KthgQjZpYLHEVOIzwvTjkXPx",
+        "displayname": "Aaron",
+        "membership": "join"
+      },
+      "event_id": "$XSyyWRz3yUaQRihf5YRESO_CdcuLeSFDR8dxKstiOtU",
+      "sender": "@aaron:raim.ist",
+      "origin_server_ts": 1574377673372,
+      "unsigned": {
+        "age": 27
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@aaron:raim.ist"
+    },
+    {
+      "type": "m.room.member",
+      "content": {
+        "avatar_url": "mxc://kamax.io/YakoqMkKmitpjpEYWZmDajty",
+        "displayname": "mkatee",
+        "membership": "join"
+      },
+      "event_id": "$qinH9f2yzxICHyRviGxFgOyQR5o2z2L0unCVQhKtiq8",
+      "sender": "@kati:kamax.io",
+      "origin_server_ts": 1574377865326,
+      "unsigned": {
+        "age": 9
+      },
+      "room_id": "!NasysSDfxKxZBzJJoE:matrix.org",
+      "state_key": "@kati:kamax.io"
+    }
+  ]
+}
