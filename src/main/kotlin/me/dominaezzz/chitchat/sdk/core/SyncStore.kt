@@ -8,6 +8,7 @@ import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.RoomSummary
 import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
+import io.github.matrixkt.models.sync.UnreadNotificationCounts
 import kotlinx.serialization.json.JsonObject
 
 interface SyncStore {
@@ -25,6 +26,7 @@ interface SyncStore {
 	suspend fun getMembers(roomId: String, membership: Membership): Set<String>
 	suspend fun getReadReceipts(roomId: String): List<ReadReceipt>
 	suspend fun getSummary(roomId: String): RoomSummary
+	suspend fun getUnreadNotificationCounts(roomId: String): UnreadNotificationCounts
 	suspend fun getLazyLoadingState(roomId: String): LazyLoadingState
 	suspend fun storeMembers(roomId: String, response: GetMembersResponse): List<MatrixEvent>
 

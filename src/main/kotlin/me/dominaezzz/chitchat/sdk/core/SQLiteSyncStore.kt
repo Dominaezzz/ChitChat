@@ -10,6 +10,7 @@ import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.RoomSummary
 import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
+import io.github.matrixkt.models.sync.UnreadNotificationCounts
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
@@ -41,7 +42,8 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					(
 						roomId                TEXT PRIMARY KEY NOT NULL,
 						summary               TEXT,
-						loadedMembershipTypes TEXT NOT NULL CHECK (JSON_VALID(loadedMembershipTypes))
+						loadedMembershipTypes TEXT NOT NULL CHECK (JSON_VALID(loadedMembershipTypes)),
+						unreadNotifications   TEXT NOT NULL CHECK (JSON_VALID(unreadNotifications))
 					);
 				""")
 				stmt.execute("""
@@ -202,9 +204,14 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 
 	private class InsertUtils(connection: Connection): Closeable {
 		private val roomSummaryStmt = connection.prepareStatement("""
-			INSERT INTO room_metadata(roomId, summary, loadedMembershipTypes)
-			VALUES (?, ?, ?)
+			INSERT INTO room_metadata(roomId, summary, loadedMembershipTypes, unreadNotifications)
+			VALUES (?, ?, ?, '{}')
 			ON CONFLICT(roomId) DO UPDATE SET summary=JSON_PATCH(summary, excluded.summary);
+		""")
+		private val roomNotificationsStmt = connection.prepareStatement("""
+			UPDATE room_metadata
+			SET unreadNotifications=JSON_PATCH(unreadNotifications, ?)
+			WHERE roomId = ?;
 		""")
 		private val eventStmt = connection.prepareStatement("""
 			INSERT OR IGNORE INTO room_events(
@@ -246,6 +253,12 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			roomSummaryStmt.setString(2, MatrixJson.encodeToString(RoomSummary.serializer(), summary))
 			roomSummaryStmt.setSerializable(3, ListSerializer(Membership.serializer()), Membership.values().asList())
 			return roomSummaryStmt.executeUpdate()
+		}
+
+		fun updateRoomNotifications(roomId: String, notificationCounts: UnreadNotificationCounts): Int {
+			roomNotificationsStmt.setSerializable(1, UnreadNotificationCounts.serializer(), notificationCounts)
+			roomNotificationsStmt.setString(2, roomId)
+			return roomNotificationsStmt.executeUpdate()
 		}
 
 		fun insertRoomEvent(roomId: String, event: MatrixEvent, timelineOrder: Long?): Int {
@@ -370,6 +383,11 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 						val summary = joinedRoom.summary
 						if (summary != null) {
 							utils.updateRoomSummary(roomId, summary)
+						}
+
+						val notifications = joinedRoom.unreadNotifications
+						if (notifications != null) {
+							utils.updateRoomNotifications(roomId, notifications)
 						}
 
 						val timeline = joinedRoom.timeline
@@ -627,6 +645,22 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
 						rs.getSerializable(1, RoomSummary.serializer())!!
+					} else {
+						throw NoSuchElementException("No room with id '$roomId'")
+					}
+				}
+			}
+		}
+	}
+
+	override suspend fun getUnreadNotificationCounts(roomId: String): UnreadNotificationCounts {
+		return helper.usingReadConnection { conn ->
+			val query = "SELECT unreadNotifications FROM room_metadata WHERE roomId = ?;"
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.executeQuery().use { rs ->
+					if (rs.next()) {
+						rs.getSerializable(1, UnreadNotificationCounts.serializer())!!
 					} else {
 						throw NoSuchElementException("No room with id '$roomId'")
 					}

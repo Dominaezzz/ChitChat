@@ -146,6 +146,18 @@ class RoomImpl(
 		}
 	}.shareIn(scope, shareConfig, 1)
 
+	override val notificationCount: Flow<Int> = flow {
+		val notificationCounts = store.getUnreadNotificationCounts(id)
+		emit(notificationCounts.notificationCount?.toInt() ?: 0)
+		emitAll(joinedFlow.mapNotNull { it.unreadNotifications?.notificationCount?.toInt() })
+	}.shareIn(scope, shareConfig, 1)
+
+	override val highlightCount: Flow<Int> = flow {
+		val notificationCounts = store.getUnreadNotificationCounts(id)
+		emit(notificationCounts.highlightCount?.toInt() ?: 0)
+		emitAll(joinedFlow.mapNotNull { it.unreadNotifications?.highlightCount?.toInt() })
+	}.shareIn(scope, shareConfig, 1)
+
 	override fun <T> getState(type: String, stateKey: String, serializer: KSerializer<T>): Flow<T?> {
 		return stateFlowMap.getFlow(type to stateKey).decodeJson(serializer)
 	}

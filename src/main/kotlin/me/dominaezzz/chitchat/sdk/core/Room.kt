@@ -19,6 +19,9 @@ interface Room {
 	val joinedMemberCount: Flow<Int>
 	val invitedMemberCount: Flow<Int>
 
+	val notificationCount: Flow<Int>
+	val highlightCount: Flow<Int>
+
 	fun <T> getState(type: String, stateKey: String, serializer: KSerializer<T>): Flow<T?>
 	fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?>
 
