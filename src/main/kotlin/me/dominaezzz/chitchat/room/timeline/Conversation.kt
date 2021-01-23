@@ -1,9 +1,11 @@
 package me.dominaezzz.chitchat.room.timeline
 
+import androidx.compose.animation.asDisposableClock
 import androidx.compose.foundation.*
+import androidx.compose.foundation.animation.defaultFlingConfig
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.Text
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.platform.AmbientAnimationClock
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +52,13 @@ fun Conversation(
 	val timelineEvents by timeline.events.collectAsState().let { derivedStateOf { it.value.asReversed() } }
 
 	Row(modifier) {
-		val state = rememberLazyListState()
+		val clock = AmbientAnimationClock.current.asDisposableClock()
+		val config = defaultFlingConfig()
+
+		val roomScrollMap = remember(config, clock) { mutableMapOf<String, LazyListState>() }
+		val state = roomScrollMap.getOrPut(room.id) {
+			LazyListState(0, 0, null, config, clock)
+		}
 
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
 			itemsIndexed(timelineEvents) { idx, item ->
