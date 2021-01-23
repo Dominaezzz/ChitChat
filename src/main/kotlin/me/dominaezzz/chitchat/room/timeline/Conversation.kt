@@ -91,7 +91,7 @@ fun Conversation(
 
 @Composable
 private fun Room.member(userId: String): MemberContent? {
-	return remember(this, userId) { getState("m.room.member", userId, MemberContent.serializer()) }
+	return remember(this, userId) { getMember(userId) }
 		.collectAsState(null).value
 }
 

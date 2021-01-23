@@ -295,7 +295,7 @@ fun TypingUsers(
 
 	@Composable
 	fun getName(userId: String): String {
-		val memberFlow = remember(userId) { room.getState("m.room.member", userId, MemberContent.serializer()) }
+		val memberFlow = remember(userId) { room.getMember(userId) }
 		val member by memberFlow.collectAsState(null)
 		return member?.displayName ?: userId
 	}
