@@ -37,6 +37,36 @@ inline fun <T> Connection.usingStatement(block: (Statement) -> T): T {
 }
 
 @OptIn(ExperimentalContracts::class)
+inline fun <T> Connection.transaction(block: () -> T): T {
+	contract {
+		callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+	}
+
+	val prev = autoCommit
+	autoCommit = false
+
+	var exception: Throwable? = null
+	try {
+		return block()
+	} catch (e: Throwable) {
+		exception = e
+		throw e
+	} finally {
+		if (exception != null) {
+			try {
+				rollback()
+			} catch (rollbackException: Throwable) {
+				@Suppress("UNNECESSARY_SAFE_CALL") // https://youtrack.jetbrains.com/issue/KT-28806
+				exception?.addSuppressed(rollbackException)
+			}
+		} else {
+			commit()
+		}
+		autoCommit = prev
+	}
+}
+
+@OptIn(ExperimentalContracts::class)
 inline fun <T> Connection.savepoint(block: () -> T): T {
 	contract {
 		callsInPlace(block, InvocationKind.EXACTLY_ONCE)

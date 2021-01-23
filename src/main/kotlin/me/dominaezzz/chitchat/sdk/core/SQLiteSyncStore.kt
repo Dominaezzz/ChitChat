@@ -175,16 +175,6 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 							ON DELETE CASCADE
 					);					
 				""")
-
-				stmt.execute("""
-					CREATE TABLE device_events
-					(
-						id      INTEGER PRIMARY KEY AUTOINCREMENT,
-						type    TEXT NOT NULL,
-						content TEXT NOT NULL CHECK (JSON_VALID(content)),
-						sender  TEXT NOT NULL
-					);
-				""")
 			}
 		}
 	}
@@ -232,7 +222,6 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		private val beginShiftTimelinesStmt = connection.prepareStatement("UPDATE room_timelines SET timelineId = -timelineId WHERE roomId = ?;")
 		private val endShiftTimelinesStmt = connection.prepareStatement("UPDATE room_timelines SET timelineId = -timelineId + 1 WHERE roomId = ?;")
 		private val newTimelineStmt = connection.prepareStatement("INSERT INTO room_timelines(roomId, timelineId, token) VALUES (?, 0, ?);")
-		private val deviceEventStmt = connection.prepareStatement("INSERT INTO device_events(type, content, sender) VALUES (?, ?, ?);")
 		private val updateReceipt = connection.prepareStatement("""
 			INSERT OR REPLACE INTO room_receipts(roomId, userId, type, eventId, content)
 			VALUES (?, ?, ?, ?, ?); 
@@ -314,13 +303,6 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			newTimelineStmt.executeUpdate()
 		}
 
-		fun insertDeviceEvent(type: String, sender: String, content: JsonElement): Int {
-			deviceEventStmt.setString(1, type)
-			deviceEventStmt.setSerializable(2, JsonElement.serializer(), content)
-			deviceEventStmt.setString(3, sender)
-			return deviceEventStmt.executeUpdate()
-		}
-
 		fun updateReceipt(roomId: String, userId: String, type: String, eventId: String, receipt: ReceiptContent.Receipt): Int {
 			updateReceipt.setString(1, roomId)
 			updateReceipt.setString(2, userId)
@@ -354,7 +336,6 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			insertInviteState.close()
 			oneTimeKeysStmt.close()
 			updateReceipt.close()
-			deviceEventStmt.close()
 			newTimelineStmt.close()
 			endShiftTimelinesStmt.close()
 			beginShiftTimelinesStmt.close()
@@ -486,13 +467,6 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				if (accountData != null) {
 					for (event in accountData.events) {
 						utils.updateAccountData(null, event.type, event.content)
-					}
-				}
-
-				val deviceEvents = sync.toDevice?.events
-				if (deviceEvents != null) {
-					for (event in deviceEvents) {
-						utils.insertDeviceEvent(event.type, event.sender!!, event.content)
 					}
 				}
 
