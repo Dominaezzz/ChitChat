@@ -20,13 +20,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.MatrixClient
-import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.models.AppViewModel
 import me.dominaezzz.chitchat.models.RoomHeader
 import me.dominaezzz.chitchat.room.timeline.Conversation
+import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.topic
 import me.dominaezzz.chitchat.util.IconCache
@@ -36,12 +36,6 @@ import java.nio.file.*
 
 val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
-
-data class LoginSession(
-	val accessToken: String,
-	val userId: String,
-	val deviceId: String
-)
 
 val SessionAmbient = staticAmbientOf<LoginSession> { error("No login session provided") }
 val ClientAmbient = staticAmbientOf<MatrixClient> { error("No client provided") }

@@ -13,7 +13,7 @@ import io.github.matrixkt.olm.Session
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import me.dominaezzz.chitchat.LoginSession
+import me.dominaezzz.chitchat.sdk.core.LoginSession
 import kotlin.random.Random
 
 class CryptoManager(

@@ -8,7 +8,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
-import me.dominaezzz.chitchat.LoginSession
 
 class SyncClientImpl(
 	private val scope: CoroutineScope,
