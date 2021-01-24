@@ -122,28 +122,18 @@ class CryptoManager(
 			Session.createInboundSessionFrom(account, content.senderKey, ciphertextInfo.body!!)
 		}
 
-		val decryptedPayload: String
 		try {
-			decryptedPayload = withContext(Dispatchers.Default) {
+			val decryptedPayload = withContext(Dispatchers.Default) {
 				session.decrypt(encryptedMsg)
 			}
 
 			// Store only if successfully decrypted.
 			store.storeInboundSession(content.senderKey, session)
-			store.modifyAccount { account ->
-				account.removeOneTimeKeys(session)
-			}
-			// Food for thought, regarding the failure of either two calls above.
-			// Is it more important to save a session and not discard the one time keys
-			// or....
-			// Discard the one time keys and not store the session.
 
-			// Perhaps the store should just provide transactional APIs.
+			return decryptedPayload
 		} finally {
 			session.clear()
 		}
-
-		return decryptedPayload
 	}
 
 	suspend fun receiveEncryptedDeviceEvent(event: Event, deviceManager: DeviceManager) {

@@ -48,9 +48,13 @@ class SQLiteCryptoStore(
 		}
 	}
 
+	private fun Connection.setAccount(account: Account) {
+		setValue("ACCOUNT", account.pickle(emptyByteArray))
+	}
+
 	override suspend fun <T> usingAccount(block: (Account) -> T): T {
-		val account = usingReadConnection { it.getAccount() }
 		// NOTE: This will leak if `withContext` throws.
+		val account = usingReadConnection { it.getAccount() }
 		try {
 			return block(account)
 		} finally {
@@ -65,7 +69,7 @@ class SQLiteCryptoStore(
 				try {
 					val res = block(account)
 					// Only save account if block finished.
-					conn.setValue("ACCOUNT", account.pickle(emptyByteArray))
+					conn.setAccount(account)
 					res
 				} finally {
 					account.clear()
@@ -108,6 +112,14 @@ class SQLiteCryptoStore(
 				stmt.setString(3, session.pickle(emptyByteArray))
 				stmt.setBoolean(4, false)
 				stmt.executeUpdate()
+			}
+
+			val account = conn.getAccount()
+			try {
+				account.removeOneTimeKeys(session)
+				conn.setAccount(account)
+			} finally {
+				account.clear()
 			}
 		}
 	}
