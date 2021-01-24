@@ -148,22 +148,23 @@ class CryptoManager(
 
 	suspend fun receiveEncryptedDeviceEvent(event: Event, deviceManager: DeviceManager) {
 		try {
-			handleEncryptedDeviceEvent(event, deviceManager)
+			require(event.type == "m.room.encrypted")
+			val content = MatrixJson.decodeFromJsonElement(EncryptedContent.serializer(), event.content)
+
+			// Only support olm for to device events.
+			if (content !is EncryptedContent.OlmV1) return
+
+			handleEncryptedDeviceEvent(event.sender!!, content, deviceManager)
 		} catch (e: Exception) {
 			e.printStackTrace()
 		}
 	}
 
-	private suspend fun handleEncryptedDeviceEvent(event: Event, deviceManager: DeviceManager) {
-		val content = MatrixJson.decodeFromJsonElement(EncryptedContent.serializer(), event.content)
-
-		// Only support olm for to device events.
-		if (content !is EncryptedContent.OlmV1) return
-
+	private suspend fun handleEncryptedDeviceEvent(sender: String, content: EncryptedContent.OlmV1, deviceManager: DeviceManager) {
 		val decryptedContent = decryptOlmEvent(content)
 		val olmPayload = MatrixJson.decodeFromString(OlmEventPayload.serializer(), decryptedContent)
 
-		check(olmPayload.sender == event.sender)
+		check(olmPayload.sender == sender)
 
 		val senderDevices = deviceManager.getUserDevices(olmPayload.sender) ?: return
 		val senderSigningKey = senderDevices.asSequence()
@@ -182,7 +183,7 @@ class CryptoManager(
 		when (olmPayload.type) {
 			"m.room_key" -> {
 				val roomKey = MatrixJson.decodeFromJsonElement(RoomKeyContent.serializer(), olmPayload.content)
-				check(roomKey.algorithm == "m.megolm.v1.aes-sha2")
+				if (roomKey.algorithm != "m.megolm.v1.aes-sha2") return
 
 				val session = InboundGroupSession(roomKey.sessionKey)
 				try {
@@ -200,7 +201,7 @@ class CryptoManager(
 			}
 			"m.forwarded_room_key" -> {
 				val forwardedRoomKey = MatrixJson.decodeFromJsonElement(ForwardedRoomKeyContent.serializer(), olmPayload.content)
-				check(forwardedRoomKey.algorithm == "m.megolm.v1.aes-sha2")
+				if (forwardedRoomKey.algorithm != "m.megolm.v1.aes-sha2") return
 
 				val session = InboundGroupSession.import(forwardedRoomKey.sessionKey)
 				try {
