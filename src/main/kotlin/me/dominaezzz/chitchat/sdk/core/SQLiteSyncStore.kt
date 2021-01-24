@@ -475,8 +475,6 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					utils.updateOneTimeKeys(oneTimeKeysCount)
 				}
 			}
-
-			conn.commit()
 		}
 	}
 
@@ -795,11 +793,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.executeUpdate()
 			}
 
-			val newState = conn.getNewState(roomId, insertedEventIds)
-
-			conn.commit()
-
-			newState
+			conn.getNewState(roomId, insertedEventIds)
 		}
 	}
 
@@ -1013,11 +1007,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				shiftTimelineStmt.close()
 			}
 
-			val newState = conn.getNewState(roomId, insertedEventIds)
-
-			conn.commit()
-
-			newState
+			conn.getNewState(roomId, insertedEventIds)
 		}
 	}
 

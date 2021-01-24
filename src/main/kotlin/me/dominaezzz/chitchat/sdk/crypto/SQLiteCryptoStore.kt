@@ -28,8 +28,9 @@ class SQLiteCryptoStore(
 		return dbSemaphore.withPermit {
 			withContext(Dispatchers.IO) {
 				usingConnection { conn ->
-					conn.autoCommit = false
-					block(conn)
+					conn.transaction {
+						block(conn)
+					}
 				}
 			}
 		}
@@ -59,7 +60,7 @@ class SQLiteCryptoStore(
 
 	override suspend fun <T> modifyAccount(block: (Account) -> T): T {
 		return usingWriteConnection { conn ->
-			val res = conn.savepoint {
+			conn.savepoint {
 				val account = conn.getAccount()
 				try {
 					val res = block(account)
@@ -70,8 +71,6 @@ class SQLiteCryptoStore(
 					account.clear()
 				}
 			}
-			conn.commit()
-			res
 		}
 	}
 

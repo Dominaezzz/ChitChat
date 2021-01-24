@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import me.dominaezzz.chitchat.db.transaction
 import me.dominaezzz.chitchat.db.usingStatement
 import org.sqlite.SQLiteConfig
 import java.nio.file.Path
@@ -81,8 +82,9 @@ abstract class SQLiteHelper(
 		return writeSemaphore.withPermit {
 			withContext(Dispatchers.IO) {
 				usingConnection { conn ->
-					conn.autoCommit = false
-					block(conn)
+					conn.transaction {
+						block(conn)
+					}
 				}
 			}
 		}
