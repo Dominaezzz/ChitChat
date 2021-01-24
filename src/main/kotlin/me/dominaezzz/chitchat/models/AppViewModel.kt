@@ -84,34 +84,4 @@ class AppViewModel(
 	suspend fun sync() {
 		syncClient.sync(timeout = 100000, setPresence = Presence.OFFLINE)
 	}
-
-	@OptIn(ExperimentalCoroutinesApi::class)
-	fun getRooms(): Flow<List<RoomHeader>> {
-		val comparator = compareByDescending<RoomHeader> { it.favourite != null }
-			.then(nullsLast(compareBy { it.favourite?.order }))
-			.thenBy { it.lowPriority != null }
-			.then(nullsLast(compareBy { it.lowPriority?.order }))
-			.thenBy(String.CASE_INSENSITIVE_ORDER) { it.displayName }
-
-		return syncClient.joinedRooms
-			.flatMapLatest { joinedRooms ->
-				val roomHeaders = joinedRooms.values.map { room ->
-					combine(
-						room.getDisplayName(session.userId),
-						room.getDisplayAvatar(session.userId),
-						room.tags
-					) { displayName, displayAvatar, tags ->
-						RoomHeader(
-							room.id,
-							room,
-							displayName,
-							displayAvatar,
-							tags["m.favourite"],
-							tags["m.lowpriority"]
-						)
-					}
-				}
-				combine(roomHeaders) { headers -> headers.sortedWith(comparator) }
-			}
-	}
 }

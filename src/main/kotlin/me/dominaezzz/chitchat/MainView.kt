@@ -20,15 +20,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.models.events.contents.TagContent
 import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.models.AppViewModel
-import me.dominaezzz.chitchat.models.RoomHeader
 import me.dominaezzz.chitchat.room.timeline.Conversation
-import me.dominaezzz.chitchat.sdk.core.LoginSession
-import me.dominaezzz.chitchat.sdk.core.Room
-import me.dominaezzz.chitchat.sdk.core.topic
+import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.util.IconCache
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
@@ -87,12 +88,12 @@ fun MainView() {
 		}
 	}
 
-	val rooms by remember { appViewModel.getRooms() }.collectAsState(emptyList())
+	val joinedRooms by remember { appViewModel.syncClient.joinedRooms }.collectAsState(emptyMap())
 	var selectedRoom by remember { mutableStateOf<String?>(null) }
 
 	Row(Modifier.fillMaxSize()) {
 		RoomListView(
-			rooms,
+			joinedRooms.values,
 			selectedRoom,
 			{ selectedRoom = it },
 			Modifier.fillMaxWidth(0.3f)
@@ -105,7 +106,7 @@ fun MainView() {
 		)
 
 		if (selectedRoom != null) {
-			val room by derivedStateOf { rooms.single { it.id == selectedRoom } }
+			val room by derivedStateOf { joinedRooms.getValue(selectedRoom!!) }
 			RoomView(
 				room,
 				Modifier.fillMaxWidth()
@@ -114,9 +115,57 @@ fun MainView() {
 	}
 }
 
+fun Collection<Room>.sortRooms(userId: String): Flow<List<Room>> {
+	if (isEmpty()) {
+		return flowOf(emptyList())
+	}
+
+	class RoomData(
+		val room: Room,
+		val displayName: String,
+		val favourite: TagContent.Tag?,
+		val lowPriority: TagContent.Tag?
+	)
+
+	val tagComparator = compareBy<TagContent.Tag> { it.order }
+	val comparator = compareBy<RoomData> { 0 }
+		.thenBy(nullsLast(tagComparator), { it.favourite })
+		.thenBy(nullsFirst(tagComparator), { it.lowPriority })
+		.thenBy(String.CASE_INSENSITIVE_ORDER, { it.displayName })
+
+	val perRoomData = map { room ->
+		combine(
+			room.getDisplayName(userId),
+			room.tags
+		) { displayName, tags ->
+			RoomData(
+				room,
+				displayName,
+				tags["m.favourite"],
+				tags["m.lowpriority"]
+			)
+		}
+	}
+	return combine(perRoomData) { roomData -> roomData.sortedWith(comparator).map { it.room } }
+}
+
+@Composable
+fun Room.displayName(): String {
+	val session = SessionAmbient.current
+	val name = remember(this) { getDisplayName(session.userId) }.collectAsState(id)
+	return name.value
+}
+
+@Composable
+fun Room.displayAvatar(): String? {
+	val session = SessionAmbient.current
+	val avatar = remember(this) { getDisplayAvatar(session.userId) }.collectAsState(null)
+	return avatar.value
+}
+
 @Composable
 fun RoomListView(
-	rooms: List<RoomHeader>,
+	rooms: Collection<Room>,
 	selectedRoom: String?,
 	onSelectedRoomChanged: (String?) -> Unit,
 	modifier: Modifier = Modifier
@@ -129,10 +178,11 @@ fun RoomListView(
 		PublicRoomsPopup { showPublicRoomsPopup = false }
 	}
 
+	val session = SessionAmbient.current
+
 	Column(modifier) {
 		TopAppBar(
 			title = {
-				val session = SessionAmbient.current
 				val client = ClientAmbient.current
 				val username by produceState(session.userId, client) {
 					val profile = client.userApi.getUserProfile(session.userId)
@@ -179,23 +229,27 @@ fun RoomListView(
 			style = MaterialTheme.typography.h5
 		)
 
+		val sortedRooms = remember(rooms) { rooms.sortRooms(session.userId) }.collectAsState(emptyList()).value
 		LazyColumn {
-			items(rooms) { room ->
+			items(sortedRooms) { room ->
+				val displayName = room.displayName()
+				val displayAvatar = room.displayAvatar()
+
 				@OptIn(ExperimentalAnimationApi::class)
-				AnimatedVisibility(roomFilter.isEmpty() || room.displayName.contains(roomFilter)) {
+				AnimatedVisibility(roomFilter.isEmpty() || displayName.contains(roomFilter)) {
 					ListItem(
 						modifier = Modifier.selectable(
 							selected = selectedRoom == room.id,
 							onClick = { onSelectedRoomChanged(room.id) }
 						),
-						text = { Text(room.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+						text = { Text(displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
 						secondaryText = {
-							val count by room.room.joinedMemberCount.collectAsState(0)
+							val count by room.joinedMemberCount.collectAsState(0)
 							Text("$count members")
 						},
 						singleLineSecondaryText = true,
 						icon = {
-							val image = room.avatarUrl?.let { loadIcon(URI(it)) }
+							val image = displayAvatar?.let { loadIcon(URI(it)) }
 
 							if (image != null) {
 								Image(image, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
@@ -212,17 +266,15 @@ fun RoomListView(
 
 @Composable
 fun RoomView(
-	roomHeader: RoomHeader,
+	room: Room,
 	modifier: Modifier = Modifier
 ) {
-	val room = roomHeader.room
-
 	Column(modifier) {
 		TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {
 
 			Spacer(Modifier.width(16.dp))
 
-			val image = roomHeader.avatarUrl?.let { loadIcon(URI(it)) }
+			val image = room.displayAvatar()?.let { loadIcon(URI(it)) }
 
 			if (image != null) {
 				Image(
@@ -238,7 +290,7 @@ fun RoomView(
 
 			Providers(AmbientContentAlpha provides ContentAlpha.high) {
 				Text(
-					text = roomHeader.displayName,
+					text = room.displayName(),
 					modifier = Modifier.align(Alignment.CenterVertically),
 					style = MaterialTheme.typography.h5,
 					maxLines = 1,
