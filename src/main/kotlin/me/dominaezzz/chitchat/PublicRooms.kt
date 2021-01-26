@@ -3,10 +3,10 @@ package me.dominaezzz.chitchat
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
-import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -84,10 +84,10 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 			onValueChange = { searchTerm = it },
 			modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
 			placeholder = { Text("Find a room… (e.g. #example:matrix.org)") },
-			leadingIcon = { Icon(Icons.Default.Search) },
+			leadingIcon = { Icon(Icons.Default.Search, null) },
 			trailingIcon = {
 				IconButton({ searchTerm = "" }, enabled = searchTerm.isNotEmpty()) {
-					Icon(Icons.Default.Clear)
+					Icon(Icons.Default.Clear, null)
 				}
 			}
 		)
@@ -127,6 +127,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 								if (image != null) {
 									Image(
 										image,
+										null,
 										Modifier.preferredSize(40.dp).clip(CircleShape),
 										contentScale = ContentScale.Crop
 									)
@@ -143,7 +144,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 							},
 							trailing = {
 								Row(verticalAlignment = Alignment.CenterVertically) {
-									Icon(Icons.Filled.Contacts)
+									Icon(Icons.Filled.Contacts, null)
 									Text(room.numJoinedMembers.toString())
 								}
 							}

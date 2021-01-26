@@ -1,11 +1,11 @@
 package me.dominaezzz.chitchat.util
 
-import androidx.compose.runtime.CompositionLifecycleObserver
+import androidx.compose.runtime.RememberObserver
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 
-class Cache<Key, Value>(private val loadData: suspend (Key) -> Value) : CompositionLifecycleObserver {
+class Cache<Key, Value>(private val loadData: suspend (Key) -> Value) : RememberObserver {
 	private val scope = CoroutineScope(SupervisorJob())
 
 	private val values = mutableMapOf<Key, Value>()
@@ -53,7 +53,13 @@ class Cache<Key, Value>(private val loadData: suspend (Key) -> Value) : Composit
 		return valuesSemaphore.withPermit { values.getValue(key) }
 	}
 
-	override fun onLeave() {
+	override fun onRemembered() {}
+
+	override fun onForgotten() {
+		scope.cancel()
+	}
+
+	override fun onAbandoned() {
 		scope.cancel()
 	}
 }

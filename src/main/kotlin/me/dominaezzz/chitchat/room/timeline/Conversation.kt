@@ -5,6 +5,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.animation.defaultFlingConfig
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -262,9 +263,9 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 				val modifier = Modifier.preferredSize(16.dp)
 					.clip(CircleShape)
 				if (avatar != null) {
-					Image(avatar, modifier, contentScale = ContentScale.Crop)
+					Image(avatar, null, modifier, contentScale = ContentScale.Crop)
 				} else {
-					Image(Icons.Filled.Person, modifier, contentScale = ContentScale.Crop)
+					Image(Icons.Filled.Person, null, modifier, contentScale = ContentScale.Crop)
 				}
 			}
 		}
@@ -286,9 +287,9 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 				.clip(CircleShape)
 				.align(Alignment.Top)
 			if (authorAvatar != null) {
-				Image(authorAvatar, modifier, contentScale = ContentScale.Crop)
+				Image(authorAvatar, null, modifier, contentScale = ContentScale.Crop)
 			} else {
-				Image(Icons.Filled.Person, modifier, contentScale = ContentScale.Crop)
+				Image(Icons.Filled.Person, null, modifier, contentScale = ContentScale.Crop)
 			}
 		} else {
 			Spacer(Modifier.preferredWidth(74.dp))
@@ -390,9 +391,9 @@ private fun Message(room: Room, content: MessageContent, senderUserId: String) {
 				Modifier
 			}
 			if (image != null) {
-				Image(image, specifiedSize)
+				Image(image, null, specifiedSize)
 			} else {
-				Image(Icons.Outlined.BrokenImage, specifiedSize)
+				Image(Icons.Outlined.BrokenImage, null, specifiedSize)
 			}
 		}
 		is MessageContent.Redacted -> {

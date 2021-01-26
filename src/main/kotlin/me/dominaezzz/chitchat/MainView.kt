@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -196,7 +197,7 @@ fun RoomListView(
 			backgroundColor = Color.Transparent,
 			actions = {
 				IconButton(onClick = { /* Open Settings */ }, enabled = false) {
-					Icon(Icons.Filled.Settings)
+					Icon(Icons.Filled.Settings, null)
 				}
 			},
 			elevation = 0.dp
@@ -213,11 +214,11 @@ fun RoomListView(
 				onValueChange = { roomFilter = it },
 				modifier = Modifier.weight(1f),
 				placeholder = { Text("Filter...") },
-				leadingIcon = { Icon(Icons.Filled.FilterList) }
+				leadingIcon = { Icon(Icons.Filled.FilterList, null) }
 			)
 
 			IconButton(onClick = { showPublicRoomsPopup = true }) {
-				Icon(Icons.Filled.Explore)
+				Icon(Icons.Filled.Explore, null)
 			}
 
 			Spacer(Modifier.width(5.dp))
@@ -252,9 +253,9 @@ fun RoomListView(
 							val image = displayAvatar?.let { loadIcon(URI(it)) }
 
 							if (image != null) {
-								Image(image, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+								Image(image, null, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
 							} else {
-								Image(Icons.Filled.Contacts, Modifier.size(40.dp))
+								Image(Icons.Filled.Contacts, null, Modifier.size(40.dp))
 							}
 						}
 					)
@@ -279,11 +280,12 @@ fun RoomView(
 			if (image != null) {
 				Image(
 					image,
+					null,
 					Modifier.size(40.dp).clip(CircleShape).align(Alignment.CenterVertically),
 					contentScale = ContentScale.Crop
 				)
 			} else {
-				Image(Icons.Filled.Image, Modifier.size(40.dp).align(Alignment.CenterVertically))
+				Image(Icons.Filled.Image, null, Modifier.size(40.dp).align(Alignment.CenterVertically))
 			}
 
 			Spacer(Modifier.width(24.dp))
@@ -316,7 +318,7 @@ fun RoomView(
 			}
 
 			IconButton(onClick = { /* Open room settings */ }, enabled = false) {
-				Icon(Icons.Filled.Settings)
+				Icon(Icons.Filled.Settings, null)
 			}
 		}
 
@@ -372,7 +374,7 @@ fun UserMessageInput(
 		placeholder = { Text("Send a message...") },
 		trailingIcon = {
 			IconButton(onClick = { /* Send message */ }, enabled = false) {
-				Icon(Icons.Filled.Send)
+				Icon(Icons.Filled.Send, null)
 			}
 		},
 		onImeActionPerformed = { _, _ -> /* Send message */ }
