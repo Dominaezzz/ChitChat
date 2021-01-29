@@ -237,7 +237,7 @@ fun RoomListView(
 				val displayAvatar = room.displayAvatar()
 
 				@OptIn(ExperimentalAnimationApi::class)
-				AnimatedVisibility(roomFilter.isEmpty() || displayName.contains(roomFilter)) {
+				AnimatedVisibility(roomFilter.isEmpty() || displayName.contains(roomFilter, true)) {
 					ListItem(
 						modifier = Modifier.selectable(
 							selected = selectedRoom == room.id,
