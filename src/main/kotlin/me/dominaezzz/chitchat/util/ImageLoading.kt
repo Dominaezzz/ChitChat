@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import me.dominaezzz.chitchat.ContentRepoAmbient
+import me.dominaezzz.chitchat.ui.ContentRepoAmbient
 import org.jetbrains.skija.Image
 import java.net.URI
 import kotlin.math.min

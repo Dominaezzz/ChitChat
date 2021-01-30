@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat
+package me.dominaezzz.chitchat.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.models.AppViewModel
-import me.dominaezzz.chitchat.room.timeline.Conversation
+import me.dominaezzz.chitchat.ui.room.timeline.Conversation
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.util.IconCache
 import me.dominaezzz.chitchat.util.loadIcon

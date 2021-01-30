@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.room.timeline
+package me.dominaezzz.chitchat.ui.room.timeline
 
 import androidx.compose.animation.asDisposableClock
 import androidx.compose.foundation.*

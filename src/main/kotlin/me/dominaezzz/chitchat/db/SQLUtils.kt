@@ -3,7 +3,7 @@ package me.dominaezzz.chitchat.db
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
-import me.dominaezzz.chitchat.projectDir
+import me.dominaezzz.chitchat.ui.projectDir
 import org.sqlite.SQLiteConfig
 import java.nio.file.Path
 import java.sql.*

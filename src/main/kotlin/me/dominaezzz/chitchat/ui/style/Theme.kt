@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.ui
+package me.dominaezzz.chitchat.ui.style
 
 import androidx.compose.desktop.DesktopMaterialTheme
 import androidx.compose.material.darkColors

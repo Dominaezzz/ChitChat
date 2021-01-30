@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat
+package me.dominaezzz.chitchat.ui
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*

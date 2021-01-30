@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.ui
+package me.dominaezzz.chitchat.ui.style
 
 import androidx.compose.ui.graphics.Color
 
