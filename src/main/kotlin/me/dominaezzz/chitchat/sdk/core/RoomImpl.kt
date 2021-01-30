@@ -21,6 +21,7 @@ import me.dominaezzz.chitchat.models.RoomTimeline
 
 class RoomImpl(
 	override val id: String,
+	override val ownUserId: String,
 	private val scope: CoroutineScope,
 	private val syncFlow: Flow<SyncResponse>,
 	private val client: MatrixClient,

@@ -9,6 +9,7 @@ import me.dominaezzz.chitchat.models.RoomTimeline
 
 interface Room {
 	val id: String
+	val ownUserId: String
 
 	val timelineEvents: Flow<MatrixEvent>
 

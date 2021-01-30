@@ -116,7 +116,7 @@ fun MainView() {
 	}
 }
 
-fun Collection<Room>.sortRooms(userId: String): Flow<List<Room>> {
+fun Collection<Room>.sortRooms(): Flow<List<Room>> {
 	if (isEmpty()) {
 		return flowOf(emptyList())
 	}
@@ -136,7 +136,7 @@ fun Collection<Room>.sortRooms(userId: String): Flow<List<Room>> {
 
 	val perRoomData = map { room ->
 		combine(
-			room.getDisplayName(userId),
+			room.getDisplayName(),
 			room.tags
 		) { displayName, tags ->
 			RoomData(
@@ -152,15 +152,13 @@ fun Collection<Room>.sortRooms(userId: String): Flow<List<Room>> {
 
 @Composable
 fun Room.displayName(): String {
-	val session = SessionAmbient.current
-	val name = remember(this) { getDisplayName(session.userId) }.collectAsState(id)
+	val name = remember(this) { getDisplayName() }.collectAsState(id)
 	return name.value
 }
 
 @Composable
 fun Room.displayAvatar(): String? {
-	val session = SessionAmbient.current
-	val avatar = remember(this) { getDisplayAvatar(session.userId) }.collectAsState(null)
+	val avatar = remember(this) { getDisplayAvatar() }.collectAsState(null)
 	return avatar.value
 }
 
@@ -179,11 +177,10 @@ fun RoomListView(
 		PublicRoomsPopup { showPublicRoomsPopup = false }
 	}
 
-	val session = SessionAmbient.current
-
 	Column(modifier) {
 		TopAppBar(
 			title = {
+				val session = SessionAmbient.current
 				val client = ClientAmbient.current
 				val username by produceState(session.userId, client) {
 					val profile = client.userApi.getUserProfile(session.userId)
@@ -230,7 +227,7 @@ fun RoomListView(
 			style = MaterialTheme.typography.h5
 		)
 
-		val sortedRooms = remember(rooms) { rooms.sortRooms(session.userId) }.collectAsState(emptyList()).value
+		val sortedRooms = remember(rooms) { rooms.sortRooms() }.collectAsState(emptyList()).value
 		LazyColumn {
 			items(sortedRooms) { room ->
 				val displayName = room.displayName()

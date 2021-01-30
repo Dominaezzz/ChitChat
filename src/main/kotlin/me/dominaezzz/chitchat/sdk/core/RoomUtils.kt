@@ -55,9 +55,9 @@ private fun String.nullIfEmpty() = takeIf { it.isNotEmpty() }
 private fun <E, T : Collection<E>> T.nullIfEmpty() = takeIf { it.isNotEmpty() }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private fun Room.getHeroes(currentUserId: String): Flow<Set<String>> {
-	val calculatedHeroes = joinedMembers.map { (it - currentUserId).nullIfEmpty() }
-		.coalesce(invitedMembers.map { (it - currentUserId).nullIfEmpty() })
+private fun Room.getHeroes(): Flow<Set<String>> {
+	val calculatedHeroes = joinedMembers.map { (it - ownUserId).nullIfEmpty() }
+		.coalesce(invitedMembers.map { (it - ownUserId).nullIfEmpty() })
 		// Fallback to left "members" when available
 		.map { it?.sorted()?.take(5)?.toSet() }
 		.coalesce(flowOf(emptySet()))
@@ -65,7 +65,7 @@ private fun Room.getHeroes(currentUserId: String): Flow<Set<String>> {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun Room.getDisplayName(currentUserId: String): Flow<String> {
+fun Room.getDisplayName(): Flow<String> {
 	fun memberDisplayNames(userIds: Collection<String>): Flow<List<String>> {
 		val nameFlows = userIds.map { userId ->
 			getState("m.room.member", userId, MemberContent.serializer())
@@ -79,7 +79,7 @@ fun Room.getDisplayName(currentUserId: String): Flow<String> {
 
 	data class CalcInfo(val heroes: Set<String>, val joinCount: Int, val inviteCount: Int)
 	val roomMembers = combine(
-		getHeroes(currentUserId),
+		getHeroes(),
 		joinedMemberCount,
 		invitedMemberCount
 	) { heroes, joinCount, inviteCount -> CalcInfo(heroes, joinCount, inviteCount) }
@@ -124,10 +124,10 @@ fun Room.getDisplayName(currentUserId: String): Flow<String> {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun Room.getDisplayAvatar(currentUserId: String): Flow<String?> {
+fun Room.getDisplayAvatar(): Flow<String?> {
 	return avatar.map { it?.url }
 		.coalesce(
-			getHeroes(currentUserId).map { it.firstOrNull() }
+			getHeroes().map { it.firstOrNull() }
 				.flatMapLatest { userId ->
 					if (userId != null) {
 						getState("m.room.member", userId, MemberContent.serializer())
