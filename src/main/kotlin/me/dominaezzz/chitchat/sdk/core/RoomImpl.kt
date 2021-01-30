@@ -199,6 +199,7 @@ class RoomImpl(
 	override val typingUsers: Flow<List<String>> = ephemeralEvents.filter { it.type == "m.typing" }
 		.map { MatrixJson.decodeFromJsonElement(TypingContent.serializer(), it.content) }
 		.map { it.userIds }
+		.onStart { emit(emptyList()) }
 		.shareIn(scope, shareConfig, 1)
 
 	override val readReceipts: Flow<Map<String, List<Pair<String, ReceiptContent.Receipt>>>> = ephemeralEvents
