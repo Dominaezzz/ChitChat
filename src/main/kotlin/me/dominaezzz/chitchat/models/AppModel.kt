@@ -2,14 +2,13 @@ package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Presence
+import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.JsonObject
-import me.dominaezzz.chitchat.db.setSerializable
-import me.dominaezzz.chitchat.db.transaction
-import me.dominaezzz.chitchat.db.usingConnection
+import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.sdk.crypto.CryptoManager
@@ -20,13 +19,25 @@ import java.nio.file.Path
 import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
 
-class AppViewModel(
-	private val client: MatrixClient,
-	private val session: LoginSession,
-	private val applicationDir: Path
-) {
+class AppModel(private val applicationDir: Path) {
 	private val scope = CoroutineScope(SupervisorJob())
-	private val appDbSemaphore = Semaphore(1)
+
+	val session = usingConnection { conn ->
+		LoginSession(
+			accessToken = conn.getValue("ACCESS_TOKEN")!!,
+			userId = conn.getValue("USER_ID")!!,
+			deviceId = conn.getValue("DEVICE_ID")!!
+		)
+	}
+
+	private val engine = Apache.create {
+		connectTimeout = 0
+		socketTimeout = 0
+	}
+
+	val client = MatrixClient(engine).apply { accessToken = session.accessToken }
+
+	val contentRepository = ContentRepository(client, applicationDir.resolve("media"))
 
 	private val syncStore = SQLiteSyncStore(applicationDir.resolve("sync.db"))
 	val syncClient: SyncClient = SyncClientImpl(scope, session, client, syncStore)
@@ -34,6 +45,7 @@ class AppViewModel(
 	private val deviceStore = SQLiteDeviceStore(applicationDir.resolve("devices.db"))
 	private val deviceManager = DeviceManager(scope, client, syncClient, deviceStore)
 
+	private val appDbSemaphore = Semaphore(1)
 	private val random = SecureRandom().asKotlinRandom()
 	private val cryptoStore = SQLiteCryptoStore(appDbSemaphore, random)
 	val cryptoManager = CryptoManager(client, session, cryptoStore, random)

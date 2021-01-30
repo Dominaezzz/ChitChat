@@ -16,10 +16,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.MatrixClient
-import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
 import me.dominaezzz.chitchat.db.*
-import me.dominaezzz.chitchat.models.AppViewModel
+import me.dominaezzz.chitchat.models.AppModel
 import me.dominaezzz.chitchat.ui.room.timeline.Conversation
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.util.IconCache
@@ -31,54 +30,39 @@ val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
 
 val SessionAmbient = staticAmbientOf<LoginSession> { error("No login session provided") }
+val AppModelAmbient = staticAmbientOf<AppModel> { error("No app model provided") }
 val ClientAmbient = staticAmbientOf<MatrixClient> { error("No client provided") }
 val ContentRepoAmbient = staticAmbientOf<ContentRepository> { error("No content repo provided") }
 
 @Composable
 fun AppView() {
-	val session = remember {
-		usingConnection { conn ->
-			LoginSession(
-				accessToken = conn.getValue("ACCESS_TOKEN")!!,
-				userId = conn.getValue("USER_ID")!!,
-				deviceId = conn.getValue("DEVICE_ID")!!
-			)
-		}
-	}
-	val client = remember(session) {
-		val engine = Apache.create {
-			connectTimeout = 0
-			socketTimeout = 0
-		}
-		MatrixClient(engine).apply {
-			accessToken = session.accessToken
-		}
-	}
-	val contentRepo = remember(client) { ContentRepository(client, appWorkingDir.resolve("media")) }
+	val appModel = remember { AppModel(appWorkingDir) }
 
-	Providers(SessionAmbient provides session, ClientAmbient provides client, ContentRepoAmbient provides contentRepo) {
+	Providers(
+		AppModelAmbient provides appModel,
+		SessionAmbient provides appModel.session,
+		ClientAmbient provides appModel.client,
+		ContentRepoAmbient provides appModel.contentRepository
+	) {
 		IconCache {
 			MainView()
+		}
+	}
+
+	LaunchedEffect(appModel) {
+		while (isActive) {
+			try {
+				appModel.sync()
+			} catch (e: Exception) {
+				e.printStackTrace()
+			}
 		}
 	}
 }
 
 @Composable
 fun MainView() {
-	val client = ClientAmbient.current
-	val session = SessionAmbient.current
-
-	val appViewModel = remember { AppViewModel(client, session, appWorkingDir) }
-
-	LaunchedEffect(appViewModel) {
-		while (isActive) {
-			try {
-				appViewModel.sync()
-			} catch (e: Exception) {
-				e.printStackTrace()
-			}
-		}
-	}
+	val appViewModel = AppModelAmbient.current
 
 	val joinedRooms by remember { appViewModel.syncClient.joinedRooms }.collectAsState(emptyMap())
 	var selectedRoom by remember { mutableStateOf<String?>(null) }
