@@ -29,7 +29,7 @@ import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.json.JsonNull
-import me.dominaezzz.chitchat.db.TimelineItem
+import me.dominaezzz.chitchat.models.TimelineItem
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage
