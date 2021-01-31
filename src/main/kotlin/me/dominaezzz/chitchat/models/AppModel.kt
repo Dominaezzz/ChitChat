@@ -55,7 +55,8 @@ class AppModel(private val applicationDir: Path) {
 			.mapNotNull { it["signed_curve25519"] }
 			.onEach { remaining ->
 				if (remaining < 20) {
-					cryptoManager.uploadOneTimeKeys(20 - remaining.toInt())
+					println("One time key count ($remaining) is below 20.")
+					// cryptoManager.uploadOneTimeKeys(20 - remaining.toInt())
 				}
 			}
 			.launchIn(scope)
