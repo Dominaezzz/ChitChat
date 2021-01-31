@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.sdk.core
+package me.dominaezzz.chitchat.sdk.core.internal
 
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Direction
@@ -18,6 +18,8 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.RoomTimeline
+import me.dominaezzz.chitchat.sdk.core.Room
+import me.dominaezzz.chitchat.sdk.core.SyncStore
 
 class RoomImpl(
 	override val id: String,

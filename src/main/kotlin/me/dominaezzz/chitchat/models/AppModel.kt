@@ -40,7 +40,7 @@ class AppModel(private val applicationDir: Path) {
 	val contentRepository = ContentRepository(client, applicationDir.resolve("media"))
 
 	private val syncStore = SQLiteSyncStore(applicationDir.resolve("sync.db"))
-	val syncClient: SyncClient = SyncClientImpl(scope, session, client, syncStore)
+	val syncClient = SyncClient(scope, session, client, syncStore)
 
 	private val deviceStore = SQLiteDeviceStore(applicationDir.resolve("devices.db"))
 	private val deviceManager = DeviceManager(scope, client, syncClient, deviceStore)

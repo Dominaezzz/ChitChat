@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.sdk.core
+package me.dominaezzz.chitchat.sdk.core.internal
 
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Presence
@@ -8,6 +8,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
+import me.dominaezzz.chitchat.sdk.core.LoginSession
+import me.dominaezzz.chitchat.sdk.core.Room
+import me.dominaezzz.chitchat.sdk.core.SyncClient
+import me.dominaezzz.chitchat.sdk.core.SyncStore
 
 class SyncClientImpl(
 	private val scope: CoroutineScope,
