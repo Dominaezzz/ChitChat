@@ -27,10 +27,9 @@ class RoomImpl(
 	private val scope: CoroutineScope,
 	private val syncFlow: Flow<SyncResponse>,
 	private val client: MatrixClient,
-	private val store: SyncStore
+	private val store: SyncStore,
+	private val shareConfig: SharingStarted
 ) : Room {
-	private val shareConfig = SharingStarted.WhileSubscribed(1000)
-
 	override val timelineEvents: Flow<MatrixEvent> = syncFlow.mapNotNull { it.rooms }
 		.transform { rooms ->
 			emitList(rooms.join[id]?.timeline?.events)

@@ -19,7 +19,7 @@ class SyncClientImpl(
 	private val client: MatrixClient,
 	private val store: SyncStore
 ) : SyncClient {
-	private val shareConfig = SharingStarted.WhileSubscribed(1000)
+	private val shareConfig = SharingStarted.WhileSubscribed(1000, 0)
 
 	private val _syncFlow = MutableSharedFlow<SyncResponse>()
 	override val syncFlow: SharedFlow<SyncResponse> = _syncFlow
@@ -95,7 +95,7 @@ class SyncClientImpl(
 	}.shareIn(scope, shareConfig, 1)
 
 	private fun createRoom(roomId: String): Room {
-		return RoomImpl(roomId, loginSession.userId, scope, syncFlow, client, store)
+		return RoomImpl(roomId, loginSession.userId, scope, syncFlow, client, store, shareConfig)
 	}
 
 
