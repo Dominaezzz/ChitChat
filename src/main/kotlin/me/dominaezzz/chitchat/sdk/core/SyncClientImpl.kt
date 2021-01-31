@@ -40,6 +40,7 @@ class SyncClientImpl(
 		emit(counts)
 
 		syncFlow.mapNotNull { it.deviceOneTimeKeysCount }
+			.distinctUntilChanged() // Synapse likes to repeat itself.
 			.filter { it.isNotEmpty() }
 			.collect { newCounts ->
 				counts += newCounts
