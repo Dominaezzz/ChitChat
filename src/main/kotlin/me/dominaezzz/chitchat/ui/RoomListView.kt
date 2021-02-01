@@ -2,7 +2,9 @@ package me.dominaezzz.chitchat.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,19 +24,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.matrixkt.models.events.contents.DirectContent
 import io.github.matrixkt.models.events.contents.TagContent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import me.dominaezzz.chitchat.sdk.core.Room
+import me.dominaezzz.chitchat.sdk.core.SyncClient
 import me.dominaezzz.chitchat.sdk.core.getDisplayName
 import me.dominaezzz.chitchat.sdk.core.tags
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 
-private fun Collection<Room>.sortRooms(): Flow<List<Room>> {
+private class RoomListModel(
+	val favourite: List<Room> = emptyList(),
+	val dm: List<Room> = emptyList(),
+	val normal: List<Room> = emptyList(),
+	val lowPriority: List<Room> = emptyList()
+)
+
+private fun Collection<Room>.partitionRooms(syncClient: SyncClient): Flow<RoomListModel> {
 	if (isEmpty()) {
-		return flowOf(emptyList())
+		return flowOf(RoomListModel())
 	}
 
 	class RoomData(
@@ -44,17 +56,10 @@ private fun Collection<Room>.sortRooms(): Flow<List<Room>> {
 		val lowPriority: TagContent.Tag?
 	)
 
-	val tagComparator = compareBy<TagContent.Tag> { it.order }
-	val comparator = compareBy<RoomData> { 0 }
-		.thenBy(nullsLast(tagComparator), { it.favourite })
-		.thenBy(nullsFirst(tagComparator), { it.lowPriority })
-		.thenBy(String.CASE_INSENSITIVE_ORDER, { it.displayName })
+	val nameComparator = compareBy<RoomData, String>(String.CASE_INSENSITIVE_ORDER) { it.displayName }
 
 	val perRoomData = map { room ->
-		combine(
-			room.getDisplayName(),
-			room.tags
-		) { displayName, tags ->
+		combine(room.getDisplayName(), room.tags) { displayName, tags ->
 			RoomData(
 				room,
 				displayName,
@@ -63,7 +68,27 @@ private fun Collection<Room>.sortRooms(): Flow<List<Room>> {
 			)
 		}
 	}
-	return combine(perRoomData) { roomData -> roomData.sortedWith(comparator).map { it.room } }
+	val allRoomData = combine(perRoomData) { it }
+	val directContent = syncClient.getAccountData("m.direct", DirectContent.serializer())
+		.map { it?.values?.flatten()?.toSet().orEmpty() }
+
+	return combine(allRoomData, directContent) { roomData, dms ->
+		val (favouriteRoomData, remaining1) = roomData.partition { it.favourite != null }
+		val (lowPriorityRoomData, remaining2) = remaining1.partition { it.lowPriority != null }
+		val (dmRooms, otherRoomData) = remaining2.partition { it.room.id in dms }
+		RoomListModel(
+			favouriteRoomData
+				.sortedWith(compareBy<RoomData> { it.favourite!!.order }
+					.then(nameComparator))
+				.map { it.room },
+			dmRooms.sortedWith(nameComparator).map { it.room },
+			otherRoomData.sortedWith(nameComparator).map { it.room },
+			lowPriorityRoomData
+				.sortedWith(compareBy<RoomData> { it.lowPriority!!.order }
+					.then(nameComparator))
+				.map { it.room }
+		)
+	}
 }
 
 @Composable
@@ -125,43 +150,58 @@ fun RoomListView(
 			Spacer(Modifier.width(5.dp))
 		}
 
-		Text(
-			"Rooms",
-			Modifier.padding(10.dp).align(Alignment.CenterHorizontally),
-			style = MaterialTheme.typography.h5
-		)
+		Spacer(Modifier.height(5.dp))
 
-		val sortedRooms = remember(rooms) { rooms.sortRooms() }.collectAsState(emptyList()).value
+		val syncClient = AppModelAmbient.current.syncClient
+		val model = remember(rooms) { rooms.partitionRooms(syncClient) }.collectAsState(RoomListModel()).value
 		LazyColumn {
-			items(sortedRooms) { room ->
-				val displayName = room.displayName()
-				val displayAvatar = room.displayAvatar()
-
-				@OptIn(ExperimentalAnimationApi::class)
-				AnimatedVisibility(roomFilter.isEmpty() || displayName.contains(roomFilter, true)) {
-					ListItem(
-						modifier = Modifier.selectable(
-							selected = selectedRoom == room.id,
-							onClick = { onSelectedRoomChanged(room.id) }
-						),
-						text = { Text(displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-						secondaryText = {
-							val count by room.joinedMemberCount.collectAsState(0)
-							Text("$count members")
-						},
-						singleLineSecondaryText = true,
-						icon = {
-							val image = displayAvatar?.let { loadIcon(URI(it)) }
-
-							if (image != null) {
-								Image(image, null, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
-							} else {
-								Image(Icons.Filled.Contacts, null, Modifier.size(40.dp))
-							}
-						}
+			fun section(header: String, rooms: List<Room>) {
+				@OptIn(ExperimentalFoundationApi::class)
+				stickyHeader {
+					Text(
+						header,
+						Modifier.fillMaxWidth()
+							.background(Color.LightGray)
+							.padding(horizontal = 16.dp, vertical = 8.dp),
+						style = MaterialTheme.typography.subtitle1
 					)
 				}
+
+				items(rooms) { room ->
+					val displayName = room.displayName()
+					val displayAvatar = room.displayAvatar()
+
+					@OptIn(ExperimentalAnimationApi::class)
+					AnimatedVisibility(roomFilter.isEmpty() || displayName.contains(roomFilter, true)) {
+						ListItem(
+							modifier = Modifier.selectable(
+								selected = selectedRoom == room.id,
+								onClick = { onSelectedRoomChanged(room.id) }
+							),
+							text = { Text(displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+							secondaryText = {
+								val count by room.joinedMemberCount.collectAsState(0)
+								Text("$count members")
+							},
+							singleLineSecondaryText = true,
+							icon = {
+								val image = displayAvatar?.let { loadIcon(URI(it)) }
+
+								if (image != null) {
+									Image(image, null, Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+								} else {
+									Image(Icons.Filled.Contacts, null, Modifier.size(40.dp))
+								}
+							}
+						)
+					}
+				}
 			}
+
+			section("Favourites", model.favourite)
+			section("Direct Messages", model.dm)
+			section("Rooms", model.normal)
+			section("Low Priority", model.lowPriority)
 		}
 	}
 }
