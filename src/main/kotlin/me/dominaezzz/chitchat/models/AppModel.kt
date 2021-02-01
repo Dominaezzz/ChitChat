@@ -17,7 +17,7 @@ import java.nio.file.Path
 import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
 
-class AppModel(private val applicationDir: Path) {
+class AppModel(applicationDir: Path) {
 	private val scope = CoroutineScope(SupervisorJob())
 
 	val session = usingConnection { conn ->
