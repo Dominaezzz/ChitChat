@@ -3,37 +3,61 @@ package me.dominaezzz.chitchat.sdk.crypto
 import io.github.matrixkt.olm.Account
 import io.github.matrixkt.olm.InboundGroupSession
 import io.github.matrixkt.olm.Session
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import me.dominaezzz.chitchat.db.*
+import me.dominaezzz.chitchat.sdk.util.SQLiteHelper
+import java.nio.file.Path
 import java.sql.Connection
 import kotlin.random.Random
 
 class SQLiteCryptoStore(
-	private val dbSemaphore: Semaphore,
+	private val databaseFile: Path,
 	private val random: Random
 ) : CryptoStore {
 	private val emptyByteArray = byteArrayOf()
 
-	private suspend inline fun <T> usingReadConnection(crossinline block: (Connection) -> T): T {
-		return withContext(Dispatchers.IO) {
-			usingConnection { block(it) }
-		}
-	}
-	private suspend inline fun <T> usingWriteConnection(crossinline block: (Connection) -> T): T {
-		return dbSemaphore.withPermit {
-			withContext(Dispatchers.IO) {
-				usingConnection { conn ->
-					conn.transaction {
-						block(conn)
-					}
-				}
+	private val helper = object : SQLiteHelper(databaseFile, 1) {
+		override fun onCreate(connection: Connection) {
+			connection.usingStatement { stmt ->
+				stmt.execute("""
+					CREATE TABLE key_value_store
+					(
+						key   TEXT PRIMARY KEY NOT NULL,
+						value TEXT
+					);
+				""")
+				stmt.execute("""
+					CREATE TABLE olm_sessions
+					(
+						sessionId         TEXT    PRIMARY KEY NOT NULL,
+						identityKey       TEXT    NOT NULL,
+						pickle            TEXT    NOT NULL,
+						isOutbound        BOOLEAN NOT NULL,
+						lastSuccessfulUse INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now'))
+					);
+				""")
+				stmt.execute("""
+					CREATE TABLE megolm_sessions
+					(
+						roomId           TEXT NOT NULL,
+						senderKey        TEXT NOT NULL,
+						sessionId        TEXT NOT NULL,
+						pickle           TEXT NOT NULL,
+						ed25519Key       TEXT NOT NULL,
+						forwardingChain  TEXT NOT NULL DEFAULT (JSON_ARRAY()),
+						PRIMARY KEY (roomId, senderKey, sessionId)
+					);
+				""")
 			}
 		}
+	}
+
+	private suspend fun <T> usingReadConnection(block: (Connection) -> T): T {
+		return helper.usingReadConnection(block)
+	}
+	private suspend fun <T> usingWriteConnection(block: (Connection) -> T): T {
+		return helper.usingWriteConnection(block)
 	}
 
 	private fun Connection.getAccount(): Account {

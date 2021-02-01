@@ -5,8 +5,6 @@ import io.github.matrixkt.models.Presence
 import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.LoginSession
@@ -45,9 +43,8 @@ class AppModel(private val applicationDir: Path) {
 	private val deviceStore = SQLiteDeviceStore(applicationDir.resolve("devices.db"))
 	private val deviceManager = DeviceManager(scope, client, syncClient, deviceStore)
 
-	private val appDbSemaphore = Semaphore(1)
 	private val random = SecureRandom().asKotlinRandom()
-	private val cryptoStore = SQLiteCryptoStore(appDbSemaphore, random)
+	private val cryptoStore = SQLiteCryptoStore(applicationDir.resolve("crypto.db"), random)
 	val cryptoManager = CryptoManager(client, session, cryptoStore, random)
 
 	init {
@@ -65,17 +62,15 @@ class AppModel(private val applicationDir: Path) {
 			.mapNotNull { it.toDevice }
 			.filter { it.events.isNotEmpty() }
 			.onEach { toDevice ->
-				appDbSemaphore.withPermit {
-					usingConnection { conn ->
-						conn.transaction {
-							val sql = "INSERT INTO device_events(type, content, sender) VALUES (?, ?, ?);"
-							conn.prepareStatement(sql).use { stmt ->
-								for (event in toDevice.events) {
-									stmt.setString(1, event.type)
-									stmt.setSerializable(2, JsonObject.serializer(), event.content)
-									stmt.setString(3, event.sender)
-									stmt.executeUpdate()
-								}
+				usingConnection { conn ->
+					conn.transaction {
+						val sql = "INSERT INTO device_events(type, content, sender) VALUES (?, ?, ?);"
+						conn.prepareStatement(sql).use { stmt ->
+							for (event in toDevice.events) {
+								stmt.setString(1, event.type)
+								stmt.setSerializable(2, JsonObject.serializer(), event.content)
+								stmt.setString(3, event.sender)
+								stmt.executeUpdate()
 							}
 						}
 					}
