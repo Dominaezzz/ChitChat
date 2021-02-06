@@ -3,6 +3,7 @@ package me.dominaezzz.chitchat.db
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.json.JsonNull
 import me.dominaezzz.chitchat.ui.projectDir
 import org.sqlite.SQLiteConfig
 import java.nio.file.Path
@@ -120,27 +121,19 @@ inline fun <T> Connection.withoutIndex(tableName: String, indexName: String, blo
 	}
 }
 
-fun <T> ResultSet.getSerializable(columnLabel: String, deserializer: DeserializationStrategy<T>): T? {
-	val content = getString(columnLabel)
-	return if (content != null) {
-		MatrixJson.decodeFromString(deserializer, content)
-	} else {
-		null
-	}
+fun <T> ResultSet.getSerializable(columnLabel: String, deserializer: DeserializationStrategy<T>): T {
+	val content = getString(columnLabel) ?: JsonNull.content
+	return MatrixJson.decodeFromString(deserializer, content)
 }
 
-fun <T> ResultSet.getSerializable(columnIndex: Int, deserializer: DeserializationStrategy<T>): T? {
-	val content = getString(columnIndex)
-	return if (content != null) {
-		MatrixJson.decodeFromString(deserializer, content)
-	} else {
-		null
-	}
+fun <T> ResultSet.getSerializable(columnIndex: Int, deserializer: DeserializationStrategy<T>): T {
+	val content = getString(columnIndex) ?: JsonNull.content
+	return MatrixJson.decodeFromString(deserializer, content)
 }
 
-fun <T> PreparedStatement.setSerializable(parameterIndex: Int, serializer: SerializationStrategy<T>, value: T?) {
-	if (value != null) {
-		val content = MatrixJson.encodeToString(serializer, value)
+fun <T> PreparedStatement.setSerializable(parameterIndex: Int, serializer: SerializationStrategy<T>, value: T) {
+	val content = MatrixJson.encodeToString(serializer, value)
+	if (content != JsonNull.content) {
 		setString(parameterIndex, content)
 	} else {
 		setString(parameterIndex, null)

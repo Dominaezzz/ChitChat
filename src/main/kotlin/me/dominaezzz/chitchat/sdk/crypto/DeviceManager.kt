@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import me.dominaezzz.chitchat.db.savepoint
 import me.dominaezzz.chitchat.db.setSerializable
@@ -122,7 +123,7 @@ class DeviceManager(
 				setSerializable(3, ListSerializer(String.serializer()), deviceKeys.algorithms)
 				setSerializable(4, MapSerializer(String.serializer(), String.serializer()), deviceKeys.keys)
 				setSerializable(5, MapSerializer(String.serializer(), MapSerializer(String.serializer(), String.serializer())), deviceKeys.signatures)
-				setSerializable(6, UnsignedDeviceInfo.serializer(), deviceKeys.unsigned)
+				setSerializable(6, UnsignedDeviceInfo.serializer().nullable, deviceKeys.unsigned)
 				executeUpdate()
 			}
 		}

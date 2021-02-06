@@ -5,6 +5,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -174,9 +175,9 @@ class RoomTimeline(
 			stmt.executeQuery().use { rs ->
 				buildList {
 					while (rs.next()) {
-						val event = rs.getSerializable(1, MatrixEvent.serializer())!!
-						val reactions = rs.getSerializable(2, MapSerializer(String.serializer(), Int.serializer())).orEmpty()
-						val msgUpdates = rs.getSerializable(3, ListSerializer(JsonObject.serializer())).orEmpty()
+						val event = rs.getSerializable(1, MatrixEvent.serializer())
+						val reactions = rs.getSerializable(2, MapSerializer(String.serializer(), Int.serializer()).nullable).orEmpty()
+						val msgUpdates = rs.getSerializable(3, ListSerializer(JsonObject.serializer()).nullable).orEmpty()
 						add(TimelineItem(event, msgUpdates, reactions))
 					}
 				}
@@ -246,9 +247,9 @@ class RoomTimeline(
 			stmt.executeQuery().use { rs ->
 				buildList {
 					while (rs.next()) {
-						val event = rs.getSerializable(1, MatrixEvent.serializer())!!
-						val reactions = rs.getSerializable(2, MapSerializer(String.serializer(), Int.serializer())).orEmpty()
-						val msgUpdates = rs.getSerializable(3, ListSerializer(JsonObject.serializer())).orEmpty()
+						val event = rs.getSerializable(1, MatrixEvent.serializer())
+						val reactions = rs.getSerializable(2, MapSerializer(String.serializer(), Int.serializer()).nullable).orEmpty()
+						val msgUpdates = rs.getSerializable(3, ListSerializer(JsonObject.serializer()).nullable).orEmpty()
 						val idx = rs.getInt(4)
 						add(idx to TimelineItem(event, msgUpdates, reactions))
 					}

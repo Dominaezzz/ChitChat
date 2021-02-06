@@ -126,7 +126,7 @@ class SQLiteSyncStoreTest {
 				stmt.executeQuery().use { rs ->
 					buildList {
 						while (rs.next()) {
-							add(rs.getSerializable(1, MatrixEvent.serializer())!!)
+							add(rs.getSerializable(1, MatrixEvent.serializer()))
 						}
 					}
 				}

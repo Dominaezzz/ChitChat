@@ -2,6 +2,7 @@ package me.dominaezzz.chitchat.sdk.crypto
 
 import io.github.matrixkt.models.DeviceKeys
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.nullable
 import me.dominaezzz.chitchat.db.getSerializable
 import me.dominaezzz.chitchat.db.usingStatement
 import me.dominaezzz.chitchat.sdk.util.SQLiteHelper
@@ -69,7 +70,7 @@ class SQLiteDeviceStore(private val databaseFile: Path): DeviceStore {
 				stmt.setString(2, deviceId)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						val deviceKeys = rs.getSerializable(1, DeviceKeys.serializer())
+						val deviceKeys = rs.getSerializable(1, DeviceKeys.serializer().nullable)
 						val isOutdated = rs.getBoolean(2)
 						deviceKeys to isOutdated
 					} else {
@@ -92,7 +93,7 @@ class SQLiteDeviceStore(private val databaseFile: Path): DeviceStore {
 				stmt.setString(1, userId)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						val deviceKeys = rs.getSerializable(1, ListSerializer(DeviceKeys.serializer()))!!
+						val deviceKeys = rs.getSerializable(1, ListSerializer(DeviceKeys.serializer()))
 						val isOutdated = rs.getBoolean(2)
 						deviceKeys to isOutdated
 					} else {

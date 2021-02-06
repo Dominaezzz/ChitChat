@@ -12,10 +12,7 @@ import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.models.sync.UnreadNotificationCounts
 import io.github.matrixkt.utils.MatrixJson
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.SetSerializer
-import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.builtins.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -256,9 +253,9 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			eventStmt.setString(3, event.type)
 			eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
 			eventStmt.setString(5, event.sender)
-			eventStmt.setSerializable(6, JsonElement.serializer(), event.unsigned)
+			eventStmt.setSerializable(6, JsonElement.serializer().nullable, event.unsigned)
 			eventStmt.setString(7, event.stateKey)
-			eventStmt.setSerializable(8, JsonElement.serializer(), event.prevContent)
+			eventStmt.setSerializable(8, JsonElement.serializer().nullable, event.prevContent)
 			eventStmt.setLong(9, event.originServerTimestamp)
 			if (timelineOrder != null) {
 				eventStmt.setLong(10, timelineOrder)
@@ -528,7 +525,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			conn.usingStatement { stmt ->
 				stmt.executeQuery(query).use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, MapSerializer(String.serializer(), ListSerializer(StrippedState.serializer())))!!
+						rs.getSerializable(1, MapSerializer(String.serializer(), ListSerializer(StrippedState.serializer())))
 					} else {
 						emptyMap()
 					}
@@ -630,7 +627,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 								SyncStore.ReadReceipt(
 									rs.getString(1),
 									rs.getString(2),
-									rs.getSerializable(3, ReceiptContent.Receipt.serializer())!!
+									rs.getSerializable(3, ReceiptContent.Receipt.serializer())
 								)
 							)
 						}
@@ -647,7 +644,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.setString(1, roomId)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, RoomSummary.serializer())!!
+						rs.getSerializable(1, RoomSummary.serializer())
 					} else {
 						throw NoSuchElementException("No room with id '$roomId'")
 					}
@@ -663,7 +660,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.setString(1, roomId)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, UnreadNotificationCounts.serializer())!!
+						rs.getSerializable(1, UnreadNotificationCounts.serializer())
 					} else {
 						throw NoSuchElementException("No room with id '$roomId'")
 					}
@@ -691,7 +688,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					if (rs.next()) {
 						SyncStore.LazyLoadingState(
 							rs.getString(1),
-							rs.getSerializable(2, SetSerializer(Membership.serializer()))!!
+							rs.getSerializable(2, SetSerializer(Membership.serializer()))
 						)
 					} else {
 						throw NoSuchElementException("No room with id '$roomId'")
@@ -724,7 +721,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			stmt.setSerializable(2, SetSerializer(String.serializer()), eventIds)
 			stmt.executeQuery().use { rs ->
 				check(rs.next())
-				rs.getSerializable(1, ListSerializer(MatrixEvent.serializer()))!!
+				rs.getSerializable(1, ListSerializer(MatrixEvent.serializer()))
 			}
 		}
 	}
@@ -762,9 +759,9 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					stmt.setSerializable(4, MemberContent.serializer(), event.content)
 					stmt.setString(5, event.sender)
 					stmt.setLong(6, event.originServerTimestamp)
-					stmt.setSerializable(7, UnsignedData.serializer(), event.unsigned)
+					stmt.setSerializable(7, UnsignedData.serializer().nullable, event.unsigned)
 					stmt.setString(8, event.stateKey!!)
-					stmt.setSerializable(9, MemberContent.serializer(), event.prevContent)
+					stmt.setSerializable(9, MemberContent.serializer().nullable, event.prevContent)
 					val changes = stmt.executeUpdate()
 					if (changes > 0) {
 						insertedEventIds.add(event.eventId)
@@ -884,9 +881,9 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
 					eventStmt.setString(5, event.sender)
 					eventStmt.setString(6, event.stateKey)
-					eventStmt.setSerializable(7, JsonElement.serializer(), event.prevContent)
+					eventStmt.setSerializable(7, JsonElement.serializer().nullable, event.prevContent)
 					eventStmt.setLong(8, event.originServerTimestamp)
-					eventStmt.setSerializable(9, JsonElement.serializer(), event.unsigned)
+					eventStmt.setSerializable(9, JsonElement.serializer().nullable, event.unsigned)
 					eventStmt.setInt(10, timelineId)
 					eventStmt.setInt(11, timelineOrder)
 					val changes = eventStmt.executeUpdate()
@@ -981,9 +978,9 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 							eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
 							eventStmt.setString(5, event.sender)
 							eventStmt.setString(6, event.stateKey)
-							eventStmt.setSerializable(7, JsonElement.serializer(), event.prevContent)
+							eventStmt.setSerializable(7, JsonElement.serializer().nullable, event.prevContent)
 							eventStmt.setLong(8, event.originServerTimestamp)
-							eventStmt.setSerializable(9, JsonElement.serializer(), event.unsigned)
+							eventStmt.setSerializable(9, JsonElement.serializer().nullable, event.unsigned)
 							eventStmt.setInt(10, timelineId)
 							eventStmt.setNull(11, Types.INTEGER)
 							val changes = eventStmt.executeUpdate()
