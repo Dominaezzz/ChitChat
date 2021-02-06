@@ -122,6 +122,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 						}
 
 						val image = room.avatarUrl?.let { loadIcon(URI(it)) }
+						@OptIn(ExperimentalMaterialApi::class)
 						ListItem(
 							icon = {
 								if (image != null) {

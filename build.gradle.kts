@@ -2,8 +2,8 @@ import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-	kotlin("jvm") version "1.4.21-2"
-	id("org.jetbrains.compose") version "0.3.0-build146"
+	kotlin("jvm") version "1.4.30"
+	id("org.jetbrains.compose") version "0.3.0-build149"
 }
 
 group = "me.dominaezzz"

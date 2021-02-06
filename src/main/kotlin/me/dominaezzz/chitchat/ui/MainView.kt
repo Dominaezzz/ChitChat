@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -29,10 +30,10 @@ import java.nio.file.*
 val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
 
-val SessionAmbient = staticAmbientOf<LoginSession> { error("No login session provided") }
-val AppModelAmbient = staticAmbientOf<AppModel> { error("No app model provided") }
-val ClientAmbient = staticAmbientOf<MatrixClient> { error("No client provided") }
-val ContentRepoAmbient = staticAmbientOf<ContentRepository> { error("No content repo provided") }
+val SessionAmbient = staticCompositionLocalOf<LoginSession> { error("No login session provided") }
+val AppModelAmbient = staticCompositionLocalOf<AppModel> { error("No app model provided") }
+val ClientAmbient = staticCompositionLocalOf<MatrixClient> { error("No client provided") }
+val ContentRepoAmbient = staticCompositionLocalOf<ContentRepository> { error("No content repo provided") }
 
 @Composable
 fun AppView() {
@@ -128,7 +129,7 @@ fun RoomView(
 
 			Spacer(Modifier.width(24.dp))
 
-			Providers(AmbientContentAlpha provides ContentAlpha.high) {
+			Providers(LocalContentAlpha provides ContentAlpha.high) {
 				Text(
 					text = room.displayName(),
 					modifier = Modifier.align(Alignment.CenterVertically),
@@ -142,7 +143,7 @@ fun RoomView(
 
 			val topic = room.topic.collectAsState(null).value?.topic
 			if (topic != null) {
-				Providers(AmbientContentAlpha provides ContentAlpha.high) {
+				Providers(LocalContentAlpha provides ContentAlpha.high) {
 					Text(
 						text = topic,
 						modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
@@ -193,7 +194,7 @@ fun TypingUsers(
 		else -> "${getName(users[0])}, ${getName(users[1])} and ${users.size - 2} others are typing ..."
 	}
 
-	Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+	Providers(LocalContentAlpha provides ContentAlpha.medium) {
 		Text(typingNotification, modifier)
 	}
 }
@@ -215,6 +216,6 @@ fun UserMessageInput(
 				Icon(Icons.Filled.Send, null)
 			}
 		},
-		onImeActionPerformed = { _, _ -> /* Send message */ }
+		keyboardActions = KeyboardActions(onSend = { /* Send message */ })
 	)
 }

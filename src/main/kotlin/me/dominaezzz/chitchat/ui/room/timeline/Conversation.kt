@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
-import androidx.compose.ui.platform.AmbientAnimationClock
+import androidx.compose.ui.platform.LocalAnimationClock
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +53,7 @@ fun Conversation(
 	val timelineEvents by timeline.events.collectAsState().let { derivedStateOf { it.value.asReversed() } }
 
 	Row(modifier) {
-		val clock = AmbientAnimationClock.current.asDisposableClock()
+		val clock = LocalAnimationClock.current.asDisposableClock()
 		val config = defaultFlingConfig()
 
 		val roomScrollMap = remember(config, clock) { mutableMapOf<String, LazyListState>() }
@@ -228,6 +228,7 @@ private fun ChatItem(room: Room, item: TimelineItem) {
 			AnnotatedString("Cannot render '${event.type}' yet" )
 		}
 	}
+	@OptIn(ExperimentalMaterialApi::class)
 	ListItem {
 		Text(text)
 	}
@@ -245,7 +246,7 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 			verticalAlignment = Alignment.CenterVertically
 		) {
 			if (eventReceipts.size > limit) {
-				Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+				Providers(LocalContentAlpha provides ContentAlpha.medium) {
 					Text(
 						"${eventReceipts.size - limit}+",
 						style = MaterialTheme.typography.caption
@@ -326,7 +327,7 @@ private fun AuthorAndTimeStamp(room: Room, senderUserId: String, originServerTim
 				.paddingFrom(LastBaseline, after = 8.dp) // Space to 1st bubble
 		)
 		Spacer(Modifier.preferredWidth(8.dp))
-		Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+		Providers(LocalContentAlpha provides ContentAlpha.medium) {
 			// TODO: Get ZoneId from compose and watch for system changes
 			Text(
 				text = Instant.ofEpochMilli(originServerTimestamp).atZone(ZoneId.systemDefault())
@@ -362,7 +363,7 @@ private fun Message(room: Room, content: MessageContent, senderUserId: String) {
 			)
 		}
 		is MessageContent.Notice -> {
-			Providers(AmbientContentAlpha provides ContentAlpha.medium) {
+			Providers(LocalContentAlpha provides ContentAlpha.medium) {
 				Text(
 					text = formatting(content.format, content.formattedBody),
 					style = MaterialTheme.typography.body1

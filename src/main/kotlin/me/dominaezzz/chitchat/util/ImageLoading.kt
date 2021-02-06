@@ -10,8 +10,8 @@ import org.jetbrains.skija.Image
 import java.net.URI
 import kotlin.math.min
 
-private val AmbientImageCache = ambientOf<Cache<URI, ImageBitmap>> { error("No image cache specified") }
-private val AmbientIconCache = ambientOf<Cache<URI, ImageBitmap>> { error("No icon cache specified") }
+private val AmbientImageCache = compositionLocalOf<Cache<URI, ImageBitmap>> { error("No image cache specified") }
+private val AmbientIconCache = compositionLocalOf<Cache<URI, ImageBitmap>> { error("No icon cache specified") }
 
 @Composable
 fun ImageCache(content: @Composable () -> Unit) {

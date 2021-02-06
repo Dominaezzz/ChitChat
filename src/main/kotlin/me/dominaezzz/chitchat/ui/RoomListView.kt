@@ -173,6 +173,7 @@ fun RoomListView(
 
 					@OptIn(ExperimentalAnimationApi::class)
 					AnimatedVisibility(roomFilter.isEmpty() || displayName.contains(roomFilter, true)) {
+						@OptIn(ExperimentalMaterialApi::class)
 						ListItem(
 							modifier = Modifier.selectable(
 								selected = selectedRoom == room.id,
