@@ -3,6 +3,7 @@ package me.dominaezzz.chitchat.util.formatting
 import androidx.compose.material.Typography
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.*
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
@@ -50,10 +51,10 @@ private fun AnnotatedString.Builder.appendElement(element: Element, typography: 
 		"i", "em" -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { appendChildren(element, typography, maxDepth) }
 		"b", "strong" -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { appendChildren(element, typography, maxDepth) }
 		"del", "strike" -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { appendChildren(element, typography, maxDepth) }
-		// "pre" /* TBD */ -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { appendChildren(element, typography, maxDepth) }
+		"pre" /* TBD */ -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { appendChildren(element, typography, maxDepth) }
 		"code" -> {
 			// language
-			withStyle(SpanStyle(background = Color(0xFFF7F7F7) /*, fontFamily = FontFamily.Monospace */)) {
+			withStyle(SpanStyle(background = Color(0xFFF7F7F7), fontFamily = FontFamily.Monospace)) {
 				appendChildren(element, typography, maxDepth)
 			}
 		}
