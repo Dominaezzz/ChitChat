@@ -30,16 +30,16 @@ import java.nio.file.*
 val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
 
-val SessionAmbient = staticCompositionLocalOf<LoginSession> { error("No login session provided") }
-val AppModelAmbient = staticCompositionLocalOf<AppModel> { error("No app model provided") }
-val ClientAmbient = staticCompositionLocalOf<MatrixClient> { error("No client provided") }
-val ContentRepoAmbient = staticCompositionLocalOf<ContentRepository> { error("No content repo provided") }
+val SessionAmbient = staticCompositionLocalOf<LoginSession>()
+val AppModelAmbient = staticCompositionLocalOf<AppModel>()
+val ClientAmbient = staticCompositionLocalOf<MatrixClient>()
+val ContentRepoAmbient = staticCompositionLocalOf<ContentRepository>()
 
 @Composable
 fun AppView() {
 	val appModel = remember { AppModel(appWorkingDir) }
 
-	Providers(
+	CompositionLocalProvider(
 		AppModelAmbient provides appModel,
 		SessionAmbient provides appModel.session,
 		ClientAmbient provides appModel.client,
@@ -78,7 +78,7 @@ fun MainView() {
 
 		Box(
 			Modifier.fillMaxHeight()
-				.preferredWidth(1.dp)
+				.width(1.dp)
 				.background(color = Color.Black.copy(alpha = 0.27f))
 		)
 
@@ -129,7 +129,7 @@ fun RoomView(
 
 			Spacer(Modifier.width(24.dp))
 
-			Providers(LocalContentAlpha provides ContentAlpha.high) {
+			CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.high) {
 				Text(
 					text = room.displayName(),
 					modifier = Modifier.align(Alignment.CenterVertically),
@@ -143,7 +143,7 @@ fun RoomView(
 
 			val topic = room.topic.collectAsState(null).value?.topic
 			if (topic != null) {
-				Providers(LocalContentAlpha provides ContentAlpha.high) {
+				CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.high) {
 					Text(
 						text = topic,
 						modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
@@ -194,7 +194,7 @@ fun TypingUsers(
 		else -> "${getName(users[0])}, ${getName(users[1])} and ${users.size - 2} others are typing ..."
 	}
 
-	Providers(LocalContentAlpha provides ContentAlpha.medium) {
+	CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
 		Text(typingNotification, modifier)
 	}
 }

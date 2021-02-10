@@ -25,7 +25,7 @@ fun ImageCache(content: @Composable () -> Unit) {
 		}
 	}
 
-	Providers(AmbientImageCache provides imageCache) {
+	CompositionLocalProvider(AmbientImageCache provides imageCache) {
 		content()
 	}
 }
@@ -50,7 +50,7 @@ fun IconCache(content: @Composable () -> Unit) {
 			}
 		}
 
-		Providers(AmbientIconCache provides iconCache) {
+		CompositionLocalProvider(AmbientIconCache provides iconCache) {
 			content()
 		}
 	}

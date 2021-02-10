@@ -1,8 +1,6 @@
 package me.dominaezzz.chitchat.ui.room.timeline
 
-import androidx.compose.animation.asDisposableClock
 import androidx.compose.foundation.*
-import androidx.compose.foundation.animation.defaultFlingConfig
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -19,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
-import androidx.compose.ui.platform.LocalAnimationClock
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -53,13 +50,8 @@ fun Conversation(
 	val timelineEvents by timeline.events.collectAsState().let { derivedStateOf { it.value.asReversed() } }
 
 	Row(modifier) {
-		val clock = LocalAnimationClock.current.asDisposableClock()
-		val config = defaultFlingConfig()
-
-		val roomScrollMap = remember(config, clock) { mutableMapOf<String, LazyListState>() }
-		val state = roomScrollMap.getOrPut(room.id) {
-			LazyListState(0, 0, null, config, clock)
-		}
+		val roomScrollMap = remember { mutableMapOf<String, LazyListState>() }
+		val state = roomScrollMap.getOrPut(room.id) { LazyListState(0, 0) }
 
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
 			itemsIndexed(timelineEvents) { idx, item ->
@@ -246,7 +238,7 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 			verticalAlignment = Alignment.CenterVertically
 		) {
 			if (eventReceipts.size > limit) {
-				Providers(LocalContentAlpha provides ContentAlpha.medium) {
+				CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
 					Text(
 						"${eventReceipts.size - limit}+",
 						style = MaterialTheme.typography.caption
@@ -261,7 +253,7 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 				val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
 
 				@Suppress("NAME_SHADOWING")
-				val modifier = Modifier.preferredSize(16.dp)
+				val modifier = Modifier.size(16.dp)
 					.clip(CircleShape)
 				if (avatar != null) {
 					Image(avatar, null, modifier, contentScale = ContentScale.Crop)
@@ -284,7 +276,7 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 			val authorAvatar = sender?.avatarUrl?.let { loadIcon(URI(it)) }
 
 			val modifier = Modifier.padding(horizontal = 16.dp)
-				.preferredSize(42.dp)
+				.size(42.dp)
 				.clip(CircleShape)
 				.align(Alignment.Top)
 			if (authorAvatar != null) {
@@ -293,7 +285,7 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 				Image(Icons.Filled.Person, null, modifier, contentScale = ContentScale.Crop)
 			}
 		} else {
-			Spacer(Modifier.preferredWidth(74.dp))
+			Spacer(Modifier.width(74.dp))
 		}
 
 		// Render message on the right
@@ -306,9 +298,9 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 			Message(room, content, event.sender)
 
 			if (isLastByAuthor) {
-				Spacer(Modifier.preferredHeight(8.dp))
+				Spacer(Modifier.height(8.dp))
 			} else {
-				Spacer(Modifier.preferredHeight(4.dp))
+				Spacer(Modifier.height(4.dp))
 			}
 		}
 	}
@@ -326,8 +318,8 @@ private fun AuthorAndTimeStamp(room: Room, senderUserId: String, originServerTim
 			modifier = Modifier.alignBy(LastBaseline)
 				.paddingFrom(LastBaseline, after = 8.dp) // Space to 1st bubble
 		)
-		Spacer(Modifier.preferredWidth(8.dp))
-		Providers(LocalContentAlpha provides ContentAlpha.medium) {
+		Spacer(Modifier.width(8.dp))
+		CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
 			// TODO: Get ZoneId from compose and watch for system changes
 			Text(
 				text = Instant.ofEpochMilli(originServerTimestamp).atZone(ZoneId.systemDefault())
@@ -363,7 +355,7 @@ private fun Message(room: Room, content: MessageContent, senderUserId: String) {
 			)
 		}
 		is MessageContent.Notice -> {
-			Providers(LocalContentAlpha provides ContentAlpha.medium) {
+			CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
 				Text(
 					text = formatting(content.format, content.formattedBody),
 					style = MaterialTheme.typography.body1
@@ -387,7 +379,7 @@ private fun Message(room: Room, content: MessageContent, senderUserId: String) {
 			val width = content.info?.width
 			val height = content.info?.height
 			val specifiedSize = if (width != null && height != null) {
-				Modifier.preferredSize(width.toInt().dp, height.toInt().dp)
+				Modifier.size(width.toInt().dp, height.toInt().dp)
 			} else {
 				Modifier
 			}

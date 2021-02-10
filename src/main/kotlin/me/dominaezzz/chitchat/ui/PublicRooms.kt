@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -129,7 +128,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 									Image(
 										image,
 										null,
-										Modifier.preferredSize(40.dp).clip(CircleShape),
+										Modifier.size(40.dp).clip(CircleShape),
 										contentScale = ContentScale.Crop
 									)
 								}
