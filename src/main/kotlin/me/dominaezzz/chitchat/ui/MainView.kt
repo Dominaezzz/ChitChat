@@ -30,10 +30,10 @@ import java.nio.file.*
 val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
 
-val SessionAmbient = staticCompositionLocalOf<LoginSession>()
-val AppModelAmbient = staticCompositionLocalOf<AppModel>()
-val ClientAmbient = staticCompositionLocalOf<MatrixClient>()
-val ContentRepoAmbient = staticCompositionLocalOf<ContentRepository>()
+val SessionAmbient = staticCompositionLocalOf<LoginSession> { error("No login session provided") }
+val AppModelAmbient = staticCompositionLocalOf<AppModel> { error("No app model provided") }
+val ClientAmbient = staticCompositionLocalOf<MatrixClient> { error("No client provided") }
+val ContentRepoAmbient = staticCompositionLocalOf<ContentRepository> { error("No content repo provided") }
 
 @Composable
 fun AppView() {
