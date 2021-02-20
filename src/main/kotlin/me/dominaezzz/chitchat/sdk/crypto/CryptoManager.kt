@@ -10,6 +10,7 @@ import io.github.matrixkt.models.sync.Event
 import io.github.matrixkt.olm.InboundGroupSession
 import io.github.matrixkt.olm.Message
 import io.github.matrixkt.olm.Session
+import io.github.matrixkt.olm.Utility
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,7 +21,8 @@ class CryptoManager(
 	private val client: MatrixClient,
 	private val loginSession: LoginSession,
 	private val store: CryptoStore,
-	private val random: Random
+	private val random: Random,
+	private val deviceCache: DeviceCache
 ) {
 	suspend fun uploadIdentityKeys() {
 		val userId = loginSession.userId
@@ -75,7 +77,7 @@ class CryptoManager(
 
 		client.keysApi.uploadKeys(request)
 
-		// NOTE: There's a small race condition here but it can be ignored.
+		// NOTE: There's a small race condition here, making this method not concurrency safe.
 
 		store.modifyAccount { account ->
 			account.markOneTimeKeysAsPublished()
@@ -136,7 +138,7 @@ class CryptoManager(
 		}
 	}
 
-	suspend fun receiveEncryptedDeviceEvent(event: Event, deviceManager: DeviceManager) {
+	suspend fun receiveEncryptedDeviceEvent(event: Event) {
 		try {
 			require(event.type == "m.room.encrypted")
 			val content = MatrixJson.decodeFromJsonElement(EncryptedContent.serializer(), event.content)
@@ -144,20 +146,21 @@ class CryptoManager(
 			// Only support olm for to device events.
 			if (content !is EncryptedContent.OlmV1) return
 
-			handleEncryptedDeviceEvent(event.sender!!, content, deviceManager)
+			handleEncryptedDeviceEvent(event.sender!!, content)
 		} catch (e: Exception) {
 			e.printStackTrace()
 		}
 	}
 
-	private suspend fun handleEncryptedDeviceEvent(sender: String, content: EncryptedContent.OlmV1, deviceManager: DeviceManager) {
+	private suspend fun handleEncryptedDeviceEvent(sender: String, content: EncryptedContent.OlmV1) {
 		val decryptedContent = decryptOlmEvent(content)
 		val olmPayload = MatrixJson.decodeFromString(OlmEventPayload.serializer(), decryptedContent)
 
 		check(olmPayload.sender == sender)
 
-		val senderDevices = deviceManager.getUserDevices(olmPayload.sender) ?: return
+		val senderDevices = deviceCache.getUserDevices(olmPayload.sender)
 		val senderSigningKey = senderDevices.asSequence()
+			.filter { keys -> runCatching { usingUtility { it.verifyEd25519Signature(keys) } }.isSuccess }
 			.filter { it.keys["curve25519:${it.deviceId}"] == content.senderKey }
 			.filter { "m.olm.v1.curve25519-aes-sha2" in it.algorithms }
 			.mapNotNull { it.keys["ed25519:${it.deviceId}"] }
@@ -211,5 +214,16 @@ class CryptoManager(
 				}
 			}
 		}
+	}
+
+
+	private fun Utility.verifyEd25519Signature(deviceKeys: DeviceKeys) {
+		verifyEd25519Signature(
+			deviceKeys.userId,
+			deviceKeys.deviceId,
+			deviceKeys.keys.getValue("ed25519:${deviceKeys.deviceId}"),
+			DeviceKeys.serializer(),
+			deviceKeys
+		)
 	}
 }

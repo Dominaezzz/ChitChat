@@ -9,10 +9,7 @@ import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.*
-import me.dominaezzz.chitchat.sdk.crypto.CryptoManager
-import me.dominaezzz.chitchat.sdk.crypto.DeviceManager
-import me.dominaezzz.chitchat.sdk.crypto.SQLiteCryptoStore
-import me.dominaezzz.chitchat.sdk.crypto.SQLiteDeviceStore
+import me.dominaezzz.chitchat.sdk.crypto.*
 import java.nio.file.Path
 import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
@@ -40,12 +37,11 @@ class AppModel(applicationDir: Path) {
 	private val syncStore = SQLiteSyncStore(applicationDir.resolve("sync.db"))
 	val syncClient = SyncClient(scope, session, client, syncStore)
 
-	private val deviceStore = SQLiteDeviceStore(applicationDir.resolve("devices.db"))
-	private val deviceManager = DeviceManager(scope, client, syncClient, deviceStore)
+	private val deviceCache = DeviceCache(scope, syncClient, client, applicationDir.resolve("devices.db"))
 
 	private val random = SecureRandom().asKotlinRandom()
 	private val cryptoStore = SQLiteCryptoStore(applicationDir.resolve("crypto.db"), random)
-	val cryptoManager = CryptoManager(client, session, cryptoStore, random)
+	val cryptoManager = CryptoManager(client, session, cryptoStore, random, deviceCache)
 
 	init {
 		syncClient.oneTimeKeysCount
@@ -83,7 +79,7 @@ class AppModel(applicationDir: Path) {
 			.transform { it.events.forEach { event -> emit(event) } }
 			.onEach { event ->
 				if (event.type == "m.room.encrypted") {
-					cryptoManager.receiveEncryptedDeviceEvent(event, deviceManager)
+					cryptoManager.receiveEncryptedDeviceEvent(event)
 				}
 			}
 			.launchIn(scope)
