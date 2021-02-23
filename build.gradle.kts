@@ -1,9 +1,8 @@
 import org.jetbrains.compose.compose
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
 	kotlin("jvm") version "1.4.30"
-	id("org.jetbrains.compose") version "0.3.0-build154"
+	id("org.jetbrains.compose") version "0.3.0"
 }
 
 group = "me.dominaezzz"
@@ -46,11 +45,6 @@ dependencies {
 compose.desktop {
 	application {
 		mainClass = "me.dominaezzz.chitchat.MainKt"
-
-		nativeDistributions {
-			targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-			packageName = "KotlinJvmComposeDesktopApplication"
-		}
 	}
 }
 
