@@ -330,7 +330,7 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 				)
 			}
 			is MessageContent.Image -> {
-				val image = loadImage(URI(content.url))
+				val image = content.url?.let { loadImage(URI(it)) }
 				val width = content.info?.width
 				val height = content.info?.height
 				val specifiedSize = if (width != null && height != null) {

@@ -3,10 +3,10 @@ package me.dominaezzz.chitchat.sdk.core
 import io.github.matrixkt.models.GetMembersResponse
 import io.github.matrixkt.models.MessagesResponse
 import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.models.events.StrippedState
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.RoomSummary
-import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.models.sync.UnreadNotificationCounts
 import kotlinx.serialization.json.JsonObject

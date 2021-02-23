@@ -1,7 +1,7 @@
 package me.dominaezzz.chitchat.sdk.core
 
 import io.github.matrixkt.models.Presence
-import io.github.matrixkt.models.sync.StrippedState
+import io.github.matrixkt.models.events.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow

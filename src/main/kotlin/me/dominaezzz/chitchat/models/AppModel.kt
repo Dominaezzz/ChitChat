@@ -2,7 +2,10 @@ package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Presence
+import io.github.matrixkt.models.wellknown.DiscoveryInformation
+import io.github.matrixkt.utils.MatrixJson
 import io.ktor.client.engine.apache.*
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
@@ -21,7 +24,8 @@ class AppModel(applicationDir: Path) {
 		LoginSession(
 			accessToken = conn.getValue("ACCESS_TOKEN")!!,
 			userId = conn.getValue("USER_ID")!!,
-			deviceId = conn.getValue("DEVICE_ID")!!
+			deviceId = conn.getValue("DEVICE_ID")!!,
+			discoveryInfo = MatrixJson.decodeFromString(DiscoveryInformation.serializer(), conn.getValue("WELL_KNOWN")!!)
 		)
 	}
 
@@ -30,7 +34,8 @@ class AppModel(applicationDir: Path) {
 		socketTimeout = 0
 	}
 
-	val client = MatrixClient(engine).apply { accessToken = session.accessToken }
+	val homeServerUrl = Url(session.discoveryInfo.homeServer.baseUrl)
+	val client = MatrixClient(engine, homeServerUrl).apply { accessToken = session.accessToken }
 
 	val contentRepository = ContentRepository(client, applicationDir.resolve("media"))
 

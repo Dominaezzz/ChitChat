@@ -3,12 +3,11 @@ package me.dominaezzz.chitchat.sdk.core
 import io.github.matrixkt.models.GetMembersResponse
 import io.github.matrixkt.models.MessagesResponse
 import io.github.matrixkt.models.events.MatrixEvent
-import io.github.matrixkt.models.events.UnsignedData
+import io.github.matrixkt.models.events.StrippedState
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.RoomSummary
-import io.github.matrixkt.models.sync.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.models.sync.UnreadNotificationCounts
 import io.github.matrixkt.utils.MatrixJson
@@ -453,7 +452,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					for ((roomId, invitedRoom) in rooms.invite) {
 						val state = invitedRoom.inviteState
 						if (state != null) {
-							for (event in state.events.orEmpty()) {
+							for (event in state.events) {
 								utils.insertInviteRoomState(roomId, event)
 							}
 						}
@@ -759,8 +758,8 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					stmt.setSerializable(4, MemberContent.serializer(), event.content)
 					stmt.setString(5, event.sender)
 					stmt.setLong(6, event.originServerTimestamp)
-					stmt.setSerializable(7, UnsignedData.serializer().nullable, event.unsigned)
-					stmt.setString(8, event.stateKey!!)
+					stmt.setSerializable(7, JsonObject.serializer().nullable, event.unsigned)
+					stmt.setString(8, event.stateKey)
 					stmt.setSerializable(9, MemberContent.serializer().nullable, event.prevContent)
 					val changes = stmt.executeUpdate()
 					if (changes > 0) {
@@ -864,7 +863,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 
 			val insertedEventIds = mutableSetOf<String>()
 			try {
-				val duplicateState = response.state?.map { it.eventId }?.toSet().orEmpty()
+				val duplicateState = response.state.map { it.eventId }.toSet()
 				val events = timelineEvents.dropLastWhile { it.eventId in duplicateState }
 
 				shiftTimelineStmt.setInt(1, events.size)
@@ -969,24 +968,21 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 						stmt.executeUpdate()
 					}
 				} else {
-					val stateEvents = response.state
-					if (stateEvents != null) {
-						for (event in stateEvents) {
-							eventStmt.setString(1, roomId)
-							eventStmt.setString(2, event.eventId)
-							eventStmt.setString(3, event.type)
-							eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
-							eventStmt.setString(5, event.sender)
-							eventStmt.setString(6, event.stateKey)
-							eventStmt.setSerializable(7, JsonElement.serializer().nullable, event.prevContent)
-							eventStmt.setLong(8, event.originServerTimestamp)
-							eventStmt.setSerializable(9, JsonElement.serializer().nullable, event.unsigned)
-							eventStmt.setInt(10, timelineId)
-							eventStmt.setNull(11, Types.INTEGER)
-							val changes = eventStmt.executeUpdate()
-							if (changes > 0) {
-								insertedEventIds.add(event.eventId)
-							}
+					for (event in response.state) {
+						eventStmt.setString(1, roomId)
+						eventStmt.setString(2, event.eventId)
+						eventStmt.setString(3, event.type)
+						eventStmt.setSerializable(4, JsonElement.serializer(), event.content)
+						eventStmt.setString(5, event.sender)
+						eventStmt.setString(6, event.stateKey)
+						eventStmt.setSerializable(7, JsonElement.serializer().nullable, event.prevContent)
+						eventStmt.setLong(8, event.originServerTimestamp)
+						eventStmt.setSerializable(9, JsonElement.serializer().nullable, event.unsigned)
+						eventStmt.setInt(10, timelineId)
+						eventStmt.setNull(11, Types.INTEGER)
+						val changes = eventStmt.executeUpdate()
+						if (changes > 0) {
+							insertedEventIds.add(event.eventId)
 						}
 					}
 					if (response.end != null) {
