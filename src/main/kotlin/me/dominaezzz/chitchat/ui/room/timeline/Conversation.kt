@@ -21,9 +21,11 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.json.JsonNull
 import me.dominaezzz.chitchat.models.TimelineItem
@@ -269,6 +271,94 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolean, isLastByAuthor: Boolean) {
 	val event = item.event
 
+	if (event.content.isEmpty()) {
+		UserMessageDecoration(room, event, isFirstByAuthor, isLastByAuthor) {
+			Text("**This message was redacted**")
+		}
+		return
+	}
+
+	val content = try {
+		MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
+	} catch (e: SerializationException) {
+		UserMessageDecoration(room, event, isFirstByAuthor, isLastByAuthor) {
+			Text("**Failed to decode message**")
+		}
+		return
+	}
+
+	@Composable
+	fun formatting(format: String?, formattedBody: String?): AnnotatedString {
+		return if (format == "org.matrix.custom.html") {
+			val typography = MaterialTheme.typography
+			try {
+				parseMatrixCustomHtml(formattedBody!!, typography)
+			} catch (e: Exception) {
+				AnnotatedString(content.body)
+			}
+		} else {
+			AnnotatedString(content.body)
+		}
+	}
+
+	UserMessageDecoration(room, event, isFirstByAuthor, isLastByAuthor) {
+		when (content) {
+			is MessageContent.Text -> {
+				Text(
+					text = formatting(content.format, content.formattedBody),
+					style = MaterialTheme.typography.body1
+				)
+			}
+			is MessageContent.Notice -> {
+				CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+					Text(
+						text = formatting(content.format, content.formattedBody),
+						style = MaterialTheme.typography.body1
+					)
+				}
+			}
+			is MessageContent.Emote -> {
+				Text(
+					text = buildAnnotatedString {
+						append("* ")
+						val sender = room.member(event.sender)
+						append(sender?.displayName ?: event.sender)
+						append(" ")
+						append(formatting(content.format, content.formattedBody))
+					},
+					style = MaterialTheme.typography.body1
+				)
+			}
+			is MessageContent.Image -> {
+				val image = loadImage(URI(content.url))
+				val width = content.info?.width
+				val height = content.info?.height
+				val specifiedSize = if (width != null && height != null) {
+					Modifier.size(width.toInt().dp, height.toInt().dp)
+				} else {
+					Modifier
+				}
+				if (image != null) {
+					Image(image, null, specifiedSize)
+				} else {
+					Image(Icons.Outlined.BrokenImage, null, specifiedSize)
+				}
+			}
+			else -> {
+				Text("This is a ${content::class.simpleName} message")
+			}
+		}
+	}
+}
+
+@Composable
+private fun UserMessageDecoration(
+	room: Room,
+	event: MatrixEvent,
+	isFirstByAuthor: Boolean,
+	isLastByAuthor: Boolean,
+	content: @Composable () -> Unit)
+{
 	Row(Modifier.padding(top = if(isFirstByAuthor) 8.dp else 0.dp)) {
 		// Render author image on the left
 		if (isFirstByAuthor) {
@@ -294,14 +384,9 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 				AuthorAndTimeStamp(room, event.sender, event.originServerTimestamp)
 			}
 
-			val content = MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
-			Message(room, content, event.sender)
+			content()
 
-			if (isLastByAuthor) {
-				Spacer(Modifier.height(8.dp))
-			} else {
-				Spacer(Modifier.height(4.dp))
-			}
+			Spacer(Modifier.height(if (isLastByAuthor) 8.dp else 4.dp))
 		}
 	}
 }
@@ -327,73 +412,6 @@ private fun AuthorAndTimeStamp(room: Room, senderUserId: String, originServerTim
 				style = MaterialTheme.typography.caption,
 				modifier = Modifier.alignBy(LastBaseline)
 			)
-		}
-	}
-}
-
-@Composable
-private fun Message(room: Room, content: MessageContent, senderUserId: String) {
-	@Composable
-	fun formatting(format: String?, formattedBody: String?): AnnotatedString {
-		return if (format == "org.matrix.custom.html") {
-			val typography = MaterialTheme.typography
-			try {
-				parseMatrixCustomHtml(formattedBody!!, typography)
-			} catch (e: Exception) {
-				AnnotatedString(content.body)
-			}
-		} else {
-			AnnotatedString(content.body)
-		}
-	}
-
-	when (content) {
-		is MessageContent.Text -> {
-			Text(
-				text = formatting(content.format, content.formattedBody),
-				style = MaterialTheme.typography.body1
-			)
-		}
-		is MessageContent.Notice -> {
-			CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-				Text(
-					text = formatting(content.format, content.formattedBody),
-					style = MaterialTheme.typography.body1
-				)
-			}
-		}
-		is MessageContent.Emote -> {
-			Text(
-				text = buildAnnotatedString {
-					append("* ")
-					val sender = room.member(senderUserId)
-					append(sender?.displayName ?: senderUserId)
-					append(" ")
-					append(formatting(content.format, content.formattedBody))
-				},
-				style = MaterialTheme.typography.body1
-			)
-		}
-		is MessageContent.Image -> {
-			val image = loadImage(URI(content.url))
-			val width = content.info?.width
-			val height = content.info?.height
-			val specifiedSize = if (width != null && height != null) {
-				Modifier.size(width.toInt().dp, height.toInt().dp)
-			} else {
-				Modifier
-			}
-			if (image != null) {
-				Image(image, null, specifiedSize)
-			} else {
-				Image(Icons.Outlined.BrokenImage, null, specifiedSize)
-			}
-		}
-		is MessageContent.Redacted -> {
-			Text("**This event was redacted**")
-		}
-		else -> {
-			Text("This is a ${content::class.simpleName} message")
 		}
 	}
 }
