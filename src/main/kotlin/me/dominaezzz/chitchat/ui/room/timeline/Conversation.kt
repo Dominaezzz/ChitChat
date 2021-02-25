@@ -25,7 +25,6 @@ import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.json.JsonNull
 import me.dominaezzz.chitchat.models.TimelineItem
@@ -280,7 +279,7 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 
 	val content = try {
 		MatrixJson.decodeFromJsonElement(MessageContent.serializer(), event.content)
-	} catch (e: SerializationException) {
+	} catch (e: Exception) {
 		UserMessageDecoration(room, event, isFirstByAuthor, isLastByAuthor) {
 			Text("**Failed to decode message**")
 		}
