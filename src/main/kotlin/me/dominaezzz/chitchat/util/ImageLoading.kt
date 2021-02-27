@@ -3,14 +3,18 @@ package me.dominaezzz.chitchat.util
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.IntSize
+import io.github.matrixkt.models.EncryptedFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import me.dominaezzz.chitchat.sdk.crypto.Attachments
 import me.dominaezzz.chitchat.ui.ContentRepoAmbient
 import org.jetbrains.skija.Image
+import java.io.ByteArrayOutputStream
 import java.net.URI
 import kotlin.math.min
 
 private val AmbientImageCache = compositionLocalOf<Cache<URI, ImageBitmap>> { error("No image cache specified") }
+private val AmbientEncryptedImageCache = compositionLocalOf<Cache<EncryptedFile, ImageBitmap>> { error("No image cache specified") }
 private val AmbientIconCache = compositionLocalOf<Cache<URI, ImageBitmap>> { error("No icon cache specified") }
 
 @Composable
@@ -24,8 +28,22 @@ fun ImageCache(content: @Composable () -> Unit) {
 			}
 		}
 	}
+	val encImageCache = remember(contentRepo) {
+		Cache<EncryptedFile, ImageBitmap> {
+			val bytes = contentRepo.getContent(URI(it.url))
+			val result = ByteArrayOutputStream(bytes.size)
+			Attachments.decrypt(bytes.inputStream(), result, it)
+			val decryptedBytes = result.toByteArray()
+			withContext(Dispatchers.Default) {
+				Image.makeFromEncoded(decryptedBytes).asImageBitmap()
+			}
+		}
+	}
 
-	CompositionLocalProvider(AmbientImageCache provides imageCache) {
+	CompositionLocalProvider(
+		AmbientImageCache provides imageCache,
+		AmbientEncryptedImageCache provides encImageCache
+	) {
 		content()
 	}
 }
@@ -72,6 +90,15 @@ private fun scaleImage(srcImage: ImageBitmap, scale: Float): ImageBitmap {
 		paint = Paint().apply { filterQuality = FilterQuality.High }
 	)
 	return dstImage
+}
+
+@Composable
+fun loadEncryptedImage(file: EncryptedFile): ImageBitmap? {
+	val iconCache = AmbientEncryptedImageCache.current
+	return produceState<ImageBitmap?>(null, file) {
+		value = null
+		value = runCatching { iconCache.getData(file) }.getOrNull()
+	}.value
 }
 
 @Composable

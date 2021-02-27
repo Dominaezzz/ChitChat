@@ -2,6 +2,7 @@ import org.jetbrains.compose.compose
 
 plugins {
 	kotlin("jvm") version "1.4.30"
+	kotlin("plugin.serialization") version "1.4.30"
 	id("org.jetbrains.compose") version "0.3.0"
 }
 

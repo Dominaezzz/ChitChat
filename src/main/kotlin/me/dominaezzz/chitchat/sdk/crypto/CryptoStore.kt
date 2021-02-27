@@ -22,4 +22,6 @@ interface CryptoStore {
 		ed25119Key: String,
 		forwardingChain: List<String> = emptyList()
 	)
+
+	suspend fun getMegolmSession(roomId: String, senderKey: String, sessionId: String): InboundGroupSession?
 }

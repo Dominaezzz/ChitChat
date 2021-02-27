@@ -181,4 +181,26 @@ class SQLiteCryptoStore(
 			}
 		}
 	}
+
+	override suspend fun getMegolmSession(roomId: String, senderKey: String, sessionId: String): InboundGroupSession? {
+		val pickle = usingReadConnection { conn ->
+			val query = """
+				SELECT pickle FROM megolm_sessions
+				WHERE roomId = ? AND senderKey = ? AND sessionId = ?
+			"""
+			conn.prepareStatement(query).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.setString(2, senderKey)
+				stmt.setString(3, sessionId)
+				stmt.executeQuery().use { rs ->
+					if (rs.next()) {
+						rs.getString(1)
+					} else {
+						null
+					}
+				}
+			}
+		}
+		return pickle?.let { InboundGroupSession.unpickle(emptyByteArray, it) }
+	}
 }

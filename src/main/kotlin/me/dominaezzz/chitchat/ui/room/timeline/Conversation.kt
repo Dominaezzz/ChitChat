@@ -27,11 +27,15 @@ import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.TimelineItem
 import me.dominaezzz.chitchat.sdk.core.Room
+import me.dominaezzz.chitchat.sdk.crypto.MegolmPayload
+import me.dominaezzz.chitchat.ui.AppModelAmbient
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage
 import me.dominaezzz.chitchat.util.formatting.parseMatrixCustomHtml
+import me.dominaezzz.chitchat.util.loadEncryptedImage
 import java.net.URI
 import java.time.Instant
 import java.time.ZoneId
@@ -54,6 +58,10 @@ fun Conversation(
 		val roomScrollMap = remember { mutableMapOf<String, LazyListState>() }
 		val state = roomScrollMap.getOrPut(room.id) { LazyListState(0, 0) }
 
+		val manager = AppModelAmbient.current.cryptoManager
+		val megolmCache = remember(room.id) { MegolmCache(room.id, manager) }
+		LaunchedEffect(megolmCache) { megolmCache.load() }
+
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
 			itemsIndexed(timelineEvents) { idx, item ->
 				if (idx == timelineEvents.lastIndex) {
@@ -73,6 +81,13 @@ fun Conversation(
 						val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
 						val isNotLast = next != null && next.sender == sender && next.type == "m.room.message"
 						MessageEvent(room, item, !isNotFirst, !isNotLast)
+					} else if (item.event.type == "m.room.encrypted") {
+						val sender = item.event.sender
+						val prev = timelineEvents.getOrNull(idx + 1)?.event
+						val next = timelineEvents.getOrNull(idx - 1)?.event
+						val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.encrypted"
+						val isNotLast = next != null && next.sender == sender && next.type == "m.room.encrypted"
+						EncryptedEvent(room, item, !isNotFirst, !isNotLast, megolmCache)
 					} else {
 						ChatItem(room, item)
 					}
@@ -211,11 +226,8 @@ private fun ChatItem(room: Room, item: TimelineItem) {
 			}
 			AnnotatedString("${sender?.displayName ?: event.sender} ${action}.")
 		}
-		"m.room.encrypted" -> {
-			AnnotatedString("${sender?.displayName ?: event.sender} has sent an encrypted message. E2EE not supported yet!")
-		}
 		"m.room.encryption" -> {
-			AnnotatedString("${sender?.displayName ?: event.sender} has enabled End to End Encryption. E2EE not supported yet!")
+			AnnotatedString("${sender?.displayName ?: event.sender} has enabled End to End Encryption.")
 		}
 		else -> {
 			AnnotatedString("Cannot render '${event.type}' yet" )
@@ -264,6 +276,67 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 			}
 		}
 	}
+}
+
+@Composable
+private fun EncryptedEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolean, isLastByAuthor: Boolean, megolmCache: MegolmCache) {
+	val event = item.event
+
+	// Handle redacted encrypted events.
+	if (event.content.isEmpty()) {
+		val newItem = TimelineItem(
+			event.copy(
+				type = "m.room.message",
+				content = JsonObject(emptyMap())
+			),
+			item.edits,
+			item.reactions
+		)
+		MessageEvent(room, newItem, isFirstByAuthor, isLastByAuthor)
+		return
+	}
+
+	val content = try {
+		MatrixJson.decodeFromJsonElement(EncryptedContent.serializer(), event.content)
+	} catch (e: Exception) {
+		UserMessageDecoration(room, event, isFirstByAuthor, isLastByAuthor) {
+			Text("**Failed to decode message**")
+		}
+		throw e
+	}
+
+	if (content !is EncryptedContent.MegolmV1) {
+		UserMessageDecoration(room, event, isFirstByAuthor, isLastByAuthor) {
+			Text("**Encryption algorithm is not supported!**")
+		}
+		return
+	}
+
+	val sessionState = megolmCache.getSession(content.senderKey, content.sessionId)
+	val session = sessionState.value
+	if (session == null) {
+		UserMessageDecoration(room, event, isFirstByAuthor, isLastByAuthor) {
+			Text("**Decrypting message...**")
+		}
+		return
+	}
+
+	val decryptedMsg = session.decrypt(content.ciphertext).message
+	val decryptedPayload = MatrixJson.decodeFromString(MegolmPayload.serializer(), decryptedMsg)
+	if (decryptedPayload.roomId != room.id) {
+		println("${decryptedPayload.roomId} ${room.id} ${event.eventId}")
+	}
+
+	val decryptedItem = TimelineItem(
+		event.copy(
+			type = decryptedPayload.type,
+			content = decryptedPayload.content
+		),
+		item.edits,
+		item.reactions
+	)
+
+	MessageEvent(room, decryptedItem, isFirstByAuthor, isLastByAuthor)
 }
 
 @Composable
@@ -329,7 +402,14 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 				)
 			}
 			is MessageContent.Image -> {
-				val image = content.url?.let { loadImage(URI(it)) }
+				val imageUrl = content.url
+				val imageFile = content.file
+
+				val image = when {
+					imageUrl != null -> loadImage(URI(imageUrl))
+					imageFile != null -> loadEncryptedImage(imageFile)
+					else -> null
+				}
 				val width = content.info?.width
 				val height = content.info?.height
 				val specifiedSize = if (width != null && height != null) {

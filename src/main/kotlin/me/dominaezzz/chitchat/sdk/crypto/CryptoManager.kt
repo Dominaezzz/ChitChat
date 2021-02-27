@@ -13,6 +13,7 @@ import io.github.matrixkt.olm.Session
 import io.github.matrixkt.olm.Utility
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import kotlin.random.Random
@@ -180,7 +181,10 @@ class CryptoManager(
 
 				val session = InboundGroupSession(roomKey.sessionKey)
 				try {
-					check(session.sessionId == roomKey.sessionId)
+					if (session.sessionId != roomKey.sessionId) {
+						// Log this occurred.
+						return
+					}
 
 					store.storeGroupSession(
 						roomKey.roomId,
@@ -188,6 +192,7 @@ class CryptoManager(
 						session,
 						senderSigningKey
 					)
+					megolmSessionFlow.emit(MegolmId(roomKey.roomId, content.senderKey, roomKey.sessionId))
 				} finally {
 					session.clear()
 				}
@@ -212,6 +217,24 @@ class CryptoManager(
 				} finally {
 					session.clear()
 				}
+			}
+		}
+	}
+
+	private data class MegolmId(val roomId: String, val senderKey: String, val sessionId: String)
+	private val megolmSessionFlow = MutableSharedFlow<MegolmId>()
+
+	suspend fun getMegolmSession(roomId: String, senderKey: String, sessionId: String): Flow<InboundGroupSession?> {
+		return flow {
+			val storedSession = store.getMegolmSession(roomId, senderKey, sessionId)
+			emit(storedSession)
+			if (storedSession == null) {
+				megolmSessionFlow.first {
+					it.roomId == roomId && it.senderKey == senderKey && it.sessionId == sessionId
+				}
+				val session = store.getMegolmSession(roomId, senderKey, sessionId)
+				checkNotNull(session)
+				emit(session)
 			}
 		}
 	}
