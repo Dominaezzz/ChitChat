@@ -30,18 +30,24 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import me.dominaezzz.chitchat.sdk.core.Room
-import me.dominaezzz.chitchat.sdk.core.SyncClient
-import me.dominaezzz.chitchat.sdk.core.getDisplayName
-import me.dominaezzz.chitchat.sdk.core.tags
+import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 
+private class RoomDetails(
+	val room: Room,
+	val displayName: String,
+	val displayAvatar: String?,
+	val memberCount: Int,
+	val favourite: TagContent.Tag?,
+	val lowPriority: TagContent.Tag?
+)
+
 private class RoomListModel(
-	val favourite: List<Room> = emptyList(),
-	val dm: List<Room> = emptyList(),
-	val normal: List<Room> = emptyList(),
-	val lowPriority: List<Room> = emptyList()
+	val favourite: List<RoomDetails> = emptyList(),
+	val dm: List<RoomDetails> = emptyList(),
+	val normal: List<RoomDetails> = emptyList(),
+	val lowPriority: List<RoomDetails> = emptyList()
 )
 
 private fun Collection<Room>.partitionRooms(syncClient: SyncClient): Flow<RoomListModel> {
@@ -49,20 +55,20 @@ private fun Collection<Room>.partitionRooms(syncClient: SyncClient): Flow<RoomLi
 		return flowOf(RoomListModel())
 	}
 
-	class RoomData(
-		val room: Room,
-		val displayName: String,
-		val favourite: TagContent.Tag?,
-		val lowPriority: TagContent.Tag?
-	)
-
-	val nameComparator = compareBy<RoomData, String>(String.CASE_INSENSITIVE_ORDER) { it.displayName }
+	val nameComparator = compareBy<RoomDetails, String>(String.CASE_INSENSITIVE_ORDER) { it.displayName }
 
 	val perRoomData = map { room ->
-		combine(room.getDisplayName(), room.tags) { displayName, tags ->
-			RoomData(
+		combine(
+			room.getDisplayName(),
+			room.getDisplayAvatar(),
+			room.joinedMemberCount,
+			room.tags
+		) { displayName, displayAvatar, memberCount, tags ->
+			RoomDetails(
 				room,
 				displayName,
+				displayAvatar,
+				memberCount,
 				tags["m.favourite"],
 				tags["m.lowpriority"]
 			)
@@ -78,15 +84,13 @@ private fun Collection<Room>.partitionRooms(syncClient: SyncClient): Flow<RoomLi
 		val (dmRooms, otherRoomData) = remaining2.partition { it.room.id in dms }
 		RoomListModel(
 			favouriteRoomData
-				.sortedWith(compareBy<RoomData> { it.favourite!!.order }
-					.then(nameComparator))
-				.map { it.room },
-			dmRooms.sortedWith(nameComparator).map { it.room },
-			otherRoomData.sortedWith(nameComparator).map { it.room },
+				.sortedWith(compareBy<RoomDetails> { it.favourite!!.order }
+					.then(nameComparator)),
+			dmRooms.sortedWith(nameComparator),
+			otherRoomData.sortedWith(nameComparator),
 			lowPriorityRoomData
-				.sortedWith(compareBy<RoomData> { it.lowPriority!!.order }
+				.sortedWith(compareBy<RoomDetails> { it.lowPriority!!.order }
 					.then(nameComparator))
-				.map { it.room }
 		)
 	}
 }
@@ -155,7 +159,7 @@ fun RoomListView(
 		val syncClient = AppModelAmbient.current.syncClient
 		val model = remember(rooms) { rooms.partitionRooms(syncClient) }.collectAsState(RoomListModel()).value
 		LazyColumn {
-			fun section(header: String, rooms: List<Room>) {
+			fun section(header: String, rooms: List<RoomDetails>) {
 				@OptIn(ExperimentalFoundationApi::class)
 				stickyHeader {
 					Text(
@@ -167,9 +171,10 @@ fun RoomListView(
 					)
 				}
 
-				items(rooms) { room ->
-					val displayName = room.displayName()
-					val displayAvatar = room.displayAvatar()
+				items(rooms) { roomDetail ->
+					val room = roomDetail.room
+					val displayName = roomDetail.displayName
+					val displayAvatar = roomDetail.displayAvatar
 
 					@OptIn(ExperimentalAnimationApi::class)
 					AnimatedVisibility(roomFilter.isEmpty() || displayName.contains(roomFilter, true)) {
@@ -180,10 +185,7 @@ fun RoomListView(
 								onClick = { onSelectedRoomChanged(room.id) }
 							),
 							text = { Text(displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-							secondaryText = {
-								val count by room.joinedMemberCount.collectAsState(0)
-								Text("$count members")
-							},
+							secondaryText = { Text("${roomDetail.memberCount} members") },
 							singleLineSecondaryText = true,
 							icon = {
 								val image = displayAvatar?.let { loadIcon(URI(it)) }
