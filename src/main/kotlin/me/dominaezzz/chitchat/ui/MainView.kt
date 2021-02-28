@@ -33,7 +33,6 @@ val appWorkingDir: Path = projectDir.resolve("appdir")
 val SessionAmbient = staticCompositionLocalOf<LoginSession> { error("No login session provided") }
 val AppModelAmbient = staticCompositionLocalOf<AppModel> { error("No app model provided") }
 val ClientAmbient = staticCompositionLocalOf<MatrixClient> { error("No client provided") }
-val ContentRepoAmbient = staticCompositionLocalOf<ContentRepository> { error("No content repo provided") }
 
 @Composable
 fun AppView() {
@@ -42,8 +41,7 @@ fun AppView() {
 	CompositionLocalProvider(
 		AppModelAmbient provides appModel,
 		SessionAmbient provides appModel.session,
-		ClientAmbient provides appModel.client,
-		ContentRepoAmbient provides appModel.contentRepository
+		ClientAmbient provides appModel.client
 	) {
 		ImageCache {
 			MainView()
