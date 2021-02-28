@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -51,8 +50,7 @@ fun Conversation(
 	LaunchedEffect(timeline) { timeline.run() }
 	val shouldBackPaginate = timeline.shouldBackPaginate
 
-	@OptIn(ExperimentalCoroutinesApi::class)
-	val timelineEvents by timeline.events.collectAsState().let { derivedStateOf { it.value.asReversed() } }
+	val timelineEvents = timeline.events.collectAsState().value.asReversed()
 
 	Row(modifier) {
 		val roomScrollMap = remember { mutableMapOf<String, LazyListState>() }

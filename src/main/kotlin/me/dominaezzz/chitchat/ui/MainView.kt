@@ -80,8 +80,8 @@ fun MainView() {
 				.background(color = Color.Black.copy(alpha = 0.27f))
 		)
 
-		if (selectedRoom != null) {
-			val room by derivedStateOf { joinedRooms.getValue(selectedRoom!!) }
+		val room = selectedRoom?.let { joinedRooms[it] }
+		if (room != null) {
 			RoomView(
 				room,
 				Modifier.fillMaxWidth()

@@ -46,7 +46,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 	var searchTerm by remember { mutableStateOf("") }
 	val shouldPaginate = remember { MutableStateFlow(false) }
 
-	@OptIn(ExperimentalComposeApi::class, ExperimentalCoroutinesApi::class)
+	@OptIn(ExperimentalCoroutinesApi::class)
 	val rooms = remember {
 		val batchSize = 40
 		snapshotFlow { searchTerm }
