@@ -22,7 +22,7 @@ import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.models.AppModel
 import me.dominaezzz.chitchat.ui.room.timeline.Conversation
 import me.dominaezzz.chitchat.sdk.core.*
-import me.dominaezzz.chitchat.util.IconCache
+import me.dominaezzz.chitchat.util.ImageCache
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 import java.nio.file.*
@@ -45,7 +45,7 @@ fun AppView() {
 		ClientAmbient provides appModel.client,
 		ContentRepoAmbient provides appModel.contentRepository
 	) {
-		IconCache {
+		ImageCache {
 			MainView()
 		}
 	}
