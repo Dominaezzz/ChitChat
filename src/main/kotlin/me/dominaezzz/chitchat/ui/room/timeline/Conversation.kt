@@ -31,6 +31,7 @@ import me.dominaezzz.chitchat.models.TimelineItem
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.crypto.MegolmPayload
 import me.dominaezzz.chitchat.ui.AppModelAmbient
+import me.dominaezzz.chitchat.ui.room.getMember
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage
 import me.dominaezzz.chitchat.util.formatting.parseMatrixCustomHtml
@@ -106,22 +107,16 @@ fun Conversation(
 }
 
 @Composable
-private fun Room.member(userId: String): MemberContent? {
-	return remember(this, userId) { getMember(userId) }
-		.collectAsState(null).value
-}
-
-@Composable
 private fun ChatItem(room: Room, item: TimelineItem) {
 	val event = item.event
-	val sender = room.member(event.sender)
+	val sender = getMember(room, event.sender).value
 
 	val text = when (event.type) {
 		"m.room.member" -> {
 			val content = MatrixJson.decodeFromJsonElement(MemberContent.serializer(), event.content)
 			val prevContentJson = event.prevContent ?: event.unsigned?.get("prev_content") ?: JsonNull
 			val prevContent = MatrixJson.decodeFromJsonElement(MemberContent.serializer().nullable, prevContentJson)
-			val target = room.member(event.stateKey ?: return)
+			val target = getMember(room, event.stateKey ?: return).value
 
 			buildAnnotatedString {
 				append(target?.displayName ?: event.stateKey ?: "Unknown user ")
@@ -196,7 +191,7 @@ private fun ChatItem(room: Room, item: TimelineItem) {
 		"m.room.create" -> {
 			val content = MatrixJson.decodeFromJsonElement(CreateContent.serializer(), event.content)
 			buildAnnotatedString {
-				val creator = room.member(content.creator)
+				val creator = getMember(room, content.creator).value
 				append(creator?.displayName ?: content.creator)
 				append(" created this room")
 				if (content.predecessor != null) {
@@ -260,7 +255,7 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 			for ((userId, _) in eventReceipts.take(limit)) {
 				Spacer(Modifier.width(1.dp))
 
-				val member = room.member(userId)
+				val member = getMember(room, userId).value
 				val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
 
 				@Suppress("NAME_SHADOWING")
@@ -391,7 +386,7 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 				Text(
 					text = buildAnnotatedString {
 						append("* ")
-						val sender = room.member(event.sender)
+						val sender = getMember(room, event.sender).value
 						append(sender?.displayName ?: event.sender)
 						append(" ")
 						append(formatting(content.format, content.formattedBody))
@@ -441,7 +436,7 @@ private fun UserMessageDecoration(
 	Row(Modifier.padding(top = if(isFirstByAuthor) 8.dp else 0.dp)) {
 		// Render author image on the left
 		if (isFirstByAuthor) {
-			val sender = room.member(event.sender)
+			val sender = getMember(room, event.sender).value
 			val authorAvatar = sender?.avatarUrl?.let { loadIcon(URI(it)) }
 
 			val modifier = Modifier.padding(horizontal = 16.dp)
@@ -472,7 +467,7 @@ private fun UserMessageDecoration(
 
 @Composable
 private fun AuthorAndTimeStamp(room: Room, senderUserId: String, originServerTimestamp: Long) {
-	val sender = room.member(senderUserId)
+	val sender = getMember(room, senderUserId).value
 
 	Row {
 		Text(

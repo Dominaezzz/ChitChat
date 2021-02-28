@@ -18,10 +18,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.MatrixClient
 import kotlinx.coroutines.*
-import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.models.AppModel
 import me.dominaezzz.chitchat.ui.room.timeline.Conversation
 import me.dominaezzz.chitchat.sdk.core.*
+import me.dominaezzz.chitchat.ui.room.MemberCache
+import me.dominaezzz.chitchat.ui.room.getMember
 import me.dominaezzz.chitchat.util.ImageCache
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
@@ -82,10 +83,12 @@ fun MainView() {
 
 		val room = selectedRoom?.let { joinedRooms[it] }
 		if (room != null) {
-			RoomView(
-				room,
-				Modifier.fillMaxWidth()
-			)
+			MemberCache(room) {
+				RoomView(
+					room,
+					Modifier.fillMaxWidth()
+				)
+			}
 		}
 	}
 }
@@ -180,8 +183,7 @@ fun TypingUsers(
 
 	@Composable
 	fun getName(userId: String): String {
-		val memberFlow = remember(userId) { room.getMember(userId) }
-		val member by memberFlow.collectAsState(null)
+		val member = getMember(room, userId).value
 		return member?.displayName ?: userId
 	}
 
