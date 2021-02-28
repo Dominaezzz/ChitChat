@@ -28,18 +28,6 @@ import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 
 @Composable
-fun PublicRoomsPopup(onDismissRequest: (() -> Unit)? = null) {
-	Popup(Alignment.Center, onDismissRequest = onDismissRequest, isFocusable = true) {
-		Card(
-			modifier = Modifier.fillMaxSize(0.7f),
-			elevation = 20.dp
-		) {
-			PublicRooms()
-		}
-	}
-}
-
-@Composable
 fun PublicRooms(modifier: Modifier = Modifier) {
 	val client = ClientAmbient.current
 

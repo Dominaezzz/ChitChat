@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import io.github.matrixkt.models.events.contents.DirectContent
 import io.github.matrixkt.models.events.contents.TagContent
 import kotlinx.coroutines.flow.Flow
@@ -107,7 +108,18 @@ fun RoomListView(
 	var showPublicRoomsPopup by remember { mutableStateOf(false) }
 
 	if (showPublicRoomsPopup) {
-		PublicRoomsPopup { showPublicRoomsPopup = false }
+		Popup(
+			alignment = Alignment.Center,
+			onDismissRequest = { showPublicRoomsPopup = false },
+			isFocusable = true
+		) {
+			Card(
+				modifier = Modifier.fillMaxSize(0.7f),
+				elevation = 20.dp
+			) {
+				PublicRooms()
+			}
+		}
 	}
 
 	Column(modifier) {
