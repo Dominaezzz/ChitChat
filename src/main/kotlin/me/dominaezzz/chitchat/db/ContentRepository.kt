@@ -14,7 +14,7 @@ class ContentRepository(private val client: MatrixClient, private val mediaDir: 
 	private val ioSemaphore = Semaphore(5)
 
 	suspend fun getContent(uri: URI): ByteArray {
-		require(uri.scheme == "mxc")
+		require(uri.scheme == "mxc") // TODO: This should be handled higher up.
 
 		val serverName = uri.host
 		val mediaId = uri.path.removePrefix("/")
