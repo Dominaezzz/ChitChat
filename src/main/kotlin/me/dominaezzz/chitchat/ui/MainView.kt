@@ -19,7 +19,7 @@ val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
 
 val SessionAmbient = staticCompositionLocalOf<LoginSession> { error("No login session provided") }
-val AppModelAmbient = staticCompositionLocalOf<AppModel> { error("No app model provided") }
+val LocalAppModel = staticCompositionLocalOf<AppModel> { error("No app model provided") }
 val ClientAmbient = staticCompositionLocalOf<MatrixClient> { error("No client provided") }
 
 @Composable
@@ -27,7 +27,7 @@ fun AppView() {
 	val appModel = remember { AppModel(appWorkingDir) }
 
 	CompositionLocalProvider(
-		AppModelAmbient provides appModel,
+		LocalAppModel provides appModel,
 		SessionAmbient provides appModel.session,
 		ClientAmbient provides appModel.client
 	) {
@@ -49,7 +49,7 @@ fun AppView() {
 
 @Composable
 fun MainView() {
-	val appViewModel = AppModelAmbient.current
+	val appViewModel = LocalAppModel.current
 
 	val joinedRooms by remember { appViewModel.syncClient.joinedRooms }.collectAsState(emptyMap())
 	var selectedRoom by remember { mutableStateOf<String?>(null) }

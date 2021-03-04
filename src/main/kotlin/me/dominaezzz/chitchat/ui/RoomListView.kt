@@ -168,7 +168,7 @@ fun RoomListView(
 
 		Spacer(Modifier.height(5.dp))
 
-		val syncClient = AppModelAmbient.current.syncClient
+		val syncClient = LocalAppModel.current.syncClient
 		val model = remember(rooms) { rooms.partitionRooms(syncClient) }.collectAsState(RoomListModel()).value
 		LazyColumn {
 			fun section(header: String, rooms: List<RoomDetails>) {

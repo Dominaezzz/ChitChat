@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.dominaezzz.chitchat.db.ContentRepository
 import me.dominaezzz.chitchat.sdk.crypto.Attachments
-import me.dominaezzz.chitchat.ui.AppModelAmbient
+import me.dominaezzz.chitchat.ui.LocalAppModel
 import org.jetbrains.skija.Image
 import java.io.ByteArrayOutputStream
 import java.net.URI
@@ -69,7 +69,7 @@ class ImageIconCache(private val contentRepository: ContentRepository) {
 
 @Composable
 fun ImageCache(content: @Composable () -> Unit) {
-	val contentRepo = AppModelAmbient.current.contentRepository
+	val contentRepo = LocalAppModel.current.contentRepository
 	val imageCache = remember(contentRepo) {
 		Cache<URI, ImageBitmap> {
 			val bytes = contentRepo.getContent(it)

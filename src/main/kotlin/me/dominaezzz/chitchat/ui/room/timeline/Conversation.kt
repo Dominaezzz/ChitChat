@@ -30,7 +30,7 @@ import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.TimelineItem
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.crypto.MegolmPayload
-import me.dominaezzz.chitchat.ui.AppModelAmbient
+import me.dominaezzz.chitchat.ui.LocalAppModel
 import me.dominaezzz.chitchat.ui.room.getMember
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage
@@ -57,7 +57,7 @@ fun Conversation(
 		val roomScrollMap = remember { mutableMapOf<String, LazyListState>() }
 		val state = roomScrollMap.getOrPut(room.id) { LazyListState(0, 0) }
 
-		val manager = AppModelAmbient.current.cryptoManager
+		val manager = LocalAppModel.current.cryptoManager
 		val megolmCache = remember(room.id) { MegolmCache(room.id, manager) }
 		LaunchedEffect(megolmCache) { megolmCache.load() }
 
