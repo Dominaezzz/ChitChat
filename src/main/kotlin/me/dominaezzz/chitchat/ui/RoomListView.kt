@@ -125,8 +125,8 @@ fun RoomListView(
 	Column(modifier) {
 		TopAppBar(
 			title = {
-				val session = SessionAmbient.current
-				val client = ClientAmbient.current
+				val session = LocalAppModel.current.session
+				val client = LocalAppModel.current.client
 				val username by produceState(session.userId, client) {
 					val profile = client.userApi.getUserProfile(session.userId)
 					val displayName = profile.displayName

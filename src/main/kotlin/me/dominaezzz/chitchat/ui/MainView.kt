@@ -18,19 +18,13 @@ import java.nio.file.*
 val projectDir: Path = Paths.get("").toAbsolutePath()
 val appWorkingDir: Path = projectDir.resolve("appdir")
 
-val SessionAmbient = staticCompositionLocalOf<LoginSession> { error("No login session provided") }
 val LocalAppModel = staticCompositionLocalOf<AppModel> { error("No app model provided") }
-val ClientAmbient = staticCompositionLocalOf<MatrixClient> { error("No client provided") }
 
 @Composable
 fun AppView() {
 	val appModel = remember { AppModel(appWorkingDir) }
 
-	CompositionLocalProvider(
-		LocalAppModel provides appModel,
-		SessionAmbient provides appModel.session,
-		ClientAmbient provides appModel.client
-	) {
+	CompositionLocalProvider(LocalAppModel provides appModel) {
 		ImageCache {
 			MainView()
 		}

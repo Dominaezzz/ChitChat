@@ -29,7 +29,7 @@ import java.net.URI
 
 @Composable
 fun PublicRooms(modifier: Modifier = Modifier) {
-	val client = ClientAmbient.current
+	val client = LocalAppModel.current.client
 
 	var searchTerm by remember { mutableStateOf("") }
 	val shouldPaginate = remember { MutableStateFlow(false) }
