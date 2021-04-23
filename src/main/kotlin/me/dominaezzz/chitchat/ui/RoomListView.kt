@@ -111,7 +111,7 @@ fun RoomListView(
 		Popup(
 			alignment = Alignment.Center,
 			onDismissRequest = { showPublicRoomsPopup = false },
-			isFocusable = true
+			focusable = true
 		) {
 			Card(
 				modifier = Modifier.fillMaxSize(0.7f),

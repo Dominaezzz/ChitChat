@@ -1,9 +1,9 @@
 import org.jetbrains.compose.compose
 
 plugins {
-	kotlin("jvm") version "1.4.31"
-	kotlin("plugin.serialization") version "1.4.31"
-	id("org.jetbrains.compose") version "0.4.0-build174"
+	kotlin("jvm") version "1.4.32"
+	kotlin("plugin.serialization") version "1.4.32"
+	id("org.jetbrains.compose") version "0.4.0-build184"
 }
 
 group = "me.dominaezzz"
