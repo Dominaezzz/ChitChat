@@ -6,10 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import io.github.matrixkt.MatrixClient
 import kotlinx.coroutines.*
 import me.dominaezzz.chitchat.models.AppModel
-import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.ui.room.MemberCache
 import me.dominaezzz.chitchat.ui.room.RoomView
 import me.dominaezzz.chitchat.util.ImageCache

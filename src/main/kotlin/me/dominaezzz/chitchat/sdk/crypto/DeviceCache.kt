@@ -1,9 +1,10 @@
 package me.dominaezzz.chitchat.sdk.crypto
 
-import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.api.QueryKeys
 import io.github.matrixkt.models.DeviceKeys
-import io.github.matrixkt.models.QueryKeysRequest
 import io.github.matrixkt.models.UnsignedDeviceInfo
+import io.github.matrixkt.utils.rpc
+import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -15,6 +16,7 @@ import me.dominaezzz.chitchat.db.getSerializable
 import me.dominaezzz.chitchat.db.savepoint
 import me.dominaezzz.chitchat.db.setSerializable
 import me.dominaezzz.chitchat.db.usingStatement
+import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.SyncClient
 import me.dominaezzz.chitchat.sdk.util.SQLiteHelper
 import java.nio.file.Path
@@ -23,7 +25,8 @@ import java.sql.Connection
 class DeviceCache(
 	private val scope: CoroutineScope,
 	private val syncClient: SyncClient,
-	private val client: MatrixClient,
+	private val client: HttpClient,
+	private val loginSession: LoginSession,
 	private val databaseFile: Path
 ) {
 	private val sqlite = object : SQLiteHelper(databaseFile, 1) {
@@ -144,8 +147,13 @@ class DeviceCache(
 			}
 		}
 
-		val query = QueryKeysRequest(deviceKeys = mapOf(userId to emptyList()), token = token)
-		val response = client.keysApi.queryKeys(query)
+		val response = client.rpc(
+			QueryKeys(
+				QueryKeys.Url(),
+				QueryKeys.Body(deviceKeys = mapOf(userId to emptyList()), token = token)
+			),
+			loginSession.accessToken
+		)
 		val userDevices = response.deviceKeys.getValue(userId)
 
 		sqlite.usingWriteConnection { conn ->

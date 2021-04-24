@@ -1,5 +1,5 @@
-import io.github.matrixkt.models.MessagesResponse
-import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.api.GetRoomEvents
+import io.github.matrixkt.models.events.SyncEvent
 import io.github.matrixkt.models.sync.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.runBlocking
@@ -8,6 +8,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.dominaezzz.chitchat.db.getSerializable
 import me.dominaezzz.chitchat.sdk.core.SQLiteSyncStore
+import me.dominaezzz.chitchat.sdk.util.toMatrixEvent
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -22,7 +23,7 @@ class SQLiteSyncStoreTest {
 		val roomJsonStr = javaClass.getResource("room_1.json").readText()
 		val roomJson = MatrixJson.parseToJsonElement(roomJsonStr).jsonObject
 		val roomId = roomJson["room_id"]!!.jsonPrimitive.content
-		val events = MatrixJson.decodeFromJsonElement(ListSerializer(MatrixEvent.serializer()), roomJson["events"]!!)
+		val events = MatrixJson.decodeFromJsonElement(ListSerializer(SyncEvent.serializer()), roomJson["events"]!!)
 
 		val sync = SyncResponse(
 			nextBatch = "DOESN'T MATTER",
@@ -34,9 +35,9 @@ class SQLiteSyncStoreTest {
 				))
 			)
 		)
-		val messages = MessagesResponse(
+		val messages = GetRoomEvents.Response(
 			start = "PREV",
-			chunk = events.dropLast(20).asReversed()
+			chunk = events.dropLast(20).map { it.toMatrixEvent(roomId) }.asReversed()
 		)
 
 		val store = SQLiteSyncStore(folder.newFile().toPath())
@@ -58,7 +59,7 @@ class SQLiteSyncStoreTest {
 		val roomJsonStr = javaClass.getResource("room_1.json").readText()
 		val roomJson = MatrixJson.parseToJsonElement(roomJsonStr).jsonObject
 		val roomId = roomJson["room_id"]!!.jsonPrimitive.content
-		val events = MatrixJson.decodeFromJsonElement(ListSerializer(MatrixEvent.serializer()), roomJson["events"]!!)
+		val events = MatrixJson.decodeFromJsonElement(ListSerializer(SyncEvent.serializer()), roomJson["events"]!!)
 
 		val initialSync = SyncResponse(
 			nextBatch = "DOESN'T MATTER",
@@ -84,15 +85,15 @@ class SQLiteSyncStoreTest {
 		val timelineGap = events.dropLast(20).drop(60).asReversed()
 		val timelineState = timelineGap.filter { it.stateKey != null }
 			.map { it.type to it.stateKey!! }.toSet()
-		val messages = MessagesResponse(
+		val messages = GetRoomEvents.Response(
 			start = "PREV2",
-			chunk = timelineGap,
+			chunk = timelineGap.map { it.toMatrixEvent(roomId) },
 			state = events.take(60)
 				.filter { it.stateKey != null }
 				.associateBy { it.type to it.stateKey!! }
 				.filterKeys { it in timelineState }
 				.values
-				.toList()
+				.map { it.toMatrixEvent(roomId) }
 		)
 
 		val store = SQLiteSyncStore(folder.newFile().toPath())
@@ -113,7 +114,7 @@ class SQLiteSyncStoreTest {
 	}
 
 	@OptIn(ExperimentalStdlibApi::class)
-	private suspend fun SQLiteSyncStore.getTimelineEvents(roomId: String, timelineId: Int): List<MatrixEvent> {
+	private suspend fun SQLiteSyncStore.getTimelineEvents(roomId: String, timelineId: Int): List<SyncEvent> {
 		return read { conn ->
 			val query = """
 				SELECT json FROM room_events
@@ -126,7 +127,7 @@ class SQLiteSyncStoreTest {
 				stmt.executeQuery().use { rs ->
 					buildList {
 						while (rs.next()) {
-							add(rs.getSerializable(1, MatrixEvent.serializer()))
+							add(rs.getSerializable(1, SyncEvent.serializer()))
 						}
 					}
 				}

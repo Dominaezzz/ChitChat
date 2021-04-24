@@ -18,9 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
+import io.github.matrixkt.api.QueryPublicRooms
 import io.github.matrixkt.models.PublicRoomsChunk
-import io.github.matrixkt.models.SearchPublicRoomsRequest
+import io.github.matrixkt.utils.rpc
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -30,22 +30,26 @@ import java.net.URI
 @Composable
 fun PublicRooms(modifier: Modifier = Modifier) {
 	val client = LocalAppModel.current.client
+	val session = LocalAppModel.current.session
 
 	var searchTerm by remember { mutableStateOf("") }
 	val shouldPaginate = remember { MutableStateFlow(false) }
 
 	@OptIn(ExperimentalCoroutinesApi::class)
 	val rooms = remember {
-		val batchSize = 40
+		val batchSize = 40L
 		snapshotFlow { searchTerm }
 			.mapLatest { delay(500); it }
-			.map { SearchPublicRoomsRequest.Filter(it) }
+			.map { QueryPublicRooms.Filter(it) }
 			.flatMapLatest { filter ->
 				val searchFlow = flow {
 					var sinceToken: String? = null
 					do {
-						val params = SearchPublicRoomsRequest(limit = batchSize, filter = filter, since = sinceToken)
-						val response = client.roomApi.queryPublicRooms(params = params)
+						val request = QueryPublicRooms(
+							QueryPublicRooms.Url(),
+							QueryPublicRooms.Body(limit = batchSize, filter = filter, since = sinceToken)
+						)
+						val response = client.rpc(request, session.accessToken)
 						emit(response.chunk)
 						sinceToken = response.nextBatch
 					} while (sinceToken != null)

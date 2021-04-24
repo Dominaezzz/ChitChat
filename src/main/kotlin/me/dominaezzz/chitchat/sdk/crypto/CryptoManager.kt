@@ -1,6 +1,6 @@
 package me.dominaezzz.chitchat.sdk.crypto
 
-import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.api.UploadKeys
 import io.github.matrixkt.models.*
 import io.github.matrixkt.models.events.OlmEventPayload
 import io.github.matrixkt.models.events.contents.ForwardedRoomKeyContent
@@ -12,6 +12,8 @@ import io.github.matrixkt.olm.Message
 import io.github.matrixkt.olm.Session
 import io.github.matrixkt.olm.Utility
 import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.utils.rpc
+import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
@@ -19,7 +21,7 @@ import me.dominaezzz.chitchat.sdk.core.LoginSession
 import kotlin.random.Random
 
 class CryptoManager(
-	private val client: MatrixClient,
+	private val client: HttpClient,
 	private val loginSession: LoginSession,
 	private val store: CryptoStore,
 	private val random: Random,
@@ -42,17 +44,20 @@ class CryptoManager(
 				signatures = emptyMap()
 			)
 
-			UploadKeysRequest(
-				deviceKeys = account.signObject(
-					DeviceKeys.serializer(),
-					deviceKeys,
-					userId,
-					deviceId
+			UploadKeys(
+				UploadKeys.Url(),
+				UploadKeys.Body(
+					deviceKeys = account.signObject(
+						DeviceKeys.serializer(),
+						deviceKeys,
+						userId,
+						deviceId
+					)
 				)
 			)
 		}
 
-		client.keysApi.uploadKeys(request)
+		client.rpc(request, loginSession.accessToken)
 	}
 
 	suspend fun uploadOneTimeKeys(numberOfKeysToUpload: Int = 10) {
@@ -65,18 +70,21 @@ class CryptoManager(
 				account.generateOneTimeKeys(keysToGenerate.toLong(), random)
 			}
 			val curve = account.oneTimeKeys.curve25519
-			UploadKeysRequest(
-				oneTimeKeys = curve.entries.associate { (key, value) ->
-					"signed_curve25519:$key" to account.signObject(
-						KeyObject.serializer(),
-						KeyObject(key=value, signatures = emptyMap()),
-						userId, deviceId
-					)
-				}
+			UploadKeys(
+				UploadKeys.Url(),
+				UploadKeys.Body(
+					oneTimeKeys = curve.entries.associate { (key, value) ->
+						"signed_curve25519:$key" to account.signObject(
+							KeyObject.serializer(),
+							KeyObject(key=value, signatures = emptyMap()),
+							userId, deviceId
+						)
+					}
+				)
 			)
 		}
 
-		client.keysApi.uploadKeys(request)
+		client.rpc(request, loginSession.accessToken)
 
 		// NOTE: There's a small race condition here, making this method not concurrency safe.
 
@@ -117,7 +125,7 @@ class CryptoManager(
 			sessions.forEach { it.clear() }
 		}
 
-		check(ciphertextInfo.type == Message.MESSAGE_TYPE_PRE_KEY) {
+		check(encryptedMsg is Message.PreKey) {
 			"Could not find existing olm session to decrypt olm message."
 		}
 

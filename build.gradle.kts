@@ -11,15 +11,20 @@ version = "1.0-SNAPSHOT"
 
 repositories {
 	maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-	maven("https://dl.bintray.com/dominaezzz/kotlin-native")
-	jcenter()
+	maven("https://maven.pkg.github.com/Dominaezzz/matrix-kt") {
+		credentials {
+			username = System.getenv("GITHUB_USER")
+			password = System.getenv("GITHUB_TOKEN")
+		}
+	}
+	mavenCentral()
 }
 
-val ktorVersion = "1.4.3"
-val coroutinesVersion = "1.4.2"
-val serializationVersion = "1.0.1"
-val matrixKtVersion = "0.1.3"
-val sqliteVersion = "3.32.3.2"
+val ktorVersion = "1.5.3"
+val coroutinesVersion = "1.4.3"
+val serializationVersion = "1.1.0"
+val matrixKtVersion = "0.1.4-RC8"
+val sqliteVersion = "3.34.0"
 
 dependencies {
 	implementation(compose.desktop.currentOs)

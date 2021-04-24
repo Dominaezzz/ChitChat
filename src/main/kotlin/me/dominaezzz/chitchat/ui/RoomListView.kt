@@ -25,8 +25,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import io.github.matrixkt.api.GetUserProfile
 import io.github.matrixkt.models.events.contents.DirectContent
 import io.github.matrixkt.models.events.contents.TagContent
+import io.github.matrixkt.utils.rpc
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
@@ -128,8 +130,9 @@ fun RoomListView(
 				val session = LocalAppModel.current.session
 				val client = LocalAppModel.current.client
 				val username by produceState(session.userId, client) {
-					val profile = client.userApi.getUserProfile(session.userId)
-					val displayName = profile.displayName
+					val request = GetUserProfile(GetUserProfile.Url(session.userId))
+					val profile = client.rpc(request)
+					val displayName = profile.displayname
 					if (displayName != null) {
 						value = displayName
 					}

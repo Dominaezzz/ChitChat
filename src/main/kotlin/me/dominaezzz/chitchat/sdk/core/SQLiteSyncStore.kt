@@ -1,9 +1,9 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.GetMembersResponse
-import io.github.matrixkt.models.MessagesResponse
-import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.api.GetMembersByRoom
+import io.github.matrixkt.api.GetRoomEvents
 import io.github.matrixkt.models.events.StrippedState
+import io.github.matrixkt.models.events.SyncEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.events.contents.room.Membership
@@ -246,7 +246,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			return roomNotificationsStmt.executeUpdate()
 		}
 
-		fun insertRoomEvent(roomId: String, event: MatrixEvent, timelineOrder: Long?): Int {
+		fun insertRoomEvent(roomId: String, event: SyncEvent, timelineOrder: Long?): Int {
 			eventStmt.setString(1, roomId)
 			eventStmt.setString(2, event.eventId)
 			eventStmt.setString(3, event.type)
@@ -697,7 +697,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		}
 	}
 
-	private fun Connection.getNewState(roomId: String, eventIds: Set<String>): List<MatrixEvent> {
+	private fun Connection.getNewState(roomId: String, eventIds: Set<String>): List<SyncEvent> {
 		val queryNewState = """
 				WITH new_events(eventId) AS (SELECT value FROM JSON_EACH(?2))
 				SELECT JSON_GROUP_ARRAY(JSON_OBJECT(
@@ -720,12 +720,12 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			stmt.setSerializable(2, SetSerializer(String.serializer()), eventIds)
 			stmt.executeQuery().use { rs ->
 				check(rs.next())
-				rs.getSerializable(1, ListSerializer(MatrixEvent.serializer()))
+				rs.getSerializable(1, ListSerializer(SyncEvent.serializer()))
 			}
 		}
 	}
 
-	override suspend fun storeMembers(roomId: String, response: GetMembersResponse): List<MatrixEvent> {
+	override suspend fun storeMembers(roomId: String, response: GetMembersByRoom.Response): List<SyncEvent> {
 		return helper.usingWriteConnection { conn ->
 			val query = "SELECT MAX(timelineId) FROM room_events WHERE roomId = ?;"
 			val oldestTimelineId = conn.prepareStatement(query).use { stmt ->
@@ -749,7 +749,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.setString(1, roomId)
 				stmt.setInt(10, oldestTimelineId)
 
-				for (event in response.chunk) {
+				for (event in response.chunk.orEmpty()) {
 					require(event.roomId == roomId)
 					require(event.type == "m.room.member")
 
@@ -781,7 +781,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				WHERE roomId = ?1
 			"""
 			conn.prepareStatement(update).use { stmt ->
-				val memberships = response.chunk.asSequence()
+				val memberships = response.chunk.orEmpty().asSequence()
 					.map { it.content.membership }.toSet()
 
 				stmt.setString(1, roomId)
@@ -817,7 +817,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		}
 	}
 
-	override suspend fun storeTimelineEvents(roomId: String, response: MessagesResponse): List<MatrixEvent> {
+	override suspend fun storeTimelineEvents(roomId: String, response: GetRoomEvents.Response): List<SyncEvent> {
 		val timelineEvents = response.chunk
 		if (timelineEvents.isNullOrEmpty()) {
 			// check(response.state.isNullOrEmpty())

@@ -1,9 +1,10 @@
 package me.dominaezzz.chitchat.models
 
-import io.github.matrixkt.MatrixClient
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.wellknown.DiscoveryInformation
+import io.github.matrixkt.utils.MatrixConfig
 import io.github.matrixkt.utils.MatrixJson
+import io.ktor.client.*
 import io.ktor.client.engine.apache.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -35,14 +36,14 @@ class AppModel(applicationDir: Path) {
 	}
 
 	val homeServerUrl = Url(session.discoveryInfo.homeServer.baseUrl)
-	val client = MatrixClient(engine, homeServerUrl).apply { accessToken = session.accessToken }
+	val client = HttpClient(engine) { MatrixConfig(homeServerUrl) }
 
 	val contentRepository = ContentRepository(client, applicationDir.resolve("media"))
 
 	private val syncStore = SQLiteSyncStore(applicationDir.resolve("sync.db"))
 	val syncClient = SyncClient(scope, session, client, syncStore)
 
-	private val deviceCache = DeviceCache(scope, syncClient, client, applicationDir.resolve("devices.db"))
+	private val deviceCache = DeviceCache(scope, syncClient, client, session, applicationDir.resolve("devices.db"))
 
 	private val random = SecureRandom().asKotlinRandom()
 	private val cryptoStore = SQLiteCryptoStore(applicationDir.resolve("crypto.db"), random)

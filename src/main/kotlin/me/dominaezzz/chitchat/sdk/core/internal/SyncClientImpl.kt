@@ -1,9 +1,11 @@
 package me.dominaezzz.chitchat.sdk.core.internal
 
-import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.api.Sync
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.events.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
+import io.github.matrixkt.utils.rpc
+import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.KSerializer
@@ -16,7 +18,7 @@ import me.dominaezzz.chitchat.sdk.core.SyncStore
 class SyncClientImpl(
 	private val scope: CoroutineScope,
 	private val loginSession: LoginSession,
-	private val client: MatrixClient,
+	private val client: HttpClient,
 	private val store: SyncStore
 ) : SyncClient {
 	private val shareConfig = SharingStarted.WhileSubscribed(1000, 0)
@@ -28,7 +30,10 @@ class SyncClientImpl(
 		val syncToken = store.getSyncToken()
 
 		println("Syncing with '$syncToken' as token")
-		val sync = client.eventApi.sync(since = syncToken, setPresence = setPresence, timeout = timeout)
+		val sync = client.rpc(
+			Sync(Sync.Url(since = syncToken, setPresence = setPresence, timeout = timeout)),
+			loginSession.accessToken
+		)
 
 		println("Saving sync response")
 		store.storeSync(sync, syncToken)
@@ -95,7 +100,7 @@ class SyncClientImpl(
 	}.shareIn(scope, shareConfig, 1)
 
 	private fun createRoom(roomId: String): Room {
-		return RoomImpl(roomId, loginSession.userId, scope, syncFlow, client, store, shareConfig)
+		return RoomImpl(roomId, scope, syncFlow, client, loginSession, store, shareConfig)
 	}
 
 

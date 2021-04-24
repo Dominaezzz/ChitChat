@@ -1,15 +1,21 @@
 package me.dominaezzz.chitchat.sdk.core.internal
 
-import io.github.matrixkt.MatrixClient
+import io.github.matrixkt.api.GetMembersByRoom
+import io.github.matrixkt.api.GetRoomEvents
+import io.github.matrixkt.api.GetRoomStateWithKey
 import io.github.matrixkt.models.Direction
 import io.github.matrixkt.models.MatrixError
+import io.github.matrixkt.models.MatrixException
 import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.models.events.SyncEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.TypingContent
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.models.sync.Event
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.utils.rpc
+import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -18,18 +24,22 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.RoomTimeline
+import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SyncStore
 
 class RoomImpl(
 	override val id: String,
-	override val ownUserId: String,
 	private val scope: CoroutineScope,
 	private val syncFlow: Flow<SyncResponse>,
-	private val client: MatrixClient,
+	private val client: HttpClient,
+	private val loginSession: LoginSession,
 	private val store: SyncStore,
 	private val shareConfig: SharingStarted
 ) : Room {
+	override val ownUserId: String
+		get() = loginSession.userId
+
 	override val timelineEvents: Flow<MatrixEvent> = syncFlow.mapNotNull { it.rooms }
 		.transform { rooms ->
 			emitList(rooms.join[id]?.timeline?.events)
@@ -37,7 +47,7 @@ class RoomImpl(
 		}
 
 	private val stateSemaphore = Semaphore(1)
-	private val lazyStateFlow = MutableSharedFlow<MatrixEvent>()
+	private val lazyStateFlow = MutableSharedFlow<SyncEvent>()
 	private val syncStateFlow = syncFlow.mapNotNull { it.rooms }
 		.onEach { stateSemaphore.withPermit { /* Wait for lazy state event emissions */ } }
 		.transform { rooms ->
@@ -83,7 +93,10 @@ class RoomImpl(
 			val lazyState = store.getLazyLoadingState(id)
 			if (membership !in lazyState.loaded) {
 				if (lazyState.token != null) {
-					val response = client.roomApi.getMembersByRoom(id, lazyState.token, membership)
+					val response = client.rpc(
+						GetMembersByRoom(GetMembersByRoom.Url(id, lazyState.token, membership)),
+						loginSession.accessToken
+					)
 					// Pause sync state updates, so we can emit (potentially) older events first.
 					stateSemaphore.withPermit {
 						val newState = store.storeMembers(id, response)
@@ -171,9 +184,16 @@ class RoomImpl(
 	private val lazyMemberMap = MapOfFlows<String, MemberContent?> { userId ->
 		flow {
 			val content = try {
-				client.roomApi.getRoomStateWithKey(id, "m.room.member", userId)
-			} catch (e: MatrixError.NotFound) {
-				null
+				client.rpc(
+					GetRoomStateWithKey(GetRoomStateWithKey.Url(id, "m.room.member", userId)),
+					loginSession.accessToken
+				)
+			} catch (e: MatrixException) {
+				if (e.error is MatrixError.NotFound) {
+					null
+				} else {
+					throw e
+				}
 			}
 			val member = content?.let { MatrixJson.decodeFromJsonElement(MemberContent.serializer(), it) }
 			emit(member)
@@ -218,7 +238,10 @@ class RoomImpl(
 			return false
 		}
 
-		val response = client.roomApi.getRoomEvents(id, token, null, Direction.B, limit.toLong())
+		val response = client.rpc(
+			GetRoomEvents(GetRoomEvents.Url(id, token, null, Direction.BACKWARD, limit.toLong())),
+			loginSession.accessToken
+		)
 
 		stateSemaphore.withPermit {
 			val newState = store.storeTimelineEvents(id, response)

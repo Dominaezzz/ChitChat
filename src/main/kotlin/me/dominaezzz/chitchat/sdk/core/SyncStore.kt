@@ -1,9 +1,9 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.GetMembersResponse
-import io.github.matrixkt.models.MessagesResponse
-import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.api.GetMembersByRoom
+import io.github.matrixkt.api.GetRoomEvents
 import io.github.matrixkt.models.events.StrippedState
+import io.github.matrixkt.models.events.SyncEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.RoomSummary
@@ -28,10 +28,10 @@ interface SyncStore {
 	suspend fun getSummary(roomId: String): RoomSummary
 	suspend fun getUnreadNotificationCounts(roomId: String): UnreadNotificationCounts
 	suspend fun getLazyLoadingState(roomId: String): LazyLoadingState
-	suspend fun storeMembers(roomId: String, response: GetMembersResponse): List<MatrixEvent>
+	suspend fun storeMembers(roomId: String, response: GetMembersByRoom.Response): List<SyncEvent>
 
 	suspend fun getPaginationToken(roomId: String, eventId: String): String?
-	suspend fun storeTimelineEvents(roomId: String, response: MessagesResponse): List<MatrixEvent>
+	suspend fun storeTimelineEvents(roomId: String, response: GetRoomEvents.Response): List<SyncEvent>
 
 	class ReadReceipt(val userId: String, val eventId: String, val receipt: ReceiptContent.Receipt)
 	class LazyLoadingState(val token: String?, val loaded: Set<Membership>)
