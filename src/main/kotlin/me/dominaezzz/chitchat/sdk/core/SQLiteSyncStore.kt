@@ -16,8 +16,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import me.dominaezzz.chitchat.db.*
-import me.dominaezzz.chitchat.sdk.util.SQLiteHelper
+import me.dominaezzz.chitchat.sdk.util.*
 import java.io.Closeable
 import java.nio.file.Path
 import java.sql.Connection

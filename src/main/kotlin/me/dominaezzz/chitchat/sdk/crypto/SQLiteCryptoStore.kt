@@ -5,8 +5,7 @@ import io.github.matrixkt.olm.InboundGroupSession
 import io.github.matrixkt.olm.Session
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import me.dominaezzz.chitchat.db.*
-import me.dominaezzz.chitchat.sdk.util.SQLiteHelper
+import me.dominaezzz.chitchat.sdk.util.*
 import java.nio.file.Path
 import java.sql.Connection
 import kotlin.random.Random

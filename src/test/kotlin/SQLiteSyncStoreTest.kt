@@ -6,8 +6,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import me.dominaezzz.chitchat.db.getSerializable
 import me.dominaezzz.chitchat.sdk.core.SQLiteSyncStore
+import me.dominaezzz.chitchat.sdk.util.getSerializable
 import me.dominaezzz.chitchat.sdk.util.toMatrixEvent
 import org.junit.Rule
 import org.junit.Test

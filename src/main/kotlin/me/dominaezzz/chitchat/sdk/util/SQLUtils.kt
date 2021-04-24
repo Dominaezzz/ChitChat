@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.db
+package me.dominaezzz.chitchat.sdk.util
 
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.DeserializationStrategy

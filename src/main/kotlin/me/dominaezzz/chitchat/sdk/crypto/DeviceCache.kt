@@ -12,13 +12,13 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
-import me.dominaezzz.chitchat.db.getSerializable
-import me.dominaezzz.chitchat.db.savepoint
-import me.dominaezzz.chitchat.db.setSerializable
-import me.dominaezzz.chitchat.db.usingStatement
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.SyncClient
+import me.dominaezzz.chitchat.sdk.util.getSerializable
 import me.dominaezzz.chitchat.sdk.util.SQLiteHelper
+import me.dominaezzz.chitchat.sdk.util.savepoint
+import me.dominaezzz.chitchat.sdk.util.setSerializable
+import me.dominaezzz.chitchat.sdk.util.usingStatement
 import java.nio.file.Path
 import java.sql.Connection
 

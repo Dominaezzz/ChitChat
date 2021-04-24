@@ -1,4 +1,4 @@
-package me.dominaezzz.chitchat.db
+package me.dominaezzz.chitchat.sdk.util
 
 import java.sql.Connection
 

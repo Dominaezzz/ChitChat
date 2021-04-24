@@ -6,10 +6,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SQLiteSyncStore
 import me.dominaezzz.chitchat.sdk.core.SyncStore
+import me.dominaezzz.chitchat.sdk.util.getSerializable
+import me.dominaezzz.chitchat.sdk.util.getTimelineIdAndOrder
 import java.sql.Connection
 
 class RoomTimeline(
