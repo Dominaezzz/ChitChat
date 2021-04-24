@@ -700,17 +700,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	private fun Connection.getNewState(roomId: String, eventIds: Set<String>): List<SyncEvent> {
 		val queryNewState = """
 				WITH new_events(eventId) AS (SELECT value FROM JSON_EACH(?2))
-				SELECT JSON_GROUP_ARRAY(JSON_OBJECT(
-					 'type', type,
-					 'content', JSON(content),
-					 'event_id', eventId,
-					 'sender', sender,
-					 'origin_server_ts', timestamp,
-					 'unsigned', JSON(unsigned),
-					 'room_id', roomId,
-					 'state_key', stateKey,
-					 'prev_content', JSON(prevContent)
-				 ))
+				SELECT JSON_GROUP_ARRAY(json)
 				FROM room_events
 				JOIN new_events USING(eventId)
 				WHERE roomId = ?1 AND isLatestState
