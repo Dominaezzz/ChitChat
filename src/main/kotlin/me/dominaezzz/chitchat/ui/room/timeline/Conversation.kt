@@ -25,6 +25,7 @@ import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.builtins.nullable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.TimelineItem
@@ -315,7 +316,7 @@ private fun EncryptedEvent(room: Room, item: TimelineItem, isFirstByAuthor: Bool
 	}
 
 	val decryptedMsg = session.decrypt(content.ciphertext).message
-	val decryptedPayload = MatrixJson.decodeFromString(MegolmPayload.serializer(), decryptedMsg)
+	val decryptedPayload = MatrixJson.decodeFromString<MegolmPayload>(decryptedMsg)
 	if (decryptedPayload.roomId != room.id) {
 		println("${decryptedPayload.roomId} ${room.id} ${event.eventId}")
 	}

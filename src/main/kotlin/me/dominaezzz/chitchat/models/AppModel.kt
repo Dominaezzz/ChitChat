@@ -1,7 +1,6 @@
 package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.models.Presence
-import io.github.matrixkt.models.wellknown.DiscoveryInformation
 import io.github.matrixkt.utils.MatrixConfig
 import io.github.matrixkt.utils.MatrixJson
 import io.ktor.client.*
@@ -9,6 +8,7 @@ import io.ktor.client.engine.apache.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.LoginSession
@@ -26,7 +26,7 @@ class AppModel(applicationDir: Path) {
 			accessToken = conn.getValue("ACCESS_TOKEN")!!,
 			userId = conn.getValue("USER_ID")!!,
 			deviceId = conn.getValue("DEVICE_ID")!!,
-			discoveryInfo = MatrixJson.decodeFromString(DiscoveryInformation.serializer(), conn.getValue("WELL_KNOWN")!!)
+			discoveryInfo = MatrixJson.decodeFromString(conn.getValue("WELL_KNOWN")!!)
 		)
 	}
 

@@ -3,6 +3,7 @@ package me.dominaezzz.chitchat.db
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonNull
 import me.dominaezzz.chitchat.ui.projectDir
 import org.sqlite.SQLiteConfig
@@ -129,6 +130,11 @@ fun <T> ResultSet.getSerializable(columnLabel: String, deserializer: Deserializa
 fun <T> ResultSet.getSerializable(columnIndex: Int, deserializer: DeserializationStrategy<T>): T {
 	val content = getString(columnIndex) ?: JsonNull.content
 	return MatrixJson.decodeFromString(deserializer, content)
+}
+
+inline fun <reified T> ResultSet.getSerializable(columnIndex: Int): T {
+	val content = getString(columnIndex) ?: JsonNull.content
+	return MatrixJson.decodeFromString(content)
 }
 
 fun <T> PreparedStatement.setSerializable(parameterIndex: Int, serializer: SerializationStrategy<T>, value: T) {

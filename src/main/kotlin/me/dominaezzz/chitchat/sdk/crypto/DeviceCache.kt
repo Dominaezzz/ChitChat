@@ -104,7 +104,7 @@ class DeviceCache(
 				stmt.setString(1, userId)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						val deviceKeys = rs.getSerializable(1, ListSerializer(DeviceKeys.serializer()))
+						val deviceKeys = rs.getSerializable<List<DeviceKeys>>(1)
 						val isOutdated = rs.getBoolean(2)
 						deviceKeys to isOutdated
 					} else {

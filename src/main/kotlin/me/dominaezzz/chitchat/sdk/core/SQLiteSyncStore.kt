@@ -12,6 +12,7 @@ import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.models.sync.UnreadNotificationCounts
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.builtins.*
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -478,7 +479,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		return helper.usingReadConnection { conn ->
 			val count = conn.getValue("ONE_TIME_KEYS_COUNT")
 			if (count != null) {
-				Json.decodeFromString(MapSerializer(String.serializer(), Long.serializer()), count)
+				Json.decodeFromString(count)
 			} else {
 				emptyMap()
 			}
@@ -524,7 +525,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			conn.usingStatement { stmt ->
 				stmt.executeQuery(query).use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, MapSerializer(String.serializer(), ListSerializer(StrippedState.serializer())))
+						rs.getSerializable(1)
 					} else {
 						emptyMap()
 					}
@@ -540,7 +541,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.setString(1, type)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, JsonObject.serializer())
+						rs.getSerializable<JsonObject>(1)
 					} else {
 						null
 					}
@@ -559,7 +560,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.setString(3, stateKey)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, JsonObject.serializer())
+						rs.getSerializable(1)
 					} else {
 						null
 					}
@@ -576,7 +577,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.setString(2, type)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, JsonObject.serializer())
+						rs.getSerializable<JsonObject>(1)
 					} else {
 						null
 					}
@@ -626,7 +627,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 								SyncStore.ReadReceipt(
 									rs.getString(1),
 									rs.getString(2),
-									rs.getSerializable(3, ReceiptContent.Receipt.serializer())
+									rs.getSerializable(3)
 								)
 							)
 						}
@@ -643,7 +644,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.setString(1, roomId)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, RoomSummary.serializer())
+						rs.getSerializable(1)
 					} else {
 						throw NoSuchElementException("No room with id '$roomId'")
 					}
@@ -659,7 +660,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				stmt.setString(1, roomId)
 				stmt.executeQuery().use { rs ->
 					if (rs.next()) {
-						rs.getSerializable(1, UnreadNotificationCounts.serializer())
+						rs.getSerializable(1)
 					} else {
 						throw NoSuchElementException("No room with id '$roomId'")
 					}
@@ -687,7 +688,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					if (rs.next()) {
 						SyncStore.LazyLoadingState(
 							rs.getString(1),
-							rs.getSerializable(2, SetSerializer(Membership.serializer()))
+							rs.getSerializable(2)
 						)
 					} else {
 						throw NoSuchElementException("No room with id '$roomId'")
@@ -710,7 +711,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			stmt.setSerializable(2, SetSerializer(String.serializer()), eventIds)
 			stmt.executeQuery().use { rs ->
 				check(rs.next())
-				rs.getSerializable(1, ListSerializer(SyncEvent.serializer()))
+				rs.getSerializable(1)
 			}
 		}
 	}

@@ -17,6 +17,7 @@ import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.decodeFromString
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import kotlin.random.Random
 
@@ -163,7 +164,7 @@ class CryptoManager(
 
 	private suspend fun handleEncryptedDeviceEvent(sender: String, content: EncryptedContent.OlmV1) {
 		val decryptedContent = decryptOlmEvent(content)
-		val olmPayload = MatrixJson.decodeFromString(OlmEventPayload.serializer(), decryptedContent)
+		val olmPayload = MatrixJson.decodeFromString<OlmEventPayload>(decryptedContent)
 
 		check(olmPayload.sender == sender)
 
