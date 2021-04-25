@@ -1,6 +1,6 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.models.events.SyncEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import kotlinx.coroutines.flow.Flow
@@ -11,7 +11,7 @@ interface Room {
 	val id: String
 	val ownUserId: String
 
-	val timelineEvents: Flow<MatrixEvent>
+	val timelineEvents: Flow<SyncEvent>
 
 	val joinedMembers: Flow<Set<String>>
 	val invitedMembers: Flow<Set<String>>

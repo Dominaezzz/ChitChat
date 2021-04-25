@@ -6,7 +6,6 @@ import io.github.matrixkt.api.GetRoomStateWithKey
 import io.github.matrixkt.models.Direction
 import io.github.matrixkt.models.MatrixError
 import io.github.matrixkt.models.MatrixException
-import io.github.matrixkt.models.events.MatrixEvent
 import io.github.matrixkt.models.events.SyncEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.TypingContent
@@ -40,7 +39,7 @@ class RoomImpl(
 	override val ownUserId: String
 		get() = loginSession.userId
 
-	override val timelineEvents: Flow<MatrixEvent> = syncFlow.mapNotNull { it.rooms }
+	override val timelineEvents: Flow<SyncEvent> = syncFlow.mapNotNull { it.rooms }
 		.transform { rooms ->
 			emitList(rooms.join[id]?.timeline?.events)
 			emitList(rooms.leave[id]?.timeline?.events)
