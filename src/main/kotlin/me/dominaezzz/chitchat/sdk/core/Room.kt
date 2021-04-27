@@ -30,8 +30,7 @@ interface Room {
 
 	val typingUsers: Flow<List<String>>
 
-	// Needs more thought about what data structure to expose here.
-	val readReceipts: Flow<Map<String, List<Pair<String, ReceiptContent.Receipt>>>>
+	fun getReadReceipts(eventId: String): Flow<Map<String, ReceiptContent.Receipt>>
 
 	// This needs more thought/design.
 	suspend fun backPaginate(eventId: String, limit: Int): Boolean

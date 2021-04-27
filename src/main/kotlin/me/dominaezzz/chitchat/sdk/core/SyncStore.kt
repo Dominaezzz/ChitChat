@@ -24,7 +24,7 @@ interface SyncStore {
 	suspend fun getState(roomId: String, type: String, stateKey: String): JsonObject?
 	suspend fun getAccountData(roomId: String, type: String): JsonObject?
 	suspend fun getMembers(roomId: String, membership: Membership): Set<String>
-	suspend fun getReadReceipts(roomId: String): List<ReadReceipt>
+	suspend fun getReadReceipts(roomId: String, eventId: String): Map<String, ReceiptContent.Receipt>
 	suspend fun getSummary(roomId: String): RoomSummary
 	suspend fun getUnreadNotificationCounts(roomId: String): UnreadNotificationCounts
 	suspend fun getLazyLoadingState(roomId: String): LazyLoadingState
@@ -33,6 +33,5 @@ interface SyncStore {
 	suspend fun getPaginationToken(roomId: String, eventId: String): String?
 	suspend fun storeTimelineEvents(roomId: String, response: GetRoomEvents.Response): List<SyncEvent>
 
-	class ReadReceipt(val userId: String, val eventId: String, val receipt: ReceiptContent.Receipt)
 	class LazyLoadingState(val token: String?, val loaded: Set<Membership>)
 }

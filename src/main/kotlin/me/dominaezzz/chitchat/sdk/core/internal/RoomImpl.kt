@@ -22,6 +22,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import me.dominaezzz.chitchat.models.RoomTimeline
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.Room
@@ -222,12 +223,24 @@ class RoomImpl(
 		.onStart { emit(emptyList()) }
 		.shareIn(scope, shareConfig, 1)
 
-	override val readReceipts: Flow<Map<String, List<Pair<String, ReceiptContent.Receipt>>>> = ephemeralEvents
-		.filter { it.type == "m.receipt" }
-		.map {}
-		.onStart { emit(Unit) }
-		.map { store.getReadReceipts(id).groupBy({ it.eventId }, { it.userId to it.receipt }) }
-		.shareIn(scope, shareConfig, 1)
+	private val readReceiptsMap = MapOfFlows<String, Map<String, ReceiptContent.Receipt>> { eventId ->
+		val updateFlow = ephemeralEvents
+			.filter { it.type == "m.receipt" }
+			.map { MatrixJson.decodeFromJsonElement<ReceiptContent>(it.content) }
+			.mapNotNull { it[eventId]?.read }
+		flow {
+			var receipts = store.getReadReceipts(id, eventId)
+			emit(receipts)
+			updateFlow.collect { users ->
+				receipts += users
+				emit(receipts)
+			}
+		}.shareIn(scope, shareConfig, 1)
+	}
+
+	override fun getReadReceipts(eventId: String): Flow<Map<String, ReceiptContent.Receipt>> {
+		return readReceiptsMap.getFlow(eventId)
+	}
 
 	override suspend fun backPaginate(eventId: String, limit: Int): Boolean {
 		val token = store.getPaginationToken(id, eventId)

@@ -235,10 +235,9 @@ private fun ChatItem(room: Room, item: TimelineItem) {
 
 @Composable
 private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modifier) {
-	val roomReceipts by room.readReceipts.collectAsState(emptyMap())
+	val eventReceipts by room.getReadReceipts(eventId).collectAsState(emptyMap())
 	val limit = 10
 
-	val eventReceipts = roomReceipts[eventId]
 	if (!eventReceipts.isNullOrEmpty()) {
 		Row(
 			modifier.padding(4.dp),
@@ -253,7 +252,7 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 				}
 			}
 
-			for ((userId, _) in eventReceipts.take(limit)) {
+			for ((userId, _) in eventReceipts.asSequence().take(limit)) {
 				Spacer(Modifier.width(1.dp))
 
 				val member = getMember(room, userId).value

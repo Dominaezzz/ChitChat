@@ -608,26 +608,24 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		}
 	}
 
-	override suspend fun getReadReceipts(roomId: String): List<SyncStore.ReadReceipt> {
+	override suspend fun getReadReceipts(roomId: String, eventId: String): Map<String, ReceiptContent.Receipt> {
 		return helper.usingReadConnection { conn ->
 			val query = """
-				SELECT userId, eventId, content
+				SELECT userId, content
 				FROM room_receipts
-				WHERE roomId = ? AND type = ?;
+				WHERE roomId = ? AND eventId = ? AND type = ?;
 			"""
 			conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, roomId)
-				stmt.setString(2, "m.read")
+				stmt.setString(2, eventId)
+				stmt.setString(3, "m.read")
 				stmt.executeQuery().use { rs ->
 					@OptIn(ExperimentalStdlibApi::class)
-					buildList {
+					buildMap {
 						while (rs.next()) {
-							add(
-								SyncStore.ReadReceipt(
-									rs.getString(1),
-									rs.getString(2),
-									rs.getSerializable(3)
-								)
+							put(
+								rs.getString(1),
+								rs.getSerializable(2)
 							)
 						}
 					}
