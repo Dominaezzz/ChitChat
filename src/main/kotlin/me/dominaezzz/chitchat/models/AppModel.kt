@@ -44,7 +44,7 @@ class AppModel(applicationDir: Path) {
 
 	val contentRepository = ContentRepository(client, applicationDir.resolve("media"))
 
-	private val syncStore = SQLiteSyncStore(applicationDir.resolve("sync.db"))
+	val syncStore = SQLiteSyncStore(applicationDir.resolve("sync.db"))
 	val syncClient = SyncClient(scope, session, client, syncStore)
 
 	private val deviceCache = DeviceCache(scope, syncClient, client, session, applicationDir.resolve("devices.db"))

@@ -28,6 +28,7 @@ import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import me.dominaezzz.chitchat.models.RoomTimeline
 import me.dominaezzz.chitchat.models.TimelineItem
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.crypto.MegolmPayload
@@ -48,7 +49,8 @@ fun Conversation(
 	room: Room,
 	modifier: Modifier = Modifier
 ) {
-	val timeline = remember(room) { room.createTimelineView() }
+	val store = LocalAppModel.current.syncStore
+	val timeline = remember(room, store) { RoomTimeline(room, store) }
 	LaunchedEffect(timeline) { timeline.run() }
 	val shouldBackPaginate = timeline.shouldBackPaginate
 

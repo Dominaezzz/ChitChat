@@ -262,10 +262,6 @@ class RoomImpl(
 		return true
 	}
 
-	override fun createTimelineView(): RoomTimeline {
-		return RoomTimeline(this, store)
-	}
-
 	// ------------------- Utilities -----------------------
 
 	private suspend fun <T> FlowCollector<T>.emitList(items: List<T>?) {

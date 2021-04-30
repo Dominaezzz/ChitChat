@@ -34,5 +34,4 @@ interface Room {
 
 	// This needs more thought/design.
 	suspend fun backPaginate(eventId: String, limit: Int): Boolean
-	fun createTimelineView(): RoomTimeline
 }
