@@ -409,7 +409,7 @@ private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolea
 				val height = content.info?.height
 				val specifiedSize = if (width != null && height != null) {
 					Modifier
-						.fillMaxWidth(0.6f)
+						.sizeIn(maxWidth = 720.dp, maxHeight = 720.dp)
 						.aspectRatio(width.toFloat() / height.toFloat())
 				} else {
 					Modifier
