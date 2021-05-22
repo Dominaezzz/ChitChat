@@ -8,8 +8,8 @@ import io.github.matrixkt.utils.rpc
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SyncClient
@@ -104,7 +104,7 @@ class SyncClientImpl(
 	}
 
 
-	private val accountDataFlowMap = MapOfFlows<String, JsonObject?> { type ->
+	private val accountDataFlowMap = MapOfFlows<Pair<String, DeserializationStrategy<*>>, Any?> { (type, deserializer) ->
 		syncFlow.mapNotNull { it.accountData }
 			.transform { data -> data.events.forEach { emit(it) } }
 			.filter { it.type == type }
@@ -113,10 +113,12 @@ class SyncClientImpl(
 				val content = store.getAccountData(type)
 				emit(content)
 			}
+			.decodeJson(deserializer)
 			.shareIn(scope, shareConfig, 1)
 	}
 
 	override fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?> {
-		return accountDataFlowMap.getFlow(type).decodeJson(serializer)
+		@Suppress("UNCHECKED_CAST")
+		return accountDataFlowMap.getFlow(type to serializer) as Flow<T?>
 	}
 }

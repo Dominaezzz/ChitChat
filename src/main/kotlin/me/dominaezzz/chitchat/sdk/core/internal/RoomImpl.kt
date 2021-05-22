@@ -20,8 +20,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import me.dominaezzz.chitchat.models.RoomTimeline
 import me.dominaezzz.chitchat.sdk.core.LoginSession
@@ -62,17 +62,18 @@ class RoomImpl(
 
 	private val joinedFlow = syncFlow.mapNotNull { it.rooms?.join?.get(id) }
 
-	private val stateFlowMap = MapOfFlows<Pair<String, String>, JsonObject?> { (type, stateKey) ->
+	private val stateFlowMap = MapOfFlows<Triple<String, String, DeserializationStrategy<*>>, Any?> { (type, stateKey, deserializer) ->
 		stateFlow.filter { it.type == type && it.stateKey == stateKey }
 			.map { it.content.takeIf { true } }
 			.onStart {
 				val content = store.getState(id, type, stateKey)
 				emit(content)
 			}
+			.decodeJson(deserializer)
 			.shareIn(scope, shareConfig, 1)
 	}
 
-	private val accountDataFlowMap = MapOfFlows<String, JsonObject?> { type ->
+	private val accountDataFlowMap = MapOfFlows<Pair<String, DeserializationStrategy<*>>, Any?> { (type, deserializer) ->
 		syncFlow.mapNotNull { it.rooms }
 			.transform { rooms ->
 				emitList(rooms.join[id]?.accountData?.events)
@@ -84,6 +85,7 @@ class RoomImpl(
 				val content = store.getAccountData(id, type)
 				emit(content)
 			}
+			.decodeJson(deserializer)
 			.shareIn(scope, shareConfig, 1)
 	}
 
@@ -174,11 +176,13 @@ class RoomImpl(
 	}.shareIn(scope, shareConfig, 1)
 
 	override fun <T> getState(type: String, stateKey: String, serializer: KSerializer<T>): Flow<T?> {
-		return stateFlowMap.getFlow(type to stateKey).decodeJson(serializer)
+		@Suppress("UNCHECKED_CAST")
+		return stateFlowMap.getFlow(Triple(type, stateKey, serializer)) as Flow<T?>
 	}
 
 	override fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?> {
-		return accountDataFlowMap.getFlow(type).decodeJson(serializer)
+		@Suppress("UNCHECKED_CAST")
+		return accountDataFlowMap.getFlow(type to serializer) as Flow<T?>
 	}
 
 	private val lazyMemberMap = MapOfFlows<String, MemberContent?> { userId ->
