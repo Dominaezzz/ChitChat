@@ -23,7 +23,6 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromJsonElement
-import me.dominaezzz.chitchat.models.RoomTimeline
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SyncStore
