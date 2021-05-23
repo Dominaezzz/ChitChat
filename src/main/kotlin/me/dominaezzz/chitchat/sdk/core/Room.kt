@@ -4,7 +4,9 @@ import io.github.matrixkt.models.events.SyncEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import me.dominaezzz.chitchat.models.RoomTimeline
 
 interface Room {
@@ -23,8 +25,8 @@ interface Room {
 	val notificationCount: Flow<Int>
 	val highlightCount: Flow<Int>
 
-	fun <T> getState(type: String, stateKey: String, serializer: KSerializer<T>): Flow<T?>
-	fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?>
+	fun <T> getState(type: String, stateKey: String, deserializer: DeserializationStrategy<T>): Flow<T?>
+	fun <T> getAccountData(type: String, deserializer: DeserializationStrategy<T>): Flow<T?>
 
 	fun getMember(userId: String): Flow<MemberContent?>
 
@@ -34,4 +36,12 @@ interface Room {
 
 	// This needs more thought/design.
 	suspend fun backPaginate(eventId: String, limit: Int): Boolean
+}
+
+inline fun <reified T> Room.getState(type: String, stateKey: String): Flow<T?> {
+	return getState(type, stateKey, serializer<T>())
+}
+
+inline fun <reified T> Room.getAccountData(type: String): Flow<T?> {
+	return getAccountData(type, serializer<T>())
 }

@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.decodeFromJsonElement
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.Room
@@ -174,14 +173,14 @@ class RoomImpl(
 		emitAll(joinedFlow.mapNotNull { it.unreadNotifications?.highlightCount?.toInt() })
 	}.shareIn(scope, shareConfig, 1)
 
-	override fun <T> getState(type: String, stateKey: String, serializer: KSerializer<T>): Flow<T?> {
+	override fun <T> getState(type: String, stateKey: String, deserializer: DeserializationStrategy<T>): Flow<T?> {
 		@Suppress("UNCHECKED_CAST")
-		return stateFlowMap.getFlow(Triple(type, stateKey, serializer)) as Flow<T?>
+		return stateFlowMap.getFlow(Triple(type, stateKey, deserializer)) as Flow<T?>
 	}
 
-	override fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?> {
+	override fun <T> getAccountData(type: String, deserializer: DeserializationStrategy<T>): Flow<T?> {
 		@Suppress("UNCHECKED_CAST")
-		return accountDataFlowMap.getFlow(type to serializer) as Flow<T?>
+		return accountDataFlowMap.getFlow(type to deserializer) as Flow<T?>
 	}
 
 	private val lazyMemberMap = MapOfFlows<String, MemberContent?> { userId ->

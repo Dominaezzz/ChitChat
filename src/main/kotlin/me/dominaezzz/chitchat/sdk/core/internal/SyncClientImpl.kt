@@ -9,7 +9,6 @@ import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.KSerializer
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SyncClient
@@ -117,8 +116,8 @@ class SyncClientImpl(
 			.shareIn(scope, shareConfig, 1)
 	}
 
-	override fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?> {
+	override fun <T> getAccountData(type: String, deserializer: DeserializationStrategy<T>): Flow<T?> {
 		@Suppress("UNCHECKED_CAST")
-		return accountDataFlowMap.getFlow(type to serializer) as Flow<T?>
+		return accountDataFlowMap.getFlow(type to deserializer) as Flow<T?>
 	}
 }

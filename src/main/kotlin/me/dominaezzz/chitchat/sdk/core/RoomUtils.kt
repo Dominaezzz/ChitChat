@@ -7,48 +7,48 @@ import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.sdk.core.internal.coalesce
 
 val Room.create: Flow<CreateContent>
-	get() = getState("m.room.create", "", CreateContent.serializer())
+	get() = getState<CreateContent>("m.room.create", "")
 		.map { checkNotNull(it) { "Rooms must have a `m.room.create` event." } }
 
 val Room.name: Flow<NameContent?>
-	get() = getState("m.room.name", "", NameContent.serializer())
+	get() = getState<NameContent>("m.room.name", "")
 
 val Room.canonicalAlias: Flow<CanonicalAliasContent?>
-	get() = getState("m.room.canonical_alias", "", CanonicalAliasContent.serializer())
+	get() = getState<CanonicalAliasContent>("m.room.canonical_alias", "")
 
 val Room.topic: Flow<TopicContent?>
-	get() = getState("m.room.topic", "", TopicContent.serializer())
+	get() = getState<TopicContent>("m.room.topic", "")
 
 val Room.avatar: Flow<AvatarContent?>
-	get() = getState("m.room.avatar", "", AvatarContent.serializer())
+	get() = getState<AvatarContent>("m.room.avatar", "")
 
 val Room.guestAccess: Flow<GuestAccessContent?>
-	get() = getState("m.room.guest_access", "", GuestAccessContent.serializer())
+	get() = getState<GuestAccessContent>("m.room.guest_access", "")
 
 val Room.historyVisibility: Flow<HistoryVisibilityContent?>
-	get() = getState("m.room.history_visibility", "", HistoryVisibilityContent.serializer())
+	get() = getState<HistoryVisibilityContent>("m.room.history_visibility", "")
 
 val Room.joinRules: Flow<JoinRulesContent?>
-	get() = getState("m.room.join_rules", "", JoinRulesContent.serializer())
+	get() = getState<JoinRulesContent>("m.room.join_rules", "")
 
 val Room.pinnedEvents: Flow<PinnedEventsContent?>
-	get() = getState("m.room.pinned_events", "", PinnedEventsContent.serializer())
+	get() = getState<PinnedEventsContent>("m.room.pinned_events", "")
 
 val Room.encryption: Flow<EncryptionContent?>
-	get() = getState("m.room.encryption", "", EncryptionContent.serializer())
+	get() = getState<EncryptionContent>("m.room.encryption", "")
 
 val Room.powerLevels: Flow<PowerLevelsContent?>
-	get() = getState("m.room.power_levels", "", PowerLevelsContent.serializer())
+	get() = getState<PowerLevelsContent>("m.room.power_levels", "")
 
 val Room.serverAcl: Flow<ServerAclContent?>
-	get() = getState("m.room.server_acl", "", ServerAclContent.serializer())
+	get() = getState<ServerAclContent>("m.room.server_acl", "")
 
 val Room.tombstone: Flow<TombstoneContent?>
-	get() = getState("m.room.tombstone", "", TombstoneContent.serializer())
+	get() = getState<TombstoneContent>("m.room.tombstone", "")
 
 
 val Room.tags: Flow<Map<String, TagContent.Tag>>
-	get() = getAccountData("m.tag", TagContent.serializer())
+	get() = getAccountData<TagContent>("m.tag")
 		.map { it?.tags ?: emptyMap() }
 
 

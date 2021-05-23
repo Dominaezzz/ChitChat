@@ -5,7 +5,8 @@ import io.github.matrixkt.models.events.StrippedState
 import io.github.matrixkt.models.sync.SyncResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.serializer
 
 interface SyncClient {
 	val syncFlow: SharedFlow<SyncResponse>
@@ -16,5 +17,9 @@ interface SyncClient {
 	val joinedRooms: Flow<Map<String, Room>>
 	val invitedRooms: Flow<Map<String, List<StrippedState>>>
 
-	fun <T> getAccountData(type: String, serializer: KSerializer<T>): Flow<T?>
+	fun <T> getAccountData(type: String, deserializer: DeserializationStrategy<T>): Flow<T?>
+}
+
+inline fun <reified T> SyncClient.getAccountData(type: String): Flow<T?> {
+	return getAccountData(type, serializer<T>())
 }
