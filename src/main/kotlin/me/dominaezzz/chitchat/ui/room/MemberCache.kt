@@ -37,8 +37,8 @@ private class MemberCache(private val room: Room) {
 		}
 		val newState = mutableStateOf<MemberContent?>(null)
 		stateMap[userId] = newState
-		val res = stateChannel.offer(userId to newState)
-		check(res)
+		val res = stateChannel.trySend(userId to newState)
+		check(res.isSuccess)
 		return newState
 	}
 

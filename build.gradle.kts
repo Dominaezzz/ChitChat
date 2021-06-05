@@ -1,9 +1,9 @@
 import org.jetbrains.compose.compose
 
 plugins {
-	kotlin("jvm") version "1.4.32"
-	kotlin("plugin.serialization") version "1.4.32"
-	id("org.jetbrains.compose") version "0.4.0-build184"
+	kotlin("jvm") version "1.5.10"
+	kotlin("plugin.serialization") version "1.5.10"
+	id("org.jetbrains.compose") version "0.4.0"
 }
 
 group = "me.dominaezzz"
@@ -20,10 +20,10 @@ repositories {
 	mavenCentral()
 }
 
-val ktorVersion = "1.5.3"
-val coroutinesVersion = "1.4.3"
-val serializationVersion = "1.1.0"
-val matrixKtVersion = "0.1.4-RC8"
+val ktorVersion = "1.6.0"
+val coroutinesVersion = "1.5.0"
+val serializationVersion = "1.2.1"
+val matrixKtVersion = "0.1.4"
 val sqliteVersion = "3.34.0"
 
 dependencies {

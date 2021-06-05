@@ -61,9 +61,10 @@ private fun AnnotatedString.Builder.appendElement(element: Element, typography: 
 		"sup" -> withStyle(SpanStyle(baselineShift = BaselineShift.Superscript)) { appendChildren(element, typography, maxDepth) }
 		"sub" -> withStyle(SpanStyle(baselineShift = BaselineShift.Subscript)) { appendChildren(element, typography, maxDepth) }
 		"a" -> withStyle(SpanStyle(textDecoration = TextDecoration.Underline)) {
-			pushStringAnnotation("UNDEFINED", element.attr("href"))
-			appendChildren(element, typography, maxDepth)
-			pop()
+			@OptIn(ExperimentalTextApi::class)
+			withAnnotation("UNDEFINED", element.attr("href")) {
+				appendChildren(element, typography, maxDepth)
+			}
 		}
 		"u" -> {
 			// TODO: This should be a squiggly underline. https://developer.mozilla.org/en-US/docs/Web/HTML/Element/u
@@ -118,7 +119,7 @@ private fun AnnotatedString.Builder.appendElement(element: Element, typography: 
 				append(' ')
 				append(when (nesting) {
 					0 -> (idx + 1).toString()
-					else -> encodeToRomanNumerals(idx + 1).toLowerCase()
+					else -> encodeToRomanNumerals(idx + 1).lowercase()
 				})
 				append(". ")
 				appendChildren(li, typography, maxDepth)

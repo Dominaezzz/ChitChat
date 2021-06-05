@@ -1,14 +1,22 @@
 package me.dominaezzz.chitchat
 
-import androidx.compose.desktop.Window
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowSize
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import me.dominaezzz.chitchat.ui.AppView
 import me.dominaezzz.chitchat.ui.style.ChitChatTheme
 
+@OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-	Window(title = "Chit Chat", size = IntSize(300, 300)) {
-		ChitChatTheme {
-			AppView()
+	application {
+		val windowState = rememberWindowState(size = WindowSize(300.dp, 300.dp))
+		Window(windowState, title = "Chit Chat") {
+			ChitChatTheme {
+				AppView()
+			}
 		}
 	}
 }

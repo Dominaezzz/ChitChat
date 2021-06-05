@@ -28,8 +28,8 @@ class MegolmCache(
 		}
 		val newState = mutableStateOf<InboundGroupSession?>(null)
 		stateMap[key] = newState
-		val res = stateChannel.offer(key to newState)
-		check(res)
+		val res = stateChannel.trySend(key to newState)
+		check(res.isSuccess)
 		return newState
 	}
 

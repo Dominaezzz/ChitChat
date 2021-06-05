@@ -595,7 +595,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 				"""
 			conn.prepareStatement(query).use { stmt ->
 				stmt.setString(1, roomId)
-				stmt.setString(2, membership.name.toLowerCase())
+				stmt.setString(2, membership.name.lowercase())
 				stmt.executeQuery().use { rs ->
 					@OptIn(ExperimentalStdlibApi::class)
 					buildSet<String> {

@@ -34,8 +34,8 @@ class ImageIconCache(private val contentRepository: ContentRepository) {
 		}
 		val newState = mutableStateOf<ImageBitmap?>(null)
 		stateMap[uri] = newState
-		val res = stateChannel.offer(uri to newState)
-		check(res)
+		val res = stateChannel.trySend(uri to newState)
+		check(res.isSuccess)
 		return newState
 	}
 

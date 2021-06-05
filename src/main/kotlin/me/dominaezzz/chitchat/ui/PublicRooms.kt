@@ -146,8 +146,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 				}
 
 				VerticalScrollbar(
-					@OptIn(ExperimentalFoundationApi::class)
-					rememberScrollbarAdapter(state, rooms.size, 72.dp),
+					rememberScrollbarAdapter(state),
 					Modifier.align(Alignment.CenterEnd).fillMaxHeight()
 				)
 			}
