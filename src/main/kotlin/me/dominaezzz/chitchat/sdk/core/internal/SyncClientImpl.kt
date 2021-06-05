@@ -99,7 +99,7 @@ class SyncClientImpl(
 	}.shareIn(scope, shareConfig, 1)
 
 	private fun createRoom(roomId: String): Room {
-		return RoomImpl(roomId, scope, syncFlow, client, loginSession, store, shareConfig)
+		return JoinedRoomImpl(roomId, scope, syncFlow, client, loginSession, store, shareConfig)
 	}
 
 

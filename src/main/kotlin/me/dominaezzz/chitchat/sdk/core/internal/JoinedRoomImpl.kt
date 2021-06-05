@@ -11,6 +11,7 @@ import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.TypingContent
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.models.sync.Event
+import io.github.matrixkt.models.sync.JoinedRoom
 import io.github.matrixkt.models.sync.SyncResponse
 import io.github.matrixkt.utils.MatrixJson
 import io.github.matrixkt.utils.rpc
@@ -26,10 +27,10 @@ import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SyncStore
 
-class RoomImpl(
+class JoinedRoomImpl(
 	override val id: String,
 	private val scope: CoroutineScope,
-	private val syncFlow: Flow<SyncResponse>,
+	syncFlow: Flow<SyncResponse>,
 	private val client: HttpClient,
 	private val loginSession: LoginSession,
 	private val store: SyncStore,
@@ -38,27 +39,29 @@ class RoomImpl(
 	override val ownUserId: String
 		get() = loginSession.userId
 
-	override val timelineEvents: Flow<SyncEvent> = syncFlow.mapNotNull { it.rooms }
-		.transform { rooms ->
-			emitList(rooms.join[id]?.timeline?.events)
-			emitList(rooms.leave[id]?.timeline?.events)
+	@OptIn(ExperimentalCoroutinesApi::class)
+	private val roomFlow: Flow<JoinedRoom> = syncFlow.mapNotNull { it.rooms }
+		.transformWhile { rooms ->
+			val joinedRoom = rooms.join[id]
+			if (joinedRoom != null) {
+				emit(joinedRoom)
+			}
+			id !in rooms.leave
 		}
+
+	override val timelineEvents: Flow<SyncEvent> = roomFlow
+		.transform { room -> room.timeline?.events?.forEach { emit(it) } }
 
 	private val stateSemaphore = Semaphore(1)
 	private val lazyStateFlow = MutableSharedFlow<SyncEvent>()
-	private val syncStateFlow = syncFlow.mapNotNull { it.rooms }
+	private val syncStateFlow = roomFlow
 		.onEach { stateSemaphore.withPermit { /* Wait for lazy state event emissions */ } }
-		.transform { rooms ->
-			emitList(rooms.join[id]?.state?.events)
-			emitList(rooms.join[id]?.timeline?.events?.filter { it.stateKey != null })
-
-			emitList(rooms.leave[id]?.state?.events)
-			emitList(rooms.leave[id]?.timeline?.events?.filter { it.stateKey != null })
+		.transform { room ->
+			room.state?.events?.forEach { emit(it) }
+			room.timeline?.events?.forEach { if (it.stateKey != null) emit(it) }
 		}
 	@OptIn(ExperimentalCoroutinesApi::class)
 	private val stateFlow = merge(lazyStateFlow, syncStateFlow)
-
-	private val joinedFlow = syncFlow.mapNotNull { it.rooms?.join?.get(id) }
 
 	private val stateFlowMap = MapOfFlows<Triple<String, String, DeserializationStrategy<*>>, Any?> { (type, stateKey, deserializer) ->
 		stateFlow.filter { it.type == type && it.stateKey == stateKey }
@@ -72,11 +75,7 @@ class RoomImpl(
 	}
 
 	private val accountDataFlowMap = MapOfFlows<Pair<String, DeserializationStrategy<*>>, Any?> { (type, deserializer) ->
-		syncFlow.mapNotNull { it.rooms }
-			.transform { rooms ->
-				emitList(rooms.join[id]?.accountData?.events)
-				emitList(rooms.leave[id]?.accountData?.events)
-			}
+		roomFlow.transform { room -> room.accountData?.events?.forEach { emit(it) } }
 			.filter { it.type == type }
 			.map { it.content.takeIf { true } }
 			.onStart {
@@ -134,9 +133,7 @@ class RoomImpl(
 		val summary = store.getSummary(id)
 		val heroes = summary.heroes
 		emit(heroes?.toSet())
-		emitAll(syncFlow.mapNotNull { it.rooms }
-			.mapNotNull { it.join[id]?.summary?.heroes }
-			.map { it.toSet() })
+		emitAll(roomFlow.mapNotNull { it.summary?.heroes?.toSet() })
 	}.shareIn(scope, shareConfig, 1)
 
 	override val joinedMemberCount: Flow<Int> = flow {
@@ -144,7 +141,7 @@ class RoomImpl(
 		val count = summary.joinedMemberCount
 		if (count != null) {
 			emit(count.toInt())
-			emitAll(joinedFlow.mapNotNull { it.summary?.joinedMemberCount?.toInt() })
+			emitAll(roomFlow.mapNotNull { it.summary?.joinedMemberCount?.toInt() })
 		} else {
 			emitAll(joinedMembers.map { it.size })
 		}
@@ -155,7 +152,7 @@ class RoomImpl(
 		val count = summary.invitedMemberCount
 		if (count != null) {
 			emit(count.toInt())
-			emitAll(joinedFlow.mapNotNull { it.summary?.invitedMemberCount?.toInt() })
+			emitAll(roomFlow.mapNotNull { it.summary?.invitedMemberCount?.toInt() })
 		} else {
 			emitAll(invitedMembers.map { it.size })
 		}
@@ -164,13 +161,13 @@ class RoomImpl(
 	override val notificationCount: Flow<Int> = flow {
 		val notificationCounts = store.getUnreadNotificationCounts(id)
 		emit(notificationCounts.notificationCount?.toInt() ?: 0)
-		emitAll(joinedFlow.mapNotNull { it.unreadNotifications?.notificationCount?.toInt() })
+		emitAll(roomFlow.mapNotNull { it.unreadNotifications?.notificationCount?.toInt() })
 	}.shareIn(scope, shareConfig, 1)
 
 	override val highlightCount: Flow<Int> = flow {
 		val notificationCounts = store.getUnreadNotificationCounts(id)
 		emit(notificationCounts.highlightCount?.toInt() ?: 0)
-		emitAll(joinedFlow.mapNotNull { it.unreadNotifications?.highlightCount?.toInt() })
+		emitAll(roomFlow.mapNotNull { it.unreadNotifications?.highlightCount?.toInt() })
 	}.shareIn(scope, shareConfig, 1)
 
 	override fun <T> getState(type: String, stateKey: String, deserializer: DeserializationStrategy<T>): Flow<T?> {
@@ -216,7 +213,7 @@ class RoomImpl(
 		return localState.coalesce(lazyFallback)
 	}
 
-	private val ephemeralEvents: Flow<Event> = joinedFlow.mapNotNull { it.ephemeral }
+	private val ephemeralEvents: Flow<Event> = roomFlow.mapNotNull { it.ephemeral }
 		.transform { for (event in it.events) emit(event) }
 
 	override val typingUsers: Flow<List<String>> = ephemeralEvents.filter { it.type == "m.typing" }
@@ -262,15 +259,5 @@ class RoomImpl(
 			newState.forEach { lazyStateFlow.emit(it) }
 		}
 		return true
-	}
-
-	// ------------------- Utilities -----------------------
-
-	private suspend fun <T> FlowCollector<T>.emitList(items: List<T>?) {
-		if (items != null) {
-			for (item in items) {
-				emit(item)
-			}
-		}
 	}
 }
