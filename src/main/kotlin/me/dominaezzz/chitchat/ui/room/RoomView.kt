@@ -10,6 +10,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -153,7 +154,7 @@ fun UserMessageInput(
 	roomId: String,
 	modifier: Modifier = Modifier
 ) {
-	var draftMessage by remember(roomId) { mutableStateOf("") }
+	var draftMessage by rememberSaveable(roomId) { mutableStateOf("") }
 
 	OutlinedTextField(
 		value = draftMessage,
