@@ -63,6 +63,9 @@ class JoinedRoomImpl(
 	@OptIn(ExperimentalCoroutinesApi::class)
 	private val stateFlow = merge(lazyStateFlow, syncStateFlow)
 
+	override val stateEvents: Flow<SyncEvent>
+		get() = stateFlow
+
 	private val stateFlowMap = MapOfFlows<Triple<String, String, DeserializationStrategy<*>>, Any?> { (type, stateKey, deserializer) ->
 		stateFlow.filter { it.type == type && it.stateKey == stateKey }
 			.map { it.content.takeIf { true } }

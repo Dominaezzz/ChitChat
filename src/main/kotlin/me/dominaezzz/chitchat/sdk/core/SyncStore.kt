@@ -22,6 +22,7 @@ interface SyncStore {
 	suspend fun getAccountData(type: String): JsonObject?
 
 	suspend fun getState(roomId: String, type: String, stateKey: String): JsonObject?
+	suspend fun getState(roomId: String, type: String): Map<String, JsonObject>
 	suspend fun getAccountData(roomId: String, type: String): JsonObject?
 	suspend fun getMembers(roomId: String, membership: Membership): Set<String>
 	suspend fun getReadReceipts(roomId: String, eventId: String): Map<String, ReceiptContent.Receipt>

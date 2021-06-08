@@ -13,6 +13,11 @@ interface Room {
 	val id: String
 	val ownUserId: String
 
+	/**
+	 * A flow of all new state events in this room.
+	 */
+	val stateEvents: Flow<SyncEvent>
+
 	val timelineEvents: Flow<SyncEvent>
 
 	val joinedMembers: Flow<Set<String>>

@@ -2,13 +2,13 @@ package me.dominaezzz.chitchat.ui.room
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,10 +17,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import me.dominaezzz.chitchat.sdk.core.Room
-import me.dominaezzz.chitchat.sdk.core.getDisplayAvatar
-import me.dominaezzz.chitchat.sdk.core.getDisplayName
-import me.dominaezzz.chitchat.sdk.core.topic
+import io.github.matrixkt.models.events.contents.room.MemberContent
+import io.github.matrixkt.models.events.contents.room.PowerLevelsContent
+import kotlinx.coroutines.flow.*
+import me.dominaezzz.chitchat.sdk.core.*
+import me.dominaezzz.chitchat.ui.LocalAppModel
 import me.dominaezzz.chitchat.ui.room.timeline.Conversation
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
@@ -42,6 +43,8 @@ fun RoomView(
 	room: Room,
 	modifier: Modifier = Modifier
 ) {
+	var showMembers by remember { mutableStateOf(false) }
+
 	Column(modifier) {
 		TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {
 
@@ -89,19 +92,33 @@ fun RoomView(
 				Spacer(Modifier.weight(1f).widthIn(min = 24.dp))
 			}
 
+			IconToggleButton(showMembers, onCheckedChange = { showMembers = it }) {
+				Icon(Icons.Filled.People, null)
+			}
+
 			IconButton(onClick = { /* Open room settings */ }, enabled = false) {
 				Icon(Icons.Filled.Settings, null)
 			}
 		}
 
-		// Timeline
-		Conversation(room, Modifier.weight(1f))
+		Row(Modifier.weight(1f)) {
+			Column(Modifier.weight(1f)) {
+				// Timeline
+				Conversation(room, Modifier.weight(1f))
 
-		Spacer(Modifier.fillMaxWidth().height(8.dp))
+				Spacer(Modifier.fillMaxWidth().height(8.dp))
 
-		TypingUsers(room, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+				TypingUsers(room, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
 
-		UserMessageInput(room.id, Modifier.fillMaxWidth())
+				UserMessageInput(room.id, Modifier.fillMaxWidth())
+			}
+
+			if (showMembers) {
+				Card(Modifier.width(300.dp).fillMaxHeight()) {
+					RoomMembers(room, Modifier.fillMaxSize())
+				}
+			}
+		}
 	}
 }
 
@@ -150,4 +167,75 @@ fun UserMessageInput(
 		},
 		keyboardActions = KeyboardActions(onSend = { /* Send message */ })
 	)
+}
+
+@Composable
+fun RoomMembers(
+	room: Room,
+	modifier: Modifier = Modifier
+) {
+	val appModel = LocalAppModel.current
+
+	// Hack to trigger eager loading of members.
+	LaunchedEffect(room) { room.joinedMembers.collect() }
+
+	fun PowerLevelsContent.getUserPowerLevel(userId: String): Long {
+		return users.getOrDefault(userId, usersDefault)
+	}
+
+	val powerLevels = remember(room) { room.powerLevels }.collectAsState(null).value
+
+	val comparator = compareBy<Pair<String, MemberContent>> { powerLevels?.getUserPowerLevel(it.first) ?: 0 }
+		.reversed()
+		.thenBy(nullsLast()) { (_, member) -> member.displayName?.takeUnless { it.isBlank() } }
+		.thenBy { (userId, _) -> userId }
+
+	val members by remember(room, powerLevels) { appModel.getMemberList(room, comparator) }
+		.collectAsState(emptyList())
+
+	Column(modifier) {
+		Row(Modifier.height(56.dp).padding(16.dp)) {
+			Text("Members", style = MaterialTheme.typography.body2)
+			Spacer(Modifier.weight(1f))
+			CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+				val count by remember(room) { room.joinedMemberCount }.collectAsState(0)
+				Text("$count", style = MaterialTheme.typography.caption)
+			}
+		}
+
+		LazyColumn {
+			items(members, key = { (userId, _) -> userId }) { (userId, member) ->
+				val powerLevel = if (powerLevels != null) {
+					when (powerLevels.getUserPowerLevel(userId)) {
+						100L -> "Admin"
+						50L -> "Moderator"
+						else -> null
+					}
+				} else {
+					null
+				}
+
+				@OptIn(ExperimentalMaterialApi::class)
+				ListItem(
+					icon = {
+						val avatar = member.avatarUrl?.let { loadIcon(URI(it)) }
+						if (avatar != null) {
+							Image(
+								avatar,
+								null,
+								Modifier.size(40.dp).clip(CircleShape),
+								contentScale = ContentScale.Crop
+							)
+						} else {
+							Image(Icons.Filled.Person, null, Modifier.size(40.dp))
+						}
+					},
+					text = {
+						Text(member.displayName ?: userId)
+					},
+					trailing = powerLevel?.let { { Text(it) } }
+				)
+			}
+		}
+	}
 }

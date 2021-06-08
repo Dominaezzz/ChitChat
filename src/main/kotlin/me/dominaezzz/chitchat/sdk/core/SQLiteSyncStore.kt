@@ -568,6 +568,26 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		}
 	}
 
+	override suspend fun getState(roomId: String, type: String): Map<String, JsonObject> {
+		return read { conn ->
+			val sql = "SELECT stateKey, content FROM room_events WHERE roomId = ? AND type = ? AND isLatestState;"
+			conn.prepareStatement(sql).use { stmt ->
+				stmt.setString(1, roomId)
+				stmt.setString(2, type)
+				stmt.executeQuery().use { rs ->
+					@OptIn(ExperimentalStdlibApi::class)
+					buildMap {
+						while (rs.next()) {
+							val stateKey = rs.getString(1)
+							val content = rs.getSerializable(2, JsonObject.serializer())
+							put(stateKey, content)
+						}
+					}
+				}
+			}
+		}
+	}
+
 	override suspend fun getAccountData(roomId: String, type: String): JsonObject? {
 		return helper.usingReadConnection { conn ->
 			val query = "SELECT content FROM account_data WHERE roomId = ? AND type = ?;"

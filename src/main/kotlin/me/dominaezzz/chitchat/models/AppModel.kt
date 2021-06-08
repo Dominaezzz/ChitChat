@@ -1,6 +1,8 @@
 package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.models.Presence
+import io.github.matrixkt.models.events.contents.room.MemberContent
+import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.utils.MatrixConfig
 import io.github.matrixkt.utils.MatrixJson
 import io.ktor.client.*
@@ -10,6 +12,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.*
@@ -97,5 +100,83 @@ class AppModel(applicationDir: Path) {
 
 	suspend fun sync() {
 		syncClient.sync(timeout = 100000, setPresence = Presence.OFFLINE)
+	}
+
+	fun getMemberList(
+		room: Room,
+		comparator: Comparator<Pair<String, MemberContent>>
+	): Flow<List<Pair<String, MemberContent>>> {
+		return flow {
+			val stateMap = syncStore.getState(room.id, "m.room.member")
+
+			val members = ArrayList<Pair<String, MemberContent>>(stateMap.size)
+			stateMap.mapTo(members) { (stateKey, content) ->
+				stateKey to MatrixJson.decodeFromJsonElement(MemberContent.serializer(), content)
+			}
+			members.removeAll { (_, member) -> member.membership != Membership.JOIN }
+			members.sortWith(comparator)
+
+			emit(members.toList())
+
+			room.stateEvents.filter { it.type == "m.room.member" }
+				.transform { event ->
+					val userId = event.stateKey!!
+					val member = MatrixJson.decodeFromJsonElement<MemberContent>(event.content)
+
+					val index = members.indexOfFirst { it.first == userId }
+
+					// If member is already in our list
+					if (index != -1) {
+						// If member is not in room anymore...
+						if (member.membership != Membership.JOIN) {
+							// Remove them from the list
+							members.removeAt(index)
+							emit(members.toList())
+						} else {
+							val oldItem = members[index]
+							// If the member content needs updating.
+							if (member != oldItem.second) {
+								val newItem = userId to member
+								val compareResult = comparator.compare(oldItem, newItem)
+								if (compareResult == 0) {
+									// If the comparison is equal, then we can simply replace the item.
+									members[index] = newItem
+									emit(members.toList())
+								} else {
+									// If the comparison is not equal, then we need to re-insert the item.
+									members.removeAt(index)
+									val searchResult = members.binarySearch(newItem, comparator)
+									val insertionPoint = if (searchResult >= 0) {
+										searchResult
+									} else {
+										-(searchResult + 1)
+									}
+									members.add(insertionPoint, newItem)
+									emit(members.toList())
+
+									// Instead of doing "remove and insert" we could be clever and do a "set and rotate".
+								}
+							}
+						}
+					} else {
+						// If member has now joined the room.
+						if (member.membership == Membership.JOIN) {
+							val item = userId to member
+							val searchResult = members.binarySearch(item, comparator)
+							val insertionPoint = if (searchResult >= 0) {
+								searchResult
+							} else {
+								-(searchResult + 1)
+							}
+							members.add(insertionPoint, item)
+							emit(members.toList())
+						}
+					}
+				}
+				.flowOn(Dispatchers.Default)
+				.collect { list ->
+					emit(list)
+				}
+		}
 	}
 }
