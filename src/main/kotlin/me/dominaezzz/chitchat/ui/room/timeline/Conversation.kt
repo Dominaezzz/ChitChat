@@ -241,34 +241,34 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 	val eventReceipts by room.getReadReceipts(eventId).collectAsState(emptyMap())
 	val limit = 10
 
-	if (!eventReceipts.isNullOrEmpty()) {
-		Row(
-			modifier.padding(4.dp),
-			verticalAlignment = Alignment.CenterVertically
-		) {
-			if (eventReceipts.size > limit) {
-				CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-					Text(
-						"${eventReceipts.size - limit}+",
-						style = MaterialTheme.typography.caption
-					)
-				}
+	if (eventReceipts.isNullOrEmpty()) return
+
+	Row(
+		modifier.padding(4.dp),
+		verticalAlignment = Alignment.CenterVertically
+	) {
+		if (eventReceipts.size > limit) {
+			CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+				Text(
+					"${eventReceipts.size - limit}+",
+					style = MaterialTheme.typography.caption
+				)
 			}
+		}
 
-			for ((userId, _) in eventReceipts.asSequence().take(limit)) {
-				Spacer(Modifier.width(1.dp))
+		for ((userId, _) in eventReceipts.asSequence().take(limit)) {
+			Spacer(Modifier.width(1.dp))
 
-				val member = getMember(room, userId).value
-				val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
+			val member = getMember(room, userId).value
+			val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
 
-				@Suppress("NAME_SHADOWING")
-				val modifier = Modifier.size(16.dp)
-					.clip(CircleShape)
-				if (avatar != null) {
-					Image(avatar, null, modifier, contentScale = ContentScale.Crop)
-				} else {
-					Image(Icons.Filled.Person, null, modifier, contentScale = ContentScale.Crop)
-				}
+			@Suppress("NAME_SHADOWING")
+			val modifier = Modifier.size(16.dp)
+				.clip(CircleShape)
+			if (avatar != null) {
+				Image(avatar, null, modifier, contentScale = ContentScale.Crop)
+			} else {
+				Image(Icons.Filled.Person, null, modifier, contentScale = ContentScale.Crop)
 			}
 		}
 	}
