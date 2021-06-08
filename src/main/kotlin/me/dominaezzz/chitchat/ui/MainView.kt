@@ -3,6 +3,7 @@ package me.dominaezzz.chitchat.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -45,6 +46,7 @@ fun MainView() {
 
 	val joinedRooms by remember { appViewModel.syncClient.joinedRooms }.collectAsState(emptyMap())
 	var selectedRoom by remember { mutableStateOf<String?>(null) }
+	val roomStateHolder = rememberSaveableStateHolder()
 
 	Row(Modifier.fillMaxSize()) {
 		RoomListView(
@@ -62,11 +64,13 @@ fun MainView() {
 
 		val room = selectedRoom?.let { joinedRooms[it] }
 		if (room != null) {
-			MemberCache(room) {
-				RoomView(
-					room,
-					Modifier.fillMaxWidth()
-				)
+			roomStateHolder.SaveableStateProvider(room) {
+				MemberCache(room) {
+					RoomView(
+						room,
+						Modifier.fillMaxWidth()
+					)
+				}
 			}
 		}
 	}

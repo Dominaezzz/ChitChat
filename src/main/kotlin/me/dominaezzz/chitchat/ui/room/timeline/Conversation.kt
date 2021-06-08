@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.Text
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,13 +59,11 @@ fun Conversation(
 	val timelineEvents = timeline.events.collectAsState().value.asReversed()
 
 	Row(modifier) {
-		val roomScrollMap = remember { mutableMapOf<String, LazyListState>() }
-		val state = roomScrollMap.getOrPut(room.id) { LazyListState(0, 0) }
-
 		val manager = LocalAppModel.current.cryptoManager
 		val megolmCache = remember(room.id) { MegolmCache(room.id, manager) }
 		LaunchedEffect(megolmCache) { megolmCache.load() }
 
+		val state = rememberLazyListState()
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
 			itemsIndexed(timelineEvents) { idx, item ->
 				if (idx == timelineEvents.lastIndex) {
