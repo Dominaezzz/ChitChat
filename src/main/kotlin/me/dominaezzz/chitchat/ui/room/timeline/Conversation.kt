@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -17,6 +18,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.text.AnnotatedString
@@ -41,6 +43,7 @@ import me.dominaezzz.chitchat.util.loadImage
 import me.dominaezzz.chitchat.util.formatting.parseMatrixCustomHtml
 import me.dominaezzz.chitchat.util.loadEncryptedImage
 import java.net.URI
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -256,20 +259,43 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 			}
 		}
 
-		for ((userId, _) in eventReceipts.asSequence().take(limit)) {
+		for ((userId, receipt) in eventReceipts.asSequence().take(limit)) {
 			Spacer(Modifier.width(1.dp))
 
 			val member = getMember(room, userId).value
 			val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
 
-			@Suppress("NAME_SHADOWING")
-			val modifier = Modifier.size(16.dp)
-				.clip(CircleShape)
-			if (avatar != null) {
-				Image(avatar, null, modifier, contentScale = ContentScale.Crop)
-			} else {
-				Image(Icons.Filled.Person, null, modifier, contentScale = ContentScale.Crop)
-			}
+			BoxWithTooltip(
+				tooltip = {
+					Surface(
+						modifier = Modifier.shadow(4.dp),
+						shape = RoundedCornerShape(4.dp)
+					) {
+						val displayName = member?.displayName ?: userId
+						val timestampMillis = receipt.timestamp
+						val content = if (timestampMillis != null) {
+							val dateTime = Instant.ofEpochMilli(timestampMillis)
+								.atZone(ZoneId.systemDefault())
+								.toLocalDateTime()
+							"Seen by $displayName at $dateTime"
+						} else {
+							"Seen by $displayName"
+						}
+						Text(content, Modifier.padding(8.dp))
+					}
+				},
+				modifier = Modifier.size(16.dp),
+				content = {
+					@Suppress("NAME_SHADOWING")
+					val modifier = Modifier.matchParentSize()
+						.clip(CircleShape)
+					if (avatar != null) {
+						Image(avatar, null, modifier, contentScale = ContentScale.Crop)
+					} else {
+						Image(Icons.Filled.Person, null, modifier, contentScale = ContentScale.Crop)
+					}
+				}
+			)
 		}
 	}
 }
