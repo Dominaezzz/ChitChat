@@ -1,5 +1,6 @@
 package me.dominaezzz.chitchat.ui
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -64,12 +65,14 @@ fun MainView() {
 
 		val room = selectedRoom?.let { joinedRooms[it] }
 		if (room != null) {
-			roomStateHolder.SaveableStateProvider(room) {
-				MemberCache(room) {
-					RoomView(
-						room,
-						Modifier.fillMaxWidth()
-					)
+			Crossfade(room) {
+				roomStateHolder.SaveableStateProvider(it) {
+					MemberCache(it) {
+						RoomView(
+							it,
+							Modifier.fillMaxWidth()
+						)
+					}
 				}
 			}
 		}
