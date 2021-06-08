@@ -569,7 +569,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 	}
 
 	override suspend fun getState(roomId: String, type: String): Map<String, JsonObject> {
-		return read { conn ->
+		return helper.usingReadConnection { conn ->
 			val sql = "SELECT stateKey, content FROM room_events WHERE roomId = ? AND type = ? AND isLatestState;"
 			conn.prepareStatement(sql).use { stmt ->
 				stmt.setString(1, roomId)
