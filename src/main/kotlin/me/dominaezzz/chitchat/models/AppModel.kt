@@ -1,12 +1,14 @@
 package me.dominaezzz.chitchat.models
 
+import androidx.compose.runtime.RememberObserver
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.utils.MatrixConfig
 import io.github.matrixkt.utils.MatrixJson
 import io.ktor.client.*
-import io.ktor.client.engine.apache.*
+import io.ktor.client.engine.java.*
+import io.ktor.client.features.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -25,7 +27,7 @@ import java.nio.file.Path
 import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
 
-class AppModel(applicationDir: Path) {
+class AppModel(applicationDir: Path) : RememberObserver {
 	private val scope = CoroutineScope(SupervisorJob())
 
 	val session = usingConnection { conn ->
@@ -37,13 +39,16 @@ class AppModel(applicationDir: Path) {
 		)
 	}
 
-	private val engine = Apache.create {
-		connectTimeout = 0
-		socketTimeout = 0
-	}
-
 	val homeServerUrl = Url(session.discoveryInfo.homeServer.baseUrl)
-	val client = HttpClient(engine) { MatrixConfig(homeServerUrl) }
+	val client = HttpClient(Java) {
+		MatrixConfig(homeServerUrl)
+
+		install(HttpTimeout) {
+			connectTimeoutMillis = 10_000
+			socketTimeoutMillis = 10000_000 // HttpTimeout.INFINITE_TIMEOUT_MS
+			requestTimeoutMillis = 10000_000 //  HttpTimeout.INFINITE_TIMEOUT_MS
+		}
+	}
 
 	val contentRepository = ContentRepository(client, applicationDir.resolve("media"))
 
@@ -96,6 +101,18 @@ class AppModel(applicationDir: Path) {
 				}
 			}
 			.launchIn(scope)
+	}
+
+	override fun onRemembered() {}
+
+	override fun onAbandoned() {
+		onForgotten()
+	}
+
+	override fun onForgotten() {
+		scope.cancel()
+		contentRepository.close()
+		client.close()
 	}
 
 	suspend fun sync() {

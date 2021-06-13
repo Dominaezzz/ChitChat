@@ -38,7 +38,7 @@ dependencies {
 	implementation("io.github.matrixkt:client-jvm:$matrixKtVersion")
 	implementation("io.github.matrixkt:olm-jvm:$matrixKtVersion")
 	implementation("io.ktor:ktor-client-core:$ktorVersion")
-	implementation("io.ktor:ktor-client-apache:$ktorVersion")
+	implementation("io.ktor:ktor-client-java:$ktorVersion")
 	implementation("io.ktor:ktor-client-logging:$ktorVersion")
 
 	implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
