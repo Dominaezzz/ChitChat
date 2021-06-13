@@ -226,16 +226,31 @@ class JoinedRoomImpl(
 		.shareIn(scope, shareConfig, 1)
 
 	private val readReceiptsMap = MapOfFlows<String, Map<String, ReceiptContent.Receipt>> { eventId ->
-		val updateFlow = ephemeralEvents
+		val receiptFlow = ephemeralEvents
 			.filter { it.type == "m.receipt" }
 			.map { MatrixJson.decodeFromJsonElement<ReceiptContent>(it.content) }
-			.mapNotNull { it[eventId]?.read }
 		flow {
-			var receipts = store.getReadReceipts(id, eventId)
-			emit(receipts)
-			updateFlow.collect { users ->
-				receipts += users
-				emit(receipts)
+			val initialReceipts = store.getReadReceipts(id, eventId)
+			emit(initialReceipts)
+
+			val receipts = initialReceipts.toMutableMap()
+			receiptFlow.collect { receiptContent ->
+				var changed = false
+				for ((receiptEventId, receipt) in receiptContent) {
+					val users = receipt.read ?: continue
+					if (receiptEventId == eventId) {
+						receipts += users
+						changed = changed || users.isNotEmpty()
+					} else {
+						for (userId in users.keys) {
+							val wasRemoved = receipts.remove(userId) != null
+							changed = changed || wasRemoved
+						}
+					}
+				}
+				if (changed) {
+					emit(receipts.toMap())
+				}
 			}
 		}.shareIn(scope, shareConfig, 1)
 	}
