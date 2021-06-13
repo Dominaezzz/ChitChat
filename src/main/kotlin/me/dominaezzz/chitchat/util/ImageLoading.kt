@@ -9,7 +9,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.dominaezzz.chitchat.db.ContentRepository
+import me.dominaezzz.chitchat.db.MediaRepository
 import me.dominaezzz.chitchat.sdk.crypto.Attachments
 import me.dominaezzz.chitchat.ui.LocalAppModel
 import org.jetbrains.skija.Image
@@ -21,7 +21,7 @@ private val LocalImageCache = compositionLocalOf<Cache<URI, ImageBitmap>> { erro
 private val LocalEncryptedImageCache = compositionLocalOf<Cache<EncryptedFile, ImageBitmap>> { error("No image cache specified") }
 private val LocalIconCache = compositionLocalOf<ImageIconCache> { error("No icon cache specified") }
 
-class ImageIconCache(private val contentRepository: ContentRepository) {
+class ImageIconCache(private val repository: MediaRepository) {
 	private val iconSize = 100f
 
 	private val stateMap = mutableMapOf<URI, State<ImageBitmap?>>()
@@ -45,7 +45,7 @@ class ImageIconCache(private val contentRepository: ContentRepository) {
 				launch {
 					for ((uri, state) in stateChannel) {
 						try {
-							val bytes = contentRepository.getContent(uri)
+							val bytes = repository.getContent(uri)
 							val srcImage = withContext(Dispatchers.Default) {
 								Image.makeFromEncoded(bytes).asImageBitmap()
 							}
@@ -69,19 +69,19 @@ class ImageIconCache(private val contentRepository: ContentRepository) {
 
 @Composable
 fun ImageCache(content: @Composable () -> Unit) {
-	val contentRepo = LocalAppModel.current.contentRepository
-	val imageCache = remember(contentRepo) {
+	val mediaRepo = LocalAppModel.current.mediaRepository
+	val imageCache = remember(mediaRepo) {
 		Cache<URI, ImageBitmap> {
-			val bytes = contentRepo.getContent(it)
+			val bytes = mediaRepo.getContent(it)
 			withContext(Dispatchers.Default) {
 				Image.makeFromEncoded(bytes).asImageBitmap()
 			}
 		}
 	}
-	val iconCache = remember(contentRepo) { ImageIconCache(contentRepo) }
-	val encImageCache = remember(contentRepo) {
+	val iconCache = remember(mediaRepo) { ImageIconCache(mediaRepo) }
+	val encImageCache = remember(mediaRepo) {
 		Cache<EncryptedFile, ImageBitmap> {
-			val bytes = contentRepo.getContent(URI(it.url))
+			val bytes = mediaRepo.getContent(URI(it.url))
 			val result = ByteArrayOutputStream(bytes.size)
 			Attachments.decrypt(bytes.inputStream(), result, it)
 			val decryptedBytes = result.toByteArray()

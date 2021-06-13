@@ -50,7 +50,7 @@ class AppModel(applicationDir: Path) : RememberObserver {
 		}
 	}
 
-	val contentRepository = ContentRepository(client, applicationDir.resolve("media"))
+	val mediaRepository = MediaRepository(client, applicationDir.resolve("media"))
 
 	val syncStore = SQLiteSyncStore(applicationDir.resolve("sync.db"))
 	val syncClient = SyncClient(scope, session, client, syncStore)
@@ -111,7 +111,7 @@ class AppModel(applicationDir: Path) : RememberObserver {
 
 	override fun onForgotten() {
 		scope.cancel()
-		contentRepository.close()
+		mediaRepository.close()
 		client.close()
 	}
 
