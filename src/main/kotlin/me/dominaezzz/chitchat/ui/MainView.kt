@@ -35,7 +35,11 @@ fun AppView() {
 			try {
 				appModel.sync()
 			} catch (e: Exception) {
-				e.printStackTrace()
+				if (e !is CancellationException) {
+					e.printStackTrace()
+				} else {
+					throw e
+				}
 			}
 		}
 	}
