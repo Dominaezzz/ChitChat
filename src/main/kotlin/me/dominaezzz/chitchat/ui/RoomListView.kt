@@ -5,6 +5,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -29,10 +31,8 @@ import io.github.matrixkt.api.GetUserProfile
 import io.github.matrixkt.models.events.contents.DirectContent
 import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.utils.rpc
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
@@ -141,6 +141,25 @@ fun RoomListView(
 			},
 			backgroundColor = Color.Transparent,
 			actions = {
+				val syncClient = LocalAppModel.current.syncClient
+				@OptIn(ExperimentalCoroutinesApi::class)
+				val syncCount by remember(syncClient) {
+					syncClient.syncFlow
+						.distinctUntilChangedBy { it.nextBatch }
+						.map { 1 }
+						.runningReduce { acc, value -> acc + value }
+				}.collectAsState(0)
+
+				Text(
+					text = syncCount.toString(),
+					modifier = Modifier
+						.align(Alignment.CenterVertically)
+						.padding(4.dp)
+						.border(2.dp, Color.Cyan, CircleShape)
+						.size(24.dp),
+					textAlign = TextAlign.Center
+				)
+
 				IconButton(onClick = { /* Open Settings */ }, enabled = false) {
 					Icon(Icons.Filled.Settings, null)
 				}

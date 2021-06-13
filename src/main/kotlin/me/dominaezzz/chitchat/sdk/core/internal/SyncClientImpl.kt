@@ -28,15 +28,12 @@ class SyncClientImpl(
 	override suspend fun sync(timeout: Long?, setPresence: Presence?) {
 		val syncToken = store.getSyncToken()
 
-		println("Syncing with '$syncToken' as token")
 		val sync = client.rpc(
 			Sync(Sync.Url(since = syncToken, setPresence = setPresence, timeout = timeout)),
 			loginSession.accessToken
 		)
 
-		println("Saving sync response")
 		store.storeSync(sync, syncToken)
-		println("Saved sync response")
 
 		// Should cancellation be disabled here?
 		// We don't really want to miss a sync if it's been persisted.
