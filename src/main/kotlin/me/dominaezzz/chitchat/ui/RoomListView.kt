@@ -205,7 +205,7 @@ fun RoomListView(
 					)
 				}
 
-				items(rooms) { roomDetail ->
+				items(rooms, key = { it.room.id }) { roomDetail ->
 					val room = roomDetail.room
 					val displayName = roomDetail.displayName
 					val displayAvatar = roomDetail.displayAvatar

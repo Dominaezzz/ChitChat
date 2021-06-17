@@ -67,7 +67,7 @@ fun Conversation(
 
 		val state = rememberLazyListState()
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
-			itemsIndexed(timelineEvents) { idx, item ->
+			itemsIndexed(timelineEvents, key = { _, item -> item.event.eventId }) { idx, item ->
 				if (idx == timelineEvents.lastIndex) {
 					DisposableEffect(item.event.eventId) {
 						shouldBackPaginate.value = true

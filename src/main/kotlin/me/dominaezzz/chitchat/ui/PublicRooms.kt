@@ -102,7 +102,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 				val state = rememberLazyListState()
 
 				LazyColumn(Modifier.padding(end = 12.dp), state = state) {
-					itemsIndexed(rooms) { idx, room ->
+					itemsIndexed(rooms, key = { _, room -> room.roomId }) { idx, room ->
 						if (idx == rooms.lastIndex) {
 							DisposableEffect(room.roomId) {
 								shouldPaginate.value = true
