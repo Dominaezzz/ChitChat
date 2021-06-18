@@ -55,8 +55,7 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 					} while (sinceToken != null)
 				}
 				searchFlow.runningReduce { acc, value -> acc + value }
-					.filterIsInstance<List<PublicRoomsChunk>?>()
-					.onStart { emit(null) }
+					.onStart<List<PublicRoomsChunk>?> { emit(null) }
 					.transform { chunk ->
 						emit(chunk)
 						shouldPaginate.first { it }
