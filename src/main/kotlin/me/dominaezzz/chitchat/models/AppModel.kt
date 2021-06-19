@@ -1,11 +1,14 @@
 package me.dominaezzz.chitchat.models
 
 import androidx.compose.runtime.RememberObserver
+import io.github.matrixkt.api.JoinRoomById
+import io.github.matrixkt.models.MatrixException
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.utils.MatrixConfig
 import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.utils.rpc
 import io.ktor.client.*
 import io.ktor.client.engine.java.*
 import io.ktor.client.features.*
@@ -194,6 +197,46 @@ class AppModel(applicationDir: Path) : RememberObserver {
 				.collect { list ->
 					emit(list)
 				}
+		}
+	}
+
+
+	private val _joinsInProgress = MutableStateFlow<Set<String>>(emptySet())
+	val joinsInProgress: StateFlow<Set<String>> get() = _joinsInProgress.asStateFlow()
+
+	fun joinRoom(roomId: String) {
+		// Not thread safe!!!
+		if (roomId in joinsInProgress.value) {
+			println("Already joining room $roomId. Ignoring!")
+			return
+		}
+
+		scope.launch {
+			val checkForJoin = launch(start = CoroutineStart.UNDISPATCHED) {
+				syncClient.joinedRooms.first { roomId in it }
+			}
+
+			val joinRequest = JoinRoomById(JoinRoomById.Url(roomId))
+			try {
+				val response = client.rpc(joinRequest, session.accessToken)
+				println("Joined room (id = ${response.roomId})!")
+				checkForJoin.join()
+			} catch (e: MatrixException) {
+				e.printStackTrace()
+			}
+
+			_joinsInProgress.update { it - roomId }
+		}
+		_joinsInProgress.update { it + roomId }
+	}
+
+	private inline fun <T> MutableStateFlow<T>.update(block: (T) -> T) {
+		while (true) {
+			val prevValue = value
+			val nextValue = block(prevValue)
+			if (compareAndSet(prevValue, nextValue)) {
+				return
+			}
 		}
 	}
 }

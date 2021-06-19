@@ -21,14 +21,14 @@ import androidx.compose.ui.unit.dp
 import io.github.matrixkt.api.QueryPublicRooms
 import io.github.matrixkt.models.PublicRoomsChunk
 import io.github.matrixkt.utils.rpc
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 
 @Composable
 fun PublicRooms(modifier: Modifier = Modifier) {
+	val appModel = LocalAppModel.current
 	val client = LocalAppModel.current.client
 	val session = LocalAppModel.current.session
 
@@ -62,6 +62,9 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 					}
 			}
 	}.collectAsState(null).value
+
+	val joinsInProgress by appModel.joinsInProgress.collectAsState()
+	val joinedRooms by appModel.syncClient.joinedRooms.collectAsState(emptyMap())
 
 	Column(modifier.padding(32.dp)) {
 		Text(
@@ -134,9 +137,29 @@ fun PublicRooms(modifier: Modifier = Modifier) {
 								}
 							},
 							trailing = {
-								Row(verticalAlignment = Alignment.CenterVertically) {
-									Icon(Icons.Filled.Contacts, null)
-									Text(room.numJoinedMembers.toString())
+								Column(
+									modifier = Modifier.fillMaxHeight(),
+									verticalArrangement = Arrangement.SpaceEvenly
+								) {
+									Row(verticalAlignment = Alignment.CenterVertically) {
+										Icon(Icons.Filled.Contacts, null)
+										Text(room.numJoinedMembers.toString())
+									}
+
+									Spacer(Modifier.height(8.dp))
+
+									if (room.roomId in joinsInProgress) {
+										CircularProgressIndicator()
+									} else {
+										val hasAlreadyJoined = room.roomId in joinedRooms
+										Button(
+											onClick = { appModel.joinRoom(room.roomId) },
+											enabled = !hasAlreadyJoined,
+											content = {
+												Text(if (hasAlreadyJoined) "Joined" else "Join")
+											}
+										)
+									}
 								}
 							}
 						)
