@@ -156,6 +156,14 @@ fun UserMessageInput(
 ) {
 	var draftMessage by rememberSaveable(roomId) { mutableStateOf("") }
 
+	val appModel = LocalAppModel.current
+	LaunchedEffect(roomId) {
+		appModel.publishTypingNotifications(
+			roomId,
+			snapshotFlow { draftMessage }.drop(1)
+		)
+	}
+
 	OutlinedTextField(
 		value = draftMessage,
 		onValueChange = { draftMessage = it },

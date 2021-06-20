@@ -2,6 +2,8 @@ package me.dominaezzz.chitchat.models
 
 import androidx.compose.runtime.RememberObserver
 import io.github.matrixkt.api.JoinRoomById
+import io.github.matrixkt.api.SetTyping
+import io.github.matrixkt.models.MatrixError
 import io.github.matrixkt.models.MatrixException
 import io.github.matrixkt.models.Presence
 import io.github.matrixkt.models.events.contents.room.MemberContent
@@ -15,6 +17,7 @@ import io.ktor.client.features.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.selects.select
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -26,9 +29,14 @@ import me.dominaezzz.chitchat.sdk.util.getValue
 import me.dominaezzz.chitchat.sdk.util.setSerializable
 import me.dominaezzz.chitchat.sdk.util.transaction
 import me.dominaezzz.chitchat.sdk.util.usingConnection
+import java.lang.Exception
 import java.nio.file.Path
 import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 class AppModel(applicationDir: Path) : RememberObserver {
 	private val scope = CoroutineScope(SupervisorJob())
@@ -236,6 +244,95 @@ class AppModel(applicationDir: Path) : RememberObserver {
 			val nextValue = block(prevValue)
 			if (compareAndSet(prevValue, nextValue)) {
 				return
+			}
+		}
+	}
+
+	@ExperimentalTime
+	private sealed class TypingUpdateResult {
+		object Success : TypingUpdateResult()
+		class RateLimit(val duration: Duration) : TypingUpdateResult()
+		class Failed(val exception: Exception) : TypingUpdateResult()
+	}
+	@ExperimentalTime
+	private suspend fun updateIsTyping(request: SetTyping): TypingUpdateResult {
+		return try {
+			client.rpc(request, session.accessToken)
+			TypingUpdateResult.Success
+		} catch (e: MatrixException) {
+			val matrixError = e.error
+			if (matrixError is MatrixError.LimitExceeded) {
+				val waitPeriod = Duration.milliseconds(matrixError.retryAfterMillis)
+				TypingUpdateResult.RateLimit(waitPeriod)
+			} else {
+				TypingUpdateResult.Failed(e)
+			}
+		} catch (e: Exception) {
+			TypingUpdateResult.Failed(e)
+		}
+	}
+
+	@OptIn(ExperimentalTime::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
+	suspend fun publishTypingNotifications(roomId: String, draft: Flow<String>) {
+		val typingUrl = SetTyping.Url(session.userId, roomId)
+
+		coroutineScope {
+			val draftChannel = draft.produceIn(this)
+
+			var lastNotification: TimeMark? = null
+			var rateLimitMark: TimeMark? = null
+
+			while (isActive) {
+				val isStillTyping = select<Boolean> {
+					draftChannel.onReceive { it.isNotEmpty() }
+					onTimeout(3_000) { false }
+				}
+
+				if (rateLimitMark != null && rateLimitMark.hasNotPassedNow()) {
+					continue
+				}
+
+				if (isStillTyping) {
+					if (lastNotification == null || lastNotification.elapsedNow() > Duration.seconds(20)) {
+						// Need to notify server again or for the first time.
+
+						val request = SetTyping(typingUrl, SetTyping.Body(typing = true, timeout = 25_000))
+						when (val result = updateIsTyping(request)) {
+							is TypingUpdateResult.Success -> {
+								lastNotification = TimeSource.Monotonic.markNow()
+							}
+							is TypingUpdateResult.Failed -> {
+								result.exception.printStackTrace()
+								// Failed to set typing notification, so we'll retry next time.
+							}
+							is TypingUpdateResult.RateLimit -> {
+								// Set rate limit period.
+								rateLimitMark = TimeSource.Monotonic.markNow() + result.duration
+								// We couldn't set our typing notification, so we'll retry next time.
+							}
+						}
+					}
+				} else {
+					if (lastNotification != null && lastNotification.elapsedNow() < Duration.seconds(25)) {
+						// Need to tell server that we're done typing.
+
+						val request = SetTyping(typingUrl, SetTyping.Body(typing = false))
+						when (val result = updateIsTyping(request)) {
+							is TypingUpdateResult.Success -> {
+								lastNotification = null
+							}
+							is TypingUpdateResult.Failed -> {
+								result.exception.printStackTrace()
+								// Failed to remove typing notification, so we'll rely on the timeouts.
+							}
+							is TypingUpdateResult.RateLimit -> {
+								// Set rate limit period.
+								rateLimitMark = TimeSource.Monotonic.markNow() + result.duration
+								// We couldn't unset our typing notification, so we'll rely on timeout.
+							}
+						}
+					}
+				}
 			}
 		}
 	}
