@@ -21,8 +21,11 @@ fun main(args: Array<String>) {
 	val applicationDirectory = Paths.get(applicationDir)
 
 	application {
-		val windowState = rememberWindowState(size = WindowSize(300.dp, 300.dp))
-		Window(windowState, title = "Chit Chat") {
+		Window(
+			onCloseRequest = { exitApplication() },
+			state = rememberWindowState(size = WindowSize(300.dp, 300.dp)),
+			title = "Chit Chat"
+		) {
 			ChitChatTheme {
 				AppView(applicationDirectory)
 			}
