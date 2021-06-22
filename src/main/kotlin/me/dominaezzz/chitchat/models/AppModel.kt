@@ -19,16 +19,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.sdk.crypto.*
-import me.dominaezzz.chitchat.sdk.util.getValue
-import me.dominaezzz.chitchat.sdk.util.setSerializable
-import me.dominaezzz.chitchat.sdk.util.transaction
-import me.dominaezzz.chitchat.sdk.util.usingConnection
 import java.lang.Exception
 import java.nio.file.Path
 import java.security.SecureRandom
@@ -41,12 +36,14 @@ import kotlin.time.TimeSource
 class AppModel(applicationDir: Path) : RememberObserver {
 	private val scope = CoroutineScope(SupervisorJob())
 
-	val session = usingConnection { conn ->
+	private val appDatabase = AppDatabase(applicationDir.resolve("app.db"))
+
+	val session = runBlocking {
 		LoginSession(
-			accessToken = conn.getValue("ACCESS_TOKEN")!!,
-			userId = conn.getValue("USER_ID")!!,
-			deviceId = conn.getValue("DEVICE_ID")!!,
-			discoveryInfo = MatrixJson.decodeFromString(conn.getValue("WELL_KNOWN")!!)
+			accessToken = appDatabase.getValue("ACCESS_TOKEN")!!,
+			userId = appDatabase.getValue("USER_ID")!!,
+			deviceId = appDatabase.getValue("DEVICE_ID")!!,
+			discoveryInfo = MatrixJson.decodeFromString(appDatabase.getValue("WELL_KNOWN")!!)
 		)
 	}
 
@@ -87,19 +84,7 @@ class AppModel(applicationDir: Path) : RememberObserver {
 			.mapNotNull { it.toDevice }
 			.filter { it.events.isNotEmpty() }
 			.onEach { toDevice ->
-				usingConnection { conn ->
-					conn.transaction {
-						val sql = "INSERT INTO device_events(type, content, sender) VALUES (?, ?, ?);"
-						conn.prepareStatement(sql).use { stmt ->
-							for (event in toDevice.events) {
-								stmt.setString(1, event.type)
-								stmt.setSerializable(2, JsonObject.serializer(), event.content)
-								stmt.setString(3, event.sender)
-								stmt.executeUpdate()
-							}
-						}
-					}
-				}
+				appDatabase.insertDeviceEvents(toDevice.events)
 			}
 			.launchIn(scope)
 

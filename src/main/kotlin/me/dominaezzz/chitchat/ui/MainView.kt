@@ -15,14 +15,11 @@ import me.dominaezzz.chitchat.ui.room.RoomView
 import me.dominaezzz.chitchat.util.ImageCache
 import java.nio.file.*
 
-val projectDir: Path = Paths.get("").toAbsolutePath()
-val appWorkingDir: Path = projectDir.resolve("appdir")
-
 val LocalAppModel = staticCompositionLocalOf<AppModel> { error("No app model provided") }
 
 @Composable
-fun AppView() {
-	val appModel = remember { AppModel(appWorkingDir) }
+fun AppView(applicationDir: Path) {
+	val appModel = remember { AppModel(applicationDir) }
 
 	CompositionLocalProvider(LocalAppModel provides appModel) {
 		ImageCache {

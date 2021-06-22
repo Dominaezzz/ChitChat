@@ -35,6 +35,8 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
 
+	implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.2")
+
 	implementation("io.github.matrixkt:client-jvm:$matrixKtVersion")
 	implementation("io.github.matrixkt:olm-jvm:$matrixKtVersion")
 	implementation("io.ktor:ktor-client-core:$ktorVersion")
@@ -51,6 +53,7 @@ dependencies {
 compose.desktop {
 	application {
 		mainClass = "me.dominaezzz.chitchat.MainKt"
+		args(projectDir.resolve("appdir").absolutePath)
 	}
 }
 

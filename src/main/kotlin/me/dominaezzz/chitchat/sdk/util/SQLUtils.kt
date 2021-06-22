@@ -5,30 +5,10 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonNull
-import me.dominaezzz.chitchat.ui.projectDir
-import org.sqlite.SQLiteConfig
-import java.nio.file.Path
 import java.sql.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-
-fun getConnection(dbFile: Path): Connection {
-	val config = SQLiteConfig()
-	config.enforceForeignKeys(true)
-	config.setJournalMode(SQLiteConfig.JournalMode.WAL)
-	// config.busyTimeout = 5000
-
-	return DriverManager.getConnection("jdbc:sqlite:${dbFile.toAbsolutePath()}", config.toProperties())
-}
-
-@OptIn(ExperimentalContracts::class)
-inline fun <T> usingConnection(block: (Connection) -> T): T {
-	contract {
-		callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-	}
-	return getConnection(projectDir.resolve("app.db")).use(block)
-}
 
 @OptIn(ExperimentalContracts::class)
 inline fun <T> Connection.usingStatement(block: (Statement) -> T): T {
