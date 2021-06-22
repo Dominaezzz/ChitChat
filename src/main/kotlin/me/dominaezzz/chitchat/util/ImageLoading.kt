@@ -4,11 +4,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.IntSize
 import io.github.matrixkt.models.EncryptedFile
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import me.dominaezzz.chitchat.db.MediaRepository
 import me.dominaezzz.chitchat.sdk.crypto.Attachments
 import me.dominaezzz.chitchat.ui.LocalAppModel
@@ -41,7 +38,7 @@ class ImageIconCache(private val repository: MediaRepository) {
 
 	suspend fun load() {
 		coroutineScope {
-			repeat(4) {
+			repeat(20) {
 				launch {
 					for ((uri, state) in stateChannel) {
 						try {
@@ -58,7 +55,9 @@ class ImageIconCache(private val repository: MediaRepository) {
 								}
 							}
 						} catch (e: Exception) {
-							e.printStackTrace()
+							if (e !is CancellationException) {
+								e.printStackTrace()
+							}
 						}
 					}
 				}
