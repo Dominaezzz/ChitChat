@@ -27,6 +27,7 @@ abstract class SQLiteHelper(
 	protected open fun getConfig(): SQLiteConfig {
 		return SQLiteConfig().apply {
 			enforceForeignKeys(true)
+			setJournalMode(SQLiteConfig.JournalMode.WAL)
 		}
 	}
 
@@ -34,43 +35,28 @@ abstract class SQLiteHelper(
 		get() = usingStatement { stmt -> stmt.executeQuery("PRAGMA user_version;").use { check(it.next()); it.getInt(1) } }
 		set(value) { usingStatement { stmt -> stmt.executeUpdate("PRAGMA user_version = $value;") } }
 
-	private val jdbcUrl = "jdbc:sqlite:${databaseFile.toAbsolutePath()}"
-
-	private fun runMigrations(conn: Connection) {
-		conn.autoCommit = false
-		val currentVersion = conn.version
-		if (currentVersion != version) {
-			when {
-				currentVersion == 0 -> onCreate(conn)
-				currentVersion > version -> onUpgrade(conn, currentVersion, version)
-				else -> TODO("Downgrade not supported")
-			}
-			conn.version = version
-		}
-		conn.autoCommit = true
-	}
-
-	private suspend fun openConnection(readOnly: Boolean): Connection {
+	private suspend fun openConnection(): Connection {
 		val config = getConfig()
-		config.setReadOnly(readOnly)
-		if (!readOnly) {
-			config.setJournalMode(SQLiteConfig.JournalMode.WAL)
-		}
 
-		val connection = DriverManager.getConnection(jdbcUrl, config.toProperties())
+		val connection = DriverManager.getConnection(
+			"jdbc:sqlite:${databaseFile.toAbsolutePath()}",
+			config.toProperties()
+		)
 
 		if (connection.version != version) {
 			try {
 				initSemaphore.withPermit {
-					if (readOnly) {
-						config.setReadOnly(false)
-						config.setLockingMode(SQLiteConfig.LockingMode.EXCLUSIVE)
-						DriverManager.getConnection(jdbcUrl, config.toProperties()).use { conn ->
-							runMigrations(conn)
+					connection.autoCommit = false
+					val currentVersion = connection.version
+					if (currentVersion != version) {
+						when {
+							currentVersion == 0 -> onCreate(connection)
+							connection.version > version -> onUpgrade(connection, currentVersion, version)
+							else -> TODO("Downgrade not supported")
 						}
-					} else {
-						runMigrations(connection)
+						connection.version = version
 					}
+					connection.autoCommit = true
 				}
 			} catch (e: Exception) {
 				connection.close()
@@ -81,15 +67,19 @@ abstract class SQLiteHelper(
 		return connection
 	}
 
+	private suspend inline fun <T> usingConnection(block: (Connection) -> T): T {
+		return openConnection().use(block)
+	}
+
 	suspend fun <T> usingReadConnection(block: (Connection) -> T): T {
 		return withContext(Dispatchers.IO) {
-			openConnection(true).use(block)
+			usingConnection(block)
 		}
 	}
 	suspend fun <T> usingWriteConnection(block: (Connection) -> T): T {
 		return writeSemaphore.withPermit {
 			withContext(Dispatchers.IO) {
-				openConnection(false).use { conn ->
+				usingConnection { conn ->
 					conn.transaction {
 						block(conn)
 					}
