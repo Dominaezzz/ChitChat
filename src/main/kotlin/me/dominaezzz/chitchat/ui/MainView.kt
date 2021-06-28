@@ -13,14 +13,11 @@ import me.dominaezzz.chitchat.models.AppModel
 import me.dominaezzz.chitchat.ui.room.MemberCache
 import me.dominaezzz.chitchat.ui.room.RoomView
 import me.dominaezzz.chitchat.util.ImageCache
-import java.nio.file.*
 
 val LocalAppModel = staticCompositionLocalOf<AppModel> { error("No app model provided") }
 
 @Composable
-fun AppView(applicationDir: Path) {
-	val appModel = remember { AppModel(applicationDir) }
-
+fun AppView(appModel: AppModel) {
 	CompositionLocalProvider(LocalAppModel provides appModel) {
 		ImageCache {
 			MainView()

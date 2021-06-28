@@ -33,10 +33,8 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
-class AppModel(applicationDir: Path) : RememberObserver {
+class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : RememberObserver {
 	private val scope = CoroutineScope(SupervisorJob())
-
-	private val appDatabase = AppDatabase(applicationDir.resolve("app.db"))
 
 	val session = runBlocking {
 		LoginSession(

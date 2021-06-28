@@ -1,6 +1,9 @@
 package me.dominaezzz.chitchat.models
 
+import io.github.matrixkt.api.Login
 import io.github.matrixkt.models.sync.Event
+import io.github.matrixkt.utils.MatrixJson
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.sdk.util.*
 import java.nio.file.Path
@@ -36,6 +39,15 @@ class AppDatabase(databasePath: Path) {
 
 	suspend fun setValue(key: String, value: String?) {
 		return helper.usingWriteConnection { it.setValue(key, value) }
+	}
+
+	suspend fun storeLoginResponse(login: Login.Response) {
+		helper.usingWriteConnection { conn ->
+			conn.setValue("ACCESS_TOKEN", login.accessToken ?: error("Login response must have access token"))
+			conn.setValue("DEVICE_ID", login.deviceId ?: error("Login response must have device id"))
+			conn.setValue("USER_ID", login.userId ?: error("Login response should have user id"))
+			conn.setValue("WELL_KNOWN", MatrixJson.encodeToString(login.wellKnown))
+		}
 	}
 
 	suspend fun insertDeviceEvents(events: Iterable<Event>) {
