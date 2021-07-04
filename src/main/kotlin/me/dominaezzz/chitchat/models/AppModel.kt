@@ -24,6 +24,7 @@ import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.sdk.crypto.*
+import me.dominaezzz.chitchat.util.update
 import java.lang.Exception
 import java.nio.file.Path
 import java.security.SecureRandom
@@ -219,16 +220,6 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Rem
 			_joinsInProgress.update { it - roomId }
 		}
 		_joinsInProgress.update { it + roomId }
-	}
-
-	private inline fun <T> MutableStateFlow<T>.update(block: (T) -> T) {
-		while (true) {
-			val prevValue = value
-			val nextValue = block(prevValue)
-			if (compareAndSet(prevValue, nextValue)) {
-				return
-			}
-		}
 	}
 
 	@ExperimentalTime

@@ -11,6 +11,7 @@ import me.dominaezzz.chitchat.sdk.core.SQLiteSyncStore
 import me.dominaezzz.chitchat.sdk.core.SyncStore
 import me.dominaezzz.chitchat.sdk.util.getSerializable
 import me.dominaezzz.chitchat.sdk.util.getTimelineIdAndOrder
+import me.dominaezzz.chitchat.util.update
 import java.sql.Connection
 
 class RoomTimeline(
@@ -48,7 +49,7 @@ class RoomTimeline(
 				val lastEvent = item.event
 				val eventId = lastEvent.eventId
 
-				_events.value += store.read { conn ->
+				val events = store.read { conn ->
 					val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(room.id, eventId)
 					if (timelineId != 0) {
 						TODO("Our timeline was disconnected from the latest timeline. RIP.")
@@ -58,6 +59,8 @@ class RoomTimeline(
 
 					conn.getEventsBetween(room.id, timelineOrder + 1, Int.MAX_VALUE)
 				}
+
+				_events.update { it + events }
 			}
 	}
 
@@ -86,7 +89,7 @@ class RoomTimeline(
 					conn.getEventsBetween(room.id, 1, timelineOrder - 1)
 				}
 
-				_events.value = events + _events.value
+				_events.update { events + it }
 			}
 	}
 
