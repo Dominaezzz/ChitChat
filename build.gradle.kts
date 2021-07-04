@@ -3,7 +3,7 @@ import org.jetbrains.compose.compose
 plugins {
 	kotlin("jvm") version "1.5.10"
 	kotlin("plugin.serialization") version "1.5.10"
-	id("org.jetbrains.compose") version "0.5.0-build226"
+	id("org.jetbrains.compose") version "0.5.0-build229"
 }
 
 group = "me.dominaezzz"
@@ -29,6 +29,7 @@ val sqliteVersion = "3.34.0"
 dependencies {
 	implementation(compose.desktop.currentOs)
 	implementation(compose.materialIconsExtended)
+	implementation(compose.uiTooling)
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
