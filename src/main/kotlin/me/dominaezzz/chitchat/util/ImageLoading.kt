@@ -69,7 +69,7 @@ class ImageIconCache(private val repository: MediaRepository) {
 @Composable
 fun ImageCache(content: @Composable () -> Unit) {
 	val mediaRepo = LocalAppModel.current.mediaRepository
-	val imageCache = remember(mediaRepo) {
+	val imageCache = rememberCloseable(mediaRepo) {
 		Cache<URI, ImageBitmap> {
 			val bytes = mediaRepo.getContent(it)
 			withContext(Dispatchers.Default) {
@@ -78,7 +78,7 @@ fun ImageCache(content: @Composable () -> Unit) {
 		}
 	}
 	val iconCache = remember(mediaRepo) { ImageIconCache(mediaRepo) }
-	val encImageCache = remember(mediaRepo) {
+	val encImageCache = rememberCloseable(mediaRepo) {
 		Cache<EncryptedFile, ImageBitmap> {
 			val bytes = mediaRepo.getContent(URI(it.url))
 			val result = ByteArrayOutputStream(bytes.size)
