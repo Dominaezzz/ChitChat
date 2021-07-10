@@ -1,10 +1,13 @@
 package me.dominaezzz.chitchat.models
 
 import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.models.events.UnsignedData
+import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.decodeFromJsonElement
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SQLiteSyncStore
 import me.dominaezzz.chitchat.sdk.core.SyncStore
@@ -16,12 +19,18 @@ import java.sql.Connection
 
 class RoomTimeline(
 	private val room: Room,
-	private val store: SyncStore
+	private val store: SyncStore,
+	private val localEcho: LocalEcho
 ) {
-	private val _events = MutableStateFlow<List<MatrixEvent>>(emptyList())
+	private val _state = MutableStateFlow(State(emptyList(), emptySet()))
+
+	data class State(
+		val events: List<MatrixEvent>,
+		val txnIds: Set<String>
+	)
 
 	val shouldBackPaginate = MutableStateFlow(false)
-	val events: StateFlow<List<MatrixEvent>> get() = _events
+	val state: StateFlow<State> = _state.asStateFlow()
 
 	suspend fun run() {
 		initialLoad()
@@ -34,33 +43,56 @@ class RoomTimeline(
 	private suspend fun initialLoad() {
 		check(store is SQLiteSyncStore)
 
-		_events.value = store.read { conn ->
-			conn.getEventsBetween(room.id, 1, Int.MAX_VALUE)
-		}
+		_state.value = State(
+			store.read { conn ->
+				conn.getEventsBetween(room.id, 1, Int.MAX_VALUE)
+			},
+			emptySet()
+		)
 	}
 
 	private suspend fun loadFutureEvents() {
 		check(store is SQLiteSyncStore)
 
-		room.timelineEvents
-			.map { }
-			.collect {
-				val lastEvent = _events.value.last()
-				val eventId = lastEvent.eventId
+		coroutineScope {
+			localEcho.sentMessages
+				.onEach { sent ->
+					// Wait for remote echo.
+					_state.first { sent.txnId in it.txnIds }
+					// Then we can delete local echo.
+					_state.update { it.copy(txnIds = it.txnIds - sent.txnId) }
+				}
+				.launchIn(this)
 
-				val events = store.read { conn ->
-					val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(room.id, eventId)
-					if (timelineId != 0) {
-						TODO("Our timeline was disconnected from the latest timeline. RIP.")
-						// Probably best to clear everything and start again in
-						// this case or attempt to restitch the separate timelines.
+			val tidBuffer = mutableListOf<String>()
+			room.timelineEvents
+				.onEach { syncEvent ->
+					val lastEvent = _state.value.events.last()
+					val eventId = lastEvent.eventId
+
+					val events = store.read { conn ->
+						val (timelineId, timelineOrder) = conn.getTimelineIdAndOrder(room.id, eventId)
+						if (timelineId != 0) {
+							TODO("Our timeline was disconnected from the latest timeline. RIP.")
+							// Probably best to clear everything and start again in
+							// this case or attempt to restitch the separate timelines.
+						}
+
+						conn.getEventsBetween(room.id, timelineOrder + 1, Int.MAX_VALUE)
 					}
 
-					conn.getEventsBetween(room.id, timelineOrder + 1, Int.MAX_VALUE)
-				}
+					events.asSequence()
+						.map { it.unsigned }
+						.plus(syncEvent.unsigned)
+						.filterNotNull()
+						.map { MatrixJson.decodeFromJsonElement<UnsignedData>(it) }
+						.mapNotNullTo(tidBuffer) { it.transactionId }
 
-				_events.update { it + events }
-			}
+					_state.update { State(it.events + events, it.txnIds + tidBuffer) }
+					tidBuffer.clear()
+				}
+				.launchIn(this)
+		}
 	}
 
 	private suspend fun loadPastEvents() {
@@ -71,7 +103,7 @@ class RoomTimeline(
 			.collect {
 				// TODO: What if this is empty though... like if all the events in
 				//  the database are not supported.
-				val targetEvent = _events.value.first()
+				val targetEvent = _state.value.events.first()
 				val eventId = targetEvent.eventId
 
 				println("Back paginating")
@@ -87,7 +119,7 @@ class RoomTimeline(
 					conn.getEventsBetween(room.id, 1, timelineOrder - 1)
 				}
 
-				_events.update { events + it }
+				_state.update { it.copy(events = events + it.events) }
 			}
 	}
 

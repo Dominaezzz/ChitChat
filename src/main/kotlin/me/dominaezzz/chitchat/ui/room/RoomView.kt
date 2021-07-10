@@ -6,24 +6,34 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.isTypedEvent
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.MemberContent
+import io.github.matrixkt.models.events.contents.room.MessageContent
 import io.github.matrixkt.models.events.contents.room.PowerLevelsContent
+import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.ui.LocalAppModel
 import me.dominaezzz.chitchat.ui.room.timeline.Conversation
+import me.dominaezzz.chitchat.models.LocalEcho
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 
@@ -45,6 +55,8 @@ fun RoomView(
 	modifier: Modifier = Modifier
 ) {
 	var showMembers by remember { mutableStateOf(false) }
+	val appModel = LocalAppModel.current
+	val localEcho = rememberSaveable(room.id) { LocalEcho(room.id, appModel.client, appModel.session) }
 
 	Column(modifier) {
 		TopAppBar(backgroundColor = Color.Transparent, elevation = 0.dp) {
@@ -105,13 +117,13 @@ fun RoomView(
 		Row(Modifier.weight(1f)) {
 			Column(Modifier.weight(1f)) {
 				// Timeline
-				Conversation(room, Modifier.weight(1f))
+				Conversation(room, localEcho, Modifier.weight(1f))
 
 				Spacer(Modifier.fillMaxWidth().height(8.dp))
 
 				TypingUsers(room, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
 
-				UserMessageInput(room.id, Modifier.fillMaxWidth())
+				UserMessageInput(room.id, localEcho, Modifier.fillMaxWidth())
 			}
 
 			if (showMembers) {
@@ -152,6 +164,7 @@ fun TypingUsers(
 @Composable
 fun UserMessageInput(
 	roomId: String,
+	localEcho: LocalEcho,
 	modifier: Modifier = Modifier
 ) {
 	var draftMessage by rememberSaveable(roomId) { mutableStateOf("") }
@@ -164,17 +177,40 @@ fun UserMessageInput(
 		)
 	}
 
+	fun sendMessage() {
+		if (draftMessage.isEmpty()) return
+
+		val content = MessageContent.Text(draftMessage)
+		val contentJson = MatrixJson.encodeToJsonElement<MessageContent>(content)
+		localEcho.sendMessage("m.room.message", contentJson.jsonObject)
+		draftMessage = ""
+	}
+
 	OutlinedTextField(
 		value = draftMessage,
 		onValueChange = { draftMessage = it },
-		modifier = modifier.padding(16.dp),
+		modifier = modifier
+			.padding(16.dp)
+			.onPreviewKeyEvent { event ->
+				@OptIn(ExperimentalComposeUiApi::class)
+				if (event.key == Key.Enter && event.type == KeyEventType.KeyDown && !event.isShiftPressed) {
+					sendMessage()
+					true
+				} else {
+					false
+				}
+			},
 		placeholder = { Text("Send a message...") },
 		trailingIcon = {
-			IconButton(onClick = { /* Send message */ }, enabled = false) {
+			IconButton(
+				onClick = { sendMessage() },
+				enabled = draftMessage.isNotEmpty()
+			) {
 				Icon(Icons.Filled.Send, null)
 			}
 		},
-		keyboardActions = KeyboardActions(onSend = { /* Send message */ })
+		keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+		keyboardActions = KeyboardActions(onSend = { sendMessage() })
 	)
 }
 

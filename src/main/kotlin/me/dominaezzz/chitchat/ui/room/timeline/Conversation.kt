@@ -35,6 +35,7 @@ import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.crypto.MegolmPayload
 import me.dominaezzz.chitchat.ui.LocalAppModel
 import me.dominaezzz.chitchat.ui.room.getMember
+import me.dominaezzz.chitchat.models.LocalEcho
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage
 import me.dominaezzz.chitchat.util.formatting.parseMatrixCustomHtml
@@ -48,14 +49,18 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun Conversation(
 	room: Room,
+	localEcho: LocalEcho,
 	modifier: Modifier = Modifier
 ) {
 	val store = LocalAppModel.current.syncStore
-	val timeline = remember(room, store) { RoomTimeline(room, store) }
+	val timeline = remember(room, store, localEcho) { RoomTimeline(room, store, localEcho) }
 	LaunchedEffect(timeline) { timeline.run() }
 	val shouldBackPaginate = timeline.shouldBackPaginate
 
-	val timelineEvents = timeline.events.collectAsState().value.asReversed()
+	val timelineState by timeline.state.collectAsState()
+	val timelineEvents = timelineState.events.asReversed()
+	val remoteEcho = timelineState.txnIds
+	val pendingEvents = localEcho.pendingMessages.collectAsState().value.asReversed()
 
 	Row(modifier) {
 		val manager = LocalAppModel.current.cryptoManager
@@ -64,7 +69,31 @@ fun Conversation(
 
 		val state = rememberLazyListState()
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
-			itemsIndexed(timelineEvents, key = { _, event -> event.eventId }) { idx, event ->
+			val pending = pendingEvents.filter { it.txnId !in remoteEcho && it.type == "m.room.message" }
+			itemsIndexed(pending) { idx, pendingEvent ->
+				val lastEvent = timelineEvents.getOrNull(0)
+				CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.disabled) {
+					MessageEvent(
+						room,
+						MatrixEvent(
+							pendingEvent.type,
+							pendingEvent.content,
+							pendingEvent.txnId,
+							room.ownUserId,
+							System.currentTimeMillis(),
+							null,
+							pendingEvent.roomId,
+							null,
+							null
+						),
+						idx == pending.lastIndex && !(
+								lastEvent != null && lastEvent.sender == room.ownUserId && lastEvent.type == "m.room.message"),
+						idx == 0
+					)
+				}
+			}
+
+			itemsIndexed(timelineEvents) { idx, event ->
 				if (idx == timelineEvents.lastIndex) {
 					DisposableEffect(event.eventId) {
 						shouldBackPaginate.value = true
@@ -80,7 +109,11 @@ fun Conversation(
 						val prev = timelineEvents.getOrNull(idx + 1)
 						val next = timelineEvents.getOrNull(idx - 1)
 						val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
-						val isNotLast = next != null && next.sender == sender && next.type == "m.room.message"
+						val isNotLast = if (next != null) {
+							next.sender == sender && next.type == "m.room.message"
+						} else {
+							sender == room.ownUserId && pending.isNotEmpty()
+						}
 						MessageEvent(room, event, !isNotFirst, !isNotLast)
 					} else if (event.type == "m.room.encrypted") {
 						val sender = event.sender
