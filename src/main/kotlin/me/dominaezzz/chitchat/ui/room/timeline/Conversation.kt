@@ -31,7 +31,6 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.RoomTimeline
-import me.dominaezzz.chitchat.models.TimelineItem
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.crypto.MegolmPayload
 import me.dominaezzz.chitchat.ui.LocalAppModel
@@ -65,9 +64,9 @@ fun Conversation(
 
 		val state = rememberLazyListState()
 		LazyColumn(Modifier.weight(1f), state = state, reverseLayout = true) {
-			itemsIndexed(timelineEvents, key = { _, item -> item.event.eventId }) { idx, item ->
+			itemsIndexed(timelineEvents, key = { _, event -> event.eventId }) { idx, event ->
 				if (idx == timelineEvents.lastIndex) {
-					DisposableEffect(item.event.eventId) {
+					DisposableEffect(event.eventId) {
 						shouldBackPaginate.value = true
 						onDispose {
 							shouldBackPaginate.value = false
@@ -76,25 +75,25 @@ fun Conversation(
 				}
 
 				Column {
-					if (item.event.type == "m.room.message") {
-						val sender = item.event.sender
-						val prev = timelineEvents.getOrNull(idx + 1)?.event
-						val next = timelineEvents.getOrNull(idx - 1)?.event
+					if (event.type == "m.room.message") {
+						val sender = event.sender
+						val prev = timelineEvents.getOrNull(idx + 1)
+						val next = timelineEvents.getOrNull(idx - 1)
 						val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.message"
 						val isNotLast = next != null && next.sender == sender && next.type == "m.room.message"
-						MessageEvent(room, item, !isNotFirst, !isNotLast)
-					} else if (item.event.type == "m.room.encrypted") {
-						val sender = item.event.sender
-						val prev = timelineEvents.getOrNull(idx + 1)?.event
-						val next = timelineEvents.getOrNull(idx - 1)?.event
+						MessageEvent(room, event, !isNotFirst, !isNotLast)
+					} else if (event.type == "m.room.encrypted") {
+						val sender = event.sender
+						val prev = timelineEvents.getOrNull(idx + 1)
+						val next = timelineEvents.getOrNull(idx - 1)
 						val isNotFirst = prev != null && prev.sender == sender && prev.type == "m.room.encrypted"
 						val isNotLast = next != null && next.sender == sender && next.type == "m.room.encrypted"
-						EncryptedEvent(room, item, !isNotFirst, !isNotLast, megolmCache)
+						EncryptedEvent(room, event, !isNotFirst, !isNotLast, megolmCache)
 					} else {
-						ChatItem(room, item)
+						ChatItem(room, event)
 					}
 
-					ReadReceipts(room, item.event.eventId, Modifier.align(Alignment.End))
+					ReadReceipts(room, event.eventId, Modifier.align(Alignment.End))
 				}
 			}
 		}
@@ -111,8 +110,7 @@ fun Conversation(
 }
 
 @Composable
-private fun ChatItem(room: Room, item: TimelineItem) {
-	val event = item.event
+private fun ChatItem(room: Room, event: MatrixEvent) {
 	val sender = getMember(room, event.sender).value
 
 	val text = when (event.type) {
@@ -298,20 +296,14 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 }
 
 @Composable
-private fun EncryptedEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolean, isLastByAuthor: Boolean, megolmCache: MegolmCache) {
-	val event = item.event
-
+private fun EncryptedEvent(room: Room, event: MatrixEvent, isFirstByAuthor: Boolean, isLastByAuthor: Boolean, megolmCache: MegolmCache) {
 	// Handle redacted encrypted events.
 	if (event.content.isEmpty()) {
-		val newItem = TimelineItem(
-			event.copy(
-				type = "m.room.message",
-				content = JsonObject(emptyMap())
-			),
-			item.edits,
-			item.reactions
+		val newEvent = event.copy(
+			type = "m.room.message",
+			content = JsonObject(emptyMap())
 		)
-		MessageEvent(room, newItem, isFirstByAuthor, isLastByAuthor)
+		MessageEvent(room, newEvent, isFirstByAuthor, isLastByAuthor)
 		return
 	}
 
@@ -346,22 +338,16 @@ private fun EncryptedEvent(room: Room, item: TimelineItem, isFirstByAuthor: Bool
 		println("${decryptedPayload.roomId} ${room.id} ${event.eventId}")
 	}
 
-	val decryptedItem = TimelineItem(
-		event.copy(
-			type = decryptedPayload.type,
-			content = decryptedPayload.content
-		),
-		item.edits,
-		item.reactions
+	val decryptedEvent = event.copy(
+		type = decryptedPayload.type,
+		content = decryptedPayload.content
 	)
 
-	MessageEvent(room, decryptedItem, isFirstByAuthor, isLastByAuthor)
+	MessageEvent(room, decryptedEvent, isFirstByAuthor, isLastByAuthor)
 }
 
 @Composable
-private fun MessageEvent(room: Room, item: TimelineItem, isFirstByAuthor: Boolean, isLastByAuthor: Boolean) {
-	val event = item.event
-
+private fun MessageEvent(room: Room, event: MatrixEvent, isFirstByAuthor: Boolean, isLastByAuthor: Boolean) {
 	if (event.content.isEmpty()) {
 		UserMessageDecoration(room, event, isFirstByAuthor, isLastByAuthor) {
 			Text("**This message was redacted**")

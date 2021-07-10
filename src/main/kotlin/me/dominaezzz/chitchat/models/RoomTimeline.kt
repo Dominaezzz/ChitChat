@@ -3,14 +3,14 @@ package me.dominaezzz.chitchat.models
 import io.github.matrixkt.models.events.MatrixEvent
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.sdk.core.SQLiteSyncStore
 import me.dominaezzz.chitchat.sdk.core.SyncStore
 import me.dominaezzz.chitchat.sdk.util.getSerializable
 import me.dominaezzz.chitchat.sdk.util.getTimelineIdAndOrder
+import me.dominaezzz.chitchat.sdk.util.setSerializable
 import me.dominaezzz.chitchat.util.update
 import java.sql.Connection
 
@@ -18,10 +18,10 @@ class RoomTimeline(
 	private val room: Room,
 	private val store: SyncStore
 ) {
-	private val _events = MutableStateFlow<List<TimelineItem>>(emptyList())
+	private val _events = MutableStateFlow<List<MatrixEvent>>(emptyList())
 
 	val shouldBackPaginate = MutableStateFlow(false)
-	val events: StateFlow<List<TimelineItem>> get() = _events
+	val events: StateFlow<List<MatrixEvent>> get() = _events
 
 	suspend fun run() {
 		initialLoad()
@@ -45,8 +45,7 @@ class RoomTimeline(
 		room.timelineEvents
 			.map { }
 			.collect {
-				val item = _events.value.last()
-				val lastEvent = item.event
+				val lastEvent = _events.value.last()
 				val eventId = lastEvent.eventId
 
 				val events = store.read { conn ->
@@ -72,8 +71,7 @@ class RoomTimeline(
 			.collect {
 				// TODO: What if this is empty though... like if all the events in
 				//  the database are not supported.
-				val item = _events.value.first()
-				val targetEvent = item.event
+				val targetEvent = _events.value.first()
 				val eventId = targetEvent.eventId
 
 				println("Back paginating")
@@ -116,59 +114,18 @@ class RoomTimeline(
 	)
 
 	@OptIn(ExperimentalStdlibApi::class)
-	private fun Connection.getEventsBetween(roomId: String, from: Int, to: Int, eventTypes: List<String> = supportedEventTypes): List<TimelineItem> {
+	private fun Connection.getEventsBetween(roomId: String, from: Int, to: Int, eventTypes: List<String> = supportedEventTypes): List<MatrixEvent> {
 		val sql = """
-			WITH
-				 event_reactions(roomId, eventId, reaction_obj) AS (
-					 SELECT roomId, eventId, JSON_GROUP_OBJECT(key, key_count)
-					 FROM (
-						 SELECT roomId, eventId, key, COUNT() AS key_count
-						 FROM (
-							 SELECT roomId, JSON_EXTRACT(content, '${'$'}."m.relates_to".event_id') AS eventId, JSON_EXTRACT(content, '${'$'}."m.relates_to".key') AS key
-							 FROM room_events
-							 WHERE type = 'm.reaction' AND JSON_EXTRACT(content, '${'$'}."m.relates_to".rel_type') = 'm.annotation'
-						 )
-						 GROUP BY roomId, eventId, key
-					 )
-					 GROUP BY roomId, eventId
-				 ),
-				 msg_updates(roomId, sender, eventId, newContents) AS (
-					 SELECT roomId, sender, eventId, JSON_GROUP_ARRAY(newContent)
-					 FROM (
-						 SELECT roomId, sender, JSON_EXTRACT(content, '${'$'}."m.relates_to".event_id') AS eventId, JSON_EXTRACT(content, '${'$'}."m.new_content"') AS newContent
-						 FROM room_events
-						 WHERE type = 'm.room.message' AND JSON_EXTRACT(content, '${'$'}."m.relates_to".rel_type') = 'm.replace'
-					 )
-					 GROUP BY roomId, sender, eventId
-				 ),
-				 event_types(type) AS (SELECT value FROM JSON_EACH(?)),
-				 msg_events AS (
-					 SELECT roomId, eventId, sender, timelineOrder, JSON_OBJECT(
-							 'type', type,
-							 'content', JSON(content),
-							 'event_id', eventId,
-							 'sender', sender,
-							 'origin_server_ts', timestamp,
-							 'unsigned', JSON(unsigned),
-							 'room_id', roomId,
-							 'state_key', stateKey,
-							 'prev_content', JSON(prevContent)
-						 ) AS json
-					 FROM room_events
-					 JOIN event_types USING (type)
-					 WHERE timelineId = 0 AND timelineOrder IS NOT NULL AND
-						 (type != 'm.room.message' OR JSON_EXTRACT(content, '${'$'}."m.relates_to".rel_type') IS NOT 'm.replace')
-				 )
-			SELECT json, reaction_obj, newContents, timelineOrder
-			FROM msg_events
-			LEFT JOIN event_reactions USING (roomId, eventId)
-			LEFT JOIN msg_updates USING (roomId, sender, eventId)
-			WHERE roomId = ? AND timelineOrder BETWEEN ? AND ?
+			WITH event_types(type) AS (SELECT value FROM JSON_EACH(?))
+			SELECT json
+			FROM room_events
+			JOIN event_types USING (type)
+			WHERE roomId = ? AND timelineId = 0 AND timelineOrder IS NOT NULL AND timelineOrder BETWEEN ? AND ?
 			ORDER BY timelineOrder;
 		"""
 
 		return prepareStatement(sql).use { stmt ->
-			stmt.setString(1, JsonArray(eventTypes.map { JsonPrimitive(it) }).toString())
+			stmt.setSerializable(1, ListSerializer(String.serializer()), eventTypes)
 			stmt.setString(2, roomId)
 			stmt.setInt(3, from)
 			stmt.setInt(4, to)
@@ -176,82 +133,7 @@ class RoomTimeline(
 				buildList {
 					while (rs.next()) {
 						val event = rs.getSerializable<MatrixEvent>(1)
-						val reactions = rs.getSerializable<Map<String, Int>?>(2).orEmpty()
-						val msgUpdates = rs.getSerializable<List<JsonObject>?>(3).orEmpty()
-						add(TimelineItem(event, msgUpdates, reactions))
-					}
-				}
-			}
-		}
-	}
-
-	@OptIn(ExperimentalStdlibApi::class)
-	private fun Connection.getEventChangesBetween(roomId: String, from: Int, to: Int, eventTypes: List<String> = supportedEventTypes): List<Pair<Int, TimelineItem>> {
-		val sql = """
-			WITH
-				 event_reactions(roomId, eventId, reaction_obj, latestOrder) AS (
-					 SELECT roomId, eventId, JSON_GROUP_OBJECT(key, key_count), MAX(latestOrder)
-					 FROM (
-						 SELECT roomId, eventId, key, COUNT() AS key_count, MAX(timelineOrder) AS latestOrder
-						 FROM (
-							  SELECT roomId, JSON_EXTRACT(content, '${'$'}."m.relates_to".event_id') AS eventId, JSON_EXTRACT(content, '${'$'}."m.relates_to".key') AS key, timelineOrder
-							  FROM room_events
-							  WHERE type = 'm.reaction' AND JSON_EXTRACT(content, '${'$'}."m.relates_to".rel_type') = 'm.annotation'
-						 )
-						 GROUP BY roomId, eventId, key
-					 )
-					 GROUP BY roomId, eventId
-				 ),
-				 msg_updates(roomId, sender, eventId, newContents, latestOrder) AS (
-					 SELECT roomId, sender, eventId, JSON_GROUP_ARRAY(newContent), MAX(timelineOrder) AS latestOrder
-					 FROM (
-						  SELECT roomId, sender, JSON_EXTRACT(content, '${'$'}."m.relates_to".event_id') AS eventId, JSON_EXTRACT(content, '${'$'}."m.new_content"') AS newContent, timelineOrder
-						  FROM room_events
-						  WHERE type = 'm.room.message' AND JSON_EXTRACT(content, '${'$'}."m.relates_to".rel_type') = 'm.replace'
-					 )
-					 GROUP BY roomId, sender, eventId
-				 ),
-				 event_types(type) AS (SELECT value FROM JSON_EACH(?1)),
-				 msg_events AS (
-					 SELECT roomId, eventId, sender, timelineOrder, JSON_OBJECT(
-							 'type', type,
-							 'content', JSON(content),
-							 'event_id', eventId,
-							 'sender', sender,
-							 'origin_server_ts', timestamp,
-							 'unsigned', JSON(unsigned),
-							 'room_id', roomId,
-							 'state_key', stateKey,
-							 'prev_content', JSON(prevContent)
-						 ) AS json,
-							ROW_NUMBER() OVER (PARTITION BY roomId ORDER BY timelineOrder) AS rowNum
-					 FROM room_events
-					 JOIN event_types USING (type)
-					 WHERE timelineId = 0 AND timelineOrder IS NOT NULL AND
-						 (type != 'm.room.message' OR JSON_EXTRACT(content, '${'$'}."m.relates_to".rel_type') IS NOT 'm.replace')
-				 )
-			SELECT json, reaction_obj, newContents, rowNum
-			FROM msg_events
-			LEFT JOIN event_reactions USING (roomId, eventId)
-			LEFT JOIN msg_updates USING (roomId, sender, eventId)
-			WHERE roomId = ?2 AND timelineOrder BETWEEN ?3 AND ?4 AND
-				  MAX(IFNULL(msg_updates.latestOrder, timelineOrder), IFNULL(event_reactions.latestOrder, timelineOrder)) > ?4
-			ORDER BY timelineOrder;
-		"""
-
-		return prepareStatement(sql).use { stmt ->
-			stmt.setString(1, JsonArray(eventTypes.map { JsonPrimitive(it) }).toString())
-			stmt.setString(2, roomId)
-			stmt.setInt(3, from)
-			stmt.setInt(4, to)
-			stmt.executeQuery().use { rs ->
-				buildList {
-					while (rs.next()) {
-						val event = rs.getSerializable<MatrixEvent>(1)
-						val reactions = rs.getSerializable<Map<String, Int>?>(2).orEmpty()
-						val msgUpdates = rs.getSerializable<List<JsonObject>?>(3).orEmpty()
-						val idx = rs.getInt(4)
-						add(idx to TimelineItem(event, msgUpdates, reactions))
+						add(event)
 					}
 				}
 			}
