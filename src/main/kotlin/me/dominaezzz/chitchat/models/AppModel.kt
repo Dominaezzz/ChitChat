@@ -1,6 +1,5 @@
 package me.dominaezzz.chitchat.models
 
-import androidx.compose.runtime.RememberObserver
 import io.github.matrixkt.api.JoinRoomById
 import io.github.matrixkt.api.SetTyping
 import io.github.matrixkt.models.MatrixError
@@ -15,6 +14,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.java.*
 import io.ktor.client.features.*
 import io.ktor.http.*
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
@@ -33,7 +33,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
-class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : RememberObserver {
+class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Closeable {
 	private val scope = CoroutineScope(SupervisorJob())
 
 	val session = runBlocking {
@@ -97,13 +97,7 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Rem
 			.launchIn(scope)
 	}
 
-	override fun onRemembered() {}
-
-	override fun onAbandoned() {
-		onForgotten()
-	}
-
-	override fun onForgotten() {
+	override fun close() {
 		scope.cancel()
 		mediaRepository.close()
 		client.close()

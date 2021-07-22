@@ -36,22 +36,27 @@ fun main(args: Array<String>) {
 		appModel = AppModel(applicationDirectory, appDb)
 	}
 
-	application {
-		Window(
-			onCloseRequest = { exitApplication() },
-			state = rememberWindowState(size = WindowSize(300.dp, 300.dp)),
-			title = "Chit Chat"
-		) {
-			ChitChatTheme {
-				if (appModel != null) {
-					AppView(appModel!!)
-				} else {
-					WelcomeScreen(
-						{ appModel = AppModel(applicationDirectory, appDb) },
-						appDb
-					)
+	try {
+		application {
+			Window(
+				onCloseRequest = { exitApplication() },
+				state = rememberWindowState(size = WindowSize(300.dp, 300.dp)),
+				title = "Chit Chat"
+			) {
+				ChitChatTheme {
+					if (appModel != null) {
+						AppView(appModel!!)
+					} else {
+						WelcomeScreen(
+							{ appModel = AppModel(applicationDirectory, appDb) },
+							appDb
+						)
+					}
 				}
 			}
 		}
+	} finally {
+		appModel?.close()
+		appModel = null
 	}
 }
