@@ -20,7 +20,7 @@ class SQLiteSyncStoreTest {
 
 	@Test
 	fun testBackPagination() {
-		val roomJsonStr = javaClass.getResource("room_1.json").readText()
+		val roomJsonStr = javaClass.getResource("room_1.json")!!.readText()
 		val roomJson = MatrixJson.parseToJsonElement(roomJsonStr).jsonObject
 		val roomId = roomJson["room_id"]!!.jsonPrimitive.content
 		val events = MatrixJson.decodeFromJsonElement(ListSerializer(SyncEvent.serializer()), roomJson["events"]!!)
