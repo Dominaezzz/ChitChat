@@ -8,7 +8,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.sdk.core.LoginSession
-import me.dominaezzz.chitchat.util.update
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 

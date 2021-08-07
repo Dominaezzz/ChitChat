@@ -14,7 +14,6 @@ import me.dominaezzz.chitchat.sdk.core.SyncStore
 import me.dominaezzz.chitchat.sdk.util.getSerializable
 import me.dominaezzz.chitchat.sdk.util.getTimelineIdAndOrder
 import me.dominaezzz.chitchat.sdk.util.setSerializable
-import me.dominaezzz.chitchat.util.update
 import java.sql.Connection
 
 class RoomTimeline(

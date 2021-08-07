@@ -1,9 +1,9 @@
 import org.jetbrains.compose.compose
 
 plugins {
-	kotlin("jvm") version "1.5.10"
-	kotlin("plugin.serialization") version "1.5.10"
-	id("org.jetbrains.compose") version "0.5.0-build253"
+	kotlin("jvm") version "1.5.21"
+	kotlin("plugin.serialization") version "1.5.21"
+	id("org.jetbrains.compose") version "1.0.0-alpha3"
 }
 
 group = "me.dominaezzz"
@@ -18,18 +18,18 @@ repositories {
 		}
 	}
 	mavenCentral()
+	google()
 }
 
-val ktorVersion = "1.6.0"
-val coroutinesVersion = "1.5.0"
-val serializationVersion = "1.2.1"
-val matrixKtVersion = "0.1.4"
-val sqliteVersion = "3.34.0"
+val ktorVersion = "1.6.2"
+val coroutinesVersion = "1.5.1"
+val serializationVersion = "1.2.2"
+val matrixKtVersion = "0.1.5"
+val sqliteVersion = "3.36.0.1"
 
 dependencies {
 	implementation(compose.desktop.currentOs)
 	implementation(compose.materialIconsExtended)
-	implementation(compose.uiTooling)
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 

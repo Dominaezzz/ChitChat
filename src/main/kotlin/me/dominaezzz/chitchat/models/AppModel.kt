@@ -24,7 +24,6 @@ import me.dominaezzz.chitchat.db.*
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.sdk.crypto.*
-import me.dominaezzz.chitchat.util.update
 import java.nio.file.Path
 import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
