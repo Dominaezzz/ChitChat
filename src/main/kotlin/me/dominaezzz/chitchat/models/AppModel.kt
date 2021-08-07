@@ -189,8 +189,8 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Clo
 	val joinsInProgress: StateFlow<Set<String>> get() = _joinsInProgress.asStateFlow()
 
 	fun joinRoom(roomId: String) {
-		// Not thread safe!!!
-		if (roomId in joinsInProgress.value) {
+		val previousJoins = _joinsInProgress.getAndUpdate { it + roomId }
+		if (roomId in previousJoins) {
 			println("Already joining room $roomId. Ignoring!")
 			return
 		}
@@ -211,7 +211,6 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Clo
 
 			_joinsInProgress.update { it - roomId }
 		}
-		_joinsInProgress.update { it + roomId }
 	}
 
 	@ExperimentalTime
