@@ -2,6 +2,7 @@ package me.dominaezzz.chitchat.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,10 +14,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Contacts
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +31,7 @@ import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.utils.rpc
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import me.dominaezzz.chitchat.models.CreateRoomModel
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
@@ -108,7 +107,6 @@ fun RoomListView(
 	var roomFilter by remember { mutableStateOf("") }
 
 	var showPublicRoomsPopup by remember { mutableStateOf(false) }
-
 	if (showPublicRoomsPopup) {
 		Popup(
 			alignment = Alignment.Center,
@@ -120,6 +118,43 @@ fun RoomListView(
 				elevation = 20.dp
 			) {
 				PublicRooms()
+			}
+		}
+	}
+
+	var showCreateRoomPopup by remember { mutableStateOf(false) }
+	if (showCreateRoomPopup) {
+		val appModel = LocalAppModel.current
+		Popup(
+			alignment = Alignment.Center,
+			onDismissRequest = { /* Don't want user to accidentally close dialog */ },
+			focusable = true
+		) {
+			Card(elevation = 24.dp) {
+				val scope = rememberCoroutineScope()
+				val model = remember { CreateRoomModel(scope, appModel.client, appModel.session) }
+				val status by model.createStatus.collectAsState()
+
+				Box(Modifier.animateContentSize()) {
+					when (status) {
+						is CreateRoomModel.Status.Creating -> {
+							CircularProgressIndicator(Modifier.padding(8.dp))
+						}
+						is CreateRoomModel.Status.Created -> {
+							CircularProgressIndicator(Modifier.padding(8.dp))
+							SideEffect {
+								showCreateRoomPopup = false
+							}
+						}
+						is CreateRoomModel.Status.Failed, null -> {
+							CreateRoomView(
+								model,
+								onCreateClicked = { model.createRoom() },
+								onCancelClicked = { showCreateRoomPopup = false }
+							)
+						}
+					}
+				}
 			}
 		}
 	}
@@ -170,9 +205,11 @@ fun RoomListView(
 
 		Spacer(Modifier.height(5.dp))
 
-		Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
-			Spacer(Modifier.width(5.dp))
-
+		Row(
+			modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
+			horizontalArrangement = Arrangement.spacedBy(8.dp),
+			verticalAlignment = Alignment.CenterVertically
+		) {
 			OutlinedTextField(
 				value = roomFilter,
 				onValueChange = { roomFilter = it },
@@ -181,11 +218,13 @@ fun RoomListView(
 				leadingIcon = { Icon(Icons.Filled.FilterList, null) }
 			)
 
+			IconButton(onClick = { showCreateRoomPopup = true }) {
+				Icon(Icons.Filled.Add, null)
+			}
+
 			IconButton(onClick = { showPublicRoomsPopup = true }) {
 				Icon(Icons.Filled.Explore, null)
 			}
-
-			Spacer(Modifier.width(5.dp))
 		}
 
 		Spacer(Modifier.height(5.dp))
