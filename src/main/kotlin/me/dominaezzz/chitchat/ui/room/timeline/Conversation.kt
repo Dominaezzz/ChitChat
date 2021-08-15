@@ -24,6 +24,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.MatrixEvent
+import io.github.matrixkt.models.events.MegolmEventPayload
 import io.github.matrixkt.models.events.contents.room.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.builtins.nullable
@@ -32,7 +33,6 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.models.RoomTimeline
 import me.dominaezzz.chitchat.sdk.core.Room
-import me.dominaezzz.chitchat.sdk.crypto.MegolmPayload
 import me.dominaezzz.chitchat.ui.LocalAppModel
 import me.dominaezzz.chitchat.ui.room.getMember
 import me.dominaezzz.chitchat.models.LocalEcho
@@ -365,7 +365,7 @@ private fun EncryptedEvent(room: Room, event: MatrixEvent, isFirstByAuthor: Bool
 	}
 
 	val decryptedMsg = session.decrypt(content.ciphertext).message
-	val decryptedPayload = MatrixJson.decodeFromString<MegolmPayload>(decryptedMsg)
+	val decryptedPayload = MatrixJson.decodeFromString<MegolmEventPayload>(decryptedMsg)
 	if (decryptedPayload.roomId != room.id) {
 		println("${decryptedPayload.roomId} ${room.id} ${event.eventId}")
 	}

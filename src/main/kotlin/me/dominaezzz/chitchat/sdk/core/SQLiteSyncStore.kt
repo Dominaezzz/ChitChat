@@ -810,7 +810,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 
 	override suspend fun storeTimelineEvents(roomId: String, response: GetRoomEvents.Response): List<SyncEvent> {
 		val timelineEvents = response.chunk
-		if (timelineEvents.isNullOrEmpty()) {
+		if (timelineEvents.isEmpty()) {
 			// check(response.state.isNullOrEmpty())
 			return emptyList()
 		}

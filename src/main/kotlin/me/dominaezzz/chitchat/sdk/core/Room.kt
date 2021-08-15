@@ -5,9 +5,7 @@ import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
-import me.dominaezzz.chitchat.models.RoomTimeline
 
 interface Room {
 	val id: String
