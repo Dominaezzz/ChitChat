@@ -7,9 +7,7 @@ import io.github.matrixkt.models.events.SyncEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.events.contents.room.Membership
-import io.github.matrixkt.models.sync.RoomSummary
-import io.github.matrixkt.models.sync.SyncResponse
-import io.github.matrixkt.models.sync.UnreadNotificationCounts
+import io.github.matrixkt.models.sync.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.serialization.builtins.*
 import kotlinx.serialization.decodeFromString
@@ -246,7 +244,28 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			return roomNotificationsStmt.executeUpdate()
 		}
 
-		fun insertRoomEvent(roomId: String, event: SyncEvent, timelineOrder: Long?): Int {
+		fun updateRoomTimeline(roomId: String, timeline: Timeline, state: State?) {
+			var order = if (timeline.limited == true) {
+				// Create new batch
+				createNewTimeline(roomId, timeline.prevBatch!!)
+				1
+			} else {
+				getLastOrder(roomId) + 1
+			}
+
+			val stateEvents = state?.events
+			if (stateEvents != null) {
+				for (event in stateEvents) {
+					insertRoomEvent(roomId, event, null)
+				}
+			}
+			for (event in timeline.events) {
+				val changes = insertRoomEvent(roomId, event, order)
+				if (changes > 0) order++
+			}
+		}
+
+		private fun insertRoomEvent(roomId: String, event: SyncEvent, timelineOrder: Long?): Int {
 			eventStmt.setString(1, roomId)
 			eventStmt.setString(2, event.eventId)
 			eventStmt.setString(3, event.type)
@@ -271,7 +290,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			return accountStmt.executeUpdate()
 		}
 
-		fun getLastOrder(roomId: String): Long {
+		private fun getLastOrder(roomId: String): Long {
 			lastOrderStmt.setString(1, roomId)
 			val order = lastOrderStmt.executeQuery().use { rs ->
 				check(rs.next())
@@ -287,7 +306,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			return order
 		}
 
-		fun createNewTimeline(roomId: String, token: String?) {
+		private fun createNewTimeline(roomId: String, token: String?) {
 			beginShiftTimelinesStmt.setString(1, roomId)
 			beginShiftTimelinesStmt.executeUpdate()
 
@@ -356,48 +375,30 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 			InsertUtils(conn).use { utils ->
 				val rooms = sync.rooms
 				if (rooms != null) {
-					for ((roomId, joinedRoom) in rooms.join) {
-						val summary = joinedRoom.summary
+					for ((roomId, room) in rooms.join) {
+						val summary = room.summary
 						if (summary != null) {
 							utils.updateRoomSummary(roomId, summary)
 						}
 
-						val notifications = joinedRoom.unreadNotifications
+						val notifications = room.unreadNotifications
 						if (notifications != null) {
 							utils.updateRoomNotifications(roomId, notifications)
 						}
 
-						val timeline = joinedRoom.timeline
+						val timeline = room.timeline
 						if (timeline != null) {
-							var order = if (timeline.limited == true) {
-								// Create new batch
-								utils.createNewTimeline(roomId, timeline.prevBatch!!)
-								1
-							} else {
-								utils.getLastOrder(roomId) + 1
-							}
-
-							val stateEvents = joinedRoom.state?.events
-							if (stateEvents != null) {
-								for (event in stateEvents) {
-									utils.insertRoomEvent(roomId, event, null)
-								}
-							}
-							for (event in timeline.events) {
-								val changes = utils.insertRoomEvent(roomId, event, order)
-								if (changes > 0) order++
-							}
+							utils.updateRoomTimeline(roomId, timeline, room.state)
 						}
-						// else { /* insert state events ? */ }
 
-						val accountEvents = joinedRoom.accountData?.events
+						val accountEvents = room.accountData?.events
 						if (accountEvents != null) {
 							for (event in accountEvents) {
 								utils.updateAccountData(roomId, event.type, event.content)
 							}
 						}
 
-						val ephemeral = joinedRoom.ephemeral
+						val ephemeral = room.ephemeral
 						if (ephemeral != null) {
 							for (event in ephemeral.events) {
 								if (event.type == "m.receipt") {
@@ -417,26 +418,8 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 					for ((roomId, room) in rooms.leave) {
 						val timeline = room.timeline
 						if (timeline != null) {
-							var order = if (timeline.limited == true) {
-								// Create new batch
-								utils.createNewTimeline(roomId, timeline.prevBatch!!)
-								1
-							} else {
-								utils.getLastOrder(roomId) + 1
-							}
-
-							val stateEvents = room.state?.events
-							if (stateEvents != null) {
-								for (event in stateEvents) {
-									utils.insertRoomEvent(roomId, event, null)
-								}
-							}
-							for (event in timeline.events) {
-								val changes = utils.insertRoomEvent(roomId, event, order)
-								if (changes > 0) order++
-							}
+							utils.updateRoomTimeline(roomId, timeline, room.state)
 						}
-						// else { /* insert state events ? */ }
 
 						val accountEvents = room.accountData?.events
 						if (accountEvents != null) {
