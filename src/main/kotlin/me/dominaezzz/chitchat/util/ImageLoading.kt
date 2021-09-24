@@ -9,7 +9,7 @@ import kotlinx.coroutines.channels.Channel
 import me.dominaezzz.chitchat.db.MediaRepository
 import me.dominaezzz.chitchat.sdk.crypto.Attachments
 import me.dominaezzz.chitchat.ui.LocalAppModel
-import org.jetbrains.skija.Image
+import org.jetbrains.skia.Image
 import java.io.ByteArrayOutputStream
 import java.net.URI
 import kotlin.math.min
