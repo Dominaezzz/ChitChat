@@ -1,8 +1,6 @@
 package me.dominaezzz.chitchat.ui
 
-import androidx.compose.foundation.BoxWithTooltip
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -196,7 +194,8 @@ fun CreateRoomView(
 
 			// Enabling encryption
 			Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)) {
-				BoxWithTooltip(
+				@OptIn(ExperimentalFoundationApi::class)
+				TooltipArea(
 					tooltip = { TooltipContent("E2EE is not yet supported") },
 					content = {
 						Checkbox(
@@ -210,7 +209,8 @@ fun CreateRoomView(
 				Text("End-to-end encryption (Cannot be disabled later)")
 
 				if (model.encryptionEnabled && model.preset == RoomPreset.PUBLIC_CHAT) {
-					BoxWithTooltip(
+					@OptIn(ExperimentalFoundationApi::class)
+					TooltipArea(
 						tooltip = { TooltipContent("E2EE is discouraged in public rooms") },
 						content = {
 							Icon(Icons.Default.WarningAmber, contentDescription = null)

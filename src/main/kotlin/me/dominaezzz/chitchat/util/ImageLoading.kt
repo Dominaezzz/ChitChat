@@ -44,7 +44,7 @@ class ImageIconCache(private val repository: MediaRepository) {
 						try {
 							val bytes = repository.getContent(uri)
 							val srcImage = withContext(Dispatchers.Default) {
-								Image.makeFromEncoded(bytes).asImageBitmap()
+								Image.makeFromEncoded(bytes).toComposeImageBitmap()
 							}
 							val scale = iconSize / min(srcImage.width, srcImage.height)
 							state.value = if (scale > 0.9) {
@@ -73,7 +73,7 @@ fun ImageCache(content: @Composable () -> Unit) {
 		Cache<URI, ImageBitmap> {
 			val bytes = mediaRepo.getContent(it)
 			withContext(Dispatchers.Default) {
-				Image.makeFromEncoded(bytes).asImageBitmap()
+				Image.makeFromEncoded(bytes).toComposeImageBitmap()
 			}
 		}
 	}
@@ -85,7 +85,7 @@ fun ImageCache(content: @Composable () -> Unit) {
 			Attachments.decrypt(bytes.inputStream(), result, it)
 			val decryptedBytes = result.toByteArray()
 			withContext(Dispatchers.Default) {
-				Image.makeFromEncoded(decryptedBytes).asImageBitmap()
+				Image.makeFromEncoded(decryptedBytes).toComposeImageBitmap()
 			}
 		}
 	}

@@ -3,6 +3,7 @@ package me.dominaezzz.chitchat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import kotlinx.cli.ArgParser
@@ -33,7 +34,7 @@ fun main(args: Array<String>) {
 
 	try {
 		singleWindowApplication(
-			state = WindowState(size = WindowSize(300.dp, 300.dp)),
+			state = WindowState(size = DpSize(300.dp, 300.dp)),
 			title = "Chit Chat"
 		) {
 			ChitChatTheme {

@@ -1,9 +1,9 @@
 import org.jetbrains.compose.compose
 
 plugins {
-	kotlin("jvm") version "1.5.30"
-	kotlin("plugin.serialization") version "1.5.30"
-	id("org.jetbrains.compose") version "1.0.0-alpha4-build348"
+	kotlin("jvm") version "1.5.31"
+	kotlin("plugin.serialization") version "1.5.31"
+	id("org.jetbrains.compose") version "1.0.0-beta5"
 }
 
 group = "me.dominaezzz"
@@ -21,11 +21,11 @@ repositories {
 	google()
 }
 
-val ktorVersion = "1.6.3"
+val ktorVersion = "1.6.4"
 val coroutinesVersion = "1.5.2-native-mt"
-val serializationVersion = "1.2.2"
-val matrixKtVersion = "0.1.5"
-val sqliteVersion = "3.36.0.2"
+val serializationVersion = "1.3.1"
+val matrixKtVersion = "0.1.7"
+val sqliteVersion = "3.36.0.3"
 
 dependencies {
 	implementation(compose.desktop.currentOs)
@@ -46,7 +46,7 @@ dependencies {
 
 	implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
 
-	implementation("org.jsoup:jsoup:1.14.2")
+	implementation("org.jsoup:jsoup:1.14.3")
 
 	testImplementation(kotlin("test-junit"))
 }
@@ -60,6 +60,11 @@ compose.desktop {
 
 tasks {
 	compileKotlin {
+		kotlinOptions {
+			freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn")
+		}
+	}
+	compileTestKotlin {
 		kotlinOptions {
 			freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn")
 		}

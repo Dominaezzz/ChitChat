@@ -200,7 +200,7 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Clo
 				syncClient.joinedRooms.first { roomId in it }
 			}
 
-			val joinRequest = JoinRoomById(JoinRoomById.Url(roomId))
+			val joinRequest = JoinRoomById(JoinRoomById.Url(roomId), JoinRoomById.Body())
 			try {
 				val response = client.rpc(joinRequest, session.accessToken)
 				println("Joined room (id = ${response.roomId})!")

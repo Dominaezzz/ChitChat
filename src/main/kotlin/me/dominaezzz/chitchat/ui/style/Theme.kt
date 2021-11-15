@@ -1,6 +1,6 @@
 package me.dominaezzz.chitchat.ui.style
 
-import androidx.compose.desktop.DesktopMaterialTheme
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
@@ -17,7 +17,7 @@ fun ChitChatTheme(darkTheme: Boolean = false, content: @Composable () -> Unit) {
         LightColorPalette
     }
 
-    DesktopMaterialTheme(
+    MaterialTheme(
             colors = colors,
             typography = typography,
             shapes = shapes,

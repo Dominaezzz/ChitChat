@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BoxWithTooltip
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -382,7 +384,8 @@ private fun LoginToHomeServer(
 
 @Composable
 private fun InfoTooltip(text: String, icon: ImageVector) {
-	BoxWithTooltip(
+	@OptIn(ExperimentalFoundationApi::class)
+	TooltipArea (
 		tooltip = { Text(text) },
 		content = {
 			Icon(icon, null)

@@ -293,7 +293,8 @@ private fun ReadReceipts(room: Room, eventId: String, modifier: Modifier = Modif
 			val member = getMember(room, userId).value
 			val avatar = member?.avatarUrl?.let { loadIcon(URI(it)) }
 
-			BoxWithTooltip(
+			@OptIn(ExperimentalFoundationApi::class)
+			TooltipArea(
 				tooltip = {
 					Surface(
 						modifier = Modifier.shadow(4.dp),
