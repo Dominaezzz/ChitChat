@@ -416,6 +416,9 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 						}
 					}
 					for ((roomId, room) in rooms.leave) {
+						// Add room summary just in case this is the first time we're seeing this room.
+						utils.updateRoomSummary(roomId, RoomSummary())
+
 						val timeline = room.timeline
 						if (timeline != null) {
 							utils.updateRoomTimeline(roomId, timeline, room.state)
