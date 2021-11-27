@@ -38,6 +38,8 @@ dependencies {
 
 	implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.2")
 
+	implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.4")
+
 	implementation("io.github.matrixkt:client-jvm:$matrixKtVersion")
 	implementation("io.github.matrixkt:olm-jvm:$matrixKtVersion")
 	implementation("io.ktor:ktor-client-core:$ktorVersion")

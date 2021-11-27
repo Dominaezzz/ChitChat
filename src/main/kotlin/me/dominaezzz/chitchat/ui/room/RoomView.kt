@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.isTypedEvent
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -23,17 +22,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.events.contents.room.MessageContent
 import io.github.matrixkt.models.events.contents.room.PowerLevelsContent
 import io.github.matrixkt.utils.MatrixJson
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.drop
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
+import me.dominaezzz.chitchat.models.LocalEcho
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.ui.LocalAppModel
+import me.dominaezzz.chitchat.ui.room.settings.RoomSettings
+import me.dominaezzz.chitchat.ui.room.settings.RoomSettingsModel
 import me.dominaezzz.chitchat.ui.room.timeline.Conversation
-import me.dominaezzz.chitchat.models.LocalEcho
+import me.dominaezzz.chitchat.util.GlobalPositionProvider
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
 
@@ -55,6 +59,7 @@ fun RoomView(
 	modifier: Modifier = Modifier
 ) {
 	var showMembers by remember { mutableStateOf(false) }
+	var isShowingRoomSettings by remember { mutableStateOf(false) }
 	val appModel = LocalAppModel.current
 	val localEcho = rememberSaveable(room.id) { LocalEcho(room.id, appModel.client, appModel.session) }
 
@@ -109,8 +114,25 @@ fun RoomView(
 				Icon(Icons.Filled.People, null)
 			}
 
-			IconButton(onClick = { /* Open room settings */ }, enabled = false) {
+			IconButton(onClick = { isShowingRoomSettings = true }) {
 				Icon(Icons.Filled.Settings, null)
+			}
+		}
+
+		if (isShowingRoomSettings) {
+			val positionProvider = remember { GlobalPositionProvider(Alignment.Center) }
+			Popup(
+				popupPositionProvider = positionProvider,
+				onDismissRequest = { isShowingRoomSettings = false },
+				focusable = true
+			) {
+				val scope = rememberCoroutineScope()
+				val model = remember {
+					RoomSettingsModel(scope, room.id, appModel.client, appModel.syncClient, appModel.session)
+				}
+				Card(modifier = Modifier.fillMaxSize(0.7f), elevation = 20.dp) {
+					RoomSettings(room.id, model)
+				}
 			}
 		}
 
