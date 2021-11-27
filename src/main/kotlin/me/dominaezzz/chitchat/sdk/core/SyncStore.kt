@@ -4,6 +4,7 @@ import io.github.matrixkt.api.GetMembersByRoom
 import io.github.matrixkt.api.GetRoomEvents
 import io.github.matrixkt.models.events.StrippedState
 import io.github.matrixkt.models.events.SyncEvent
+import io.github.matrixkt.models.events.SyncStateEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.Membership
 import io.github.matrixkt.models.sync.RoomSummary
@@ -29,10 +30,10 @@ interface SyncStore {
 	suspend fun getSummary(roomId: String): RoomSummary
 	suspend fun getUnreadNotificationCounts(roomId: String): UnreadNotificationCounts
 	suspend fun getLazyLoadingState(roomId: String): LazyLoadingState
-	suspend fun storeMembers(roomId: String, response: GetMembersByRoom.Response): List<SyncEvent>
+	suspend fun storeMembers(roomId: String, response: GetMembersByRoom.Response): List<SyncStateEvent>
 
 	suspend fun getPaginationToken(roomId: String, eventId: String): String?
-	suspend fun storeTimelineEvents(roomId: String, response: GetRoomEvents.Response): List<SyncEvent>
+	suspend fun storeTimelineEvents(roomId: String, response: GetRoomEvents.Response): List<SyncStateEvent>
 
 	class LazyLoadingState(val token: String?, val loaded: Set<Membership>)
 }

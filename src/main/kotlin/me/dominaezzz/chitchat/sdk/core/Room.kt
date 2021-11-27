@@ -1,6 +1,7 @@
 package me.dominaezzz.chitchat.sdk.core
 
 import io.github.matrixkt.models.events.SyncEvent
+import io.github.matrixkt.models.events.SyncStateEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +15,7 @@ interface Room {
 	/**
 	 * A flow of all new state events in this room.
 	 */
-	val stateEvents: Flow<SyncEvent>
+	val stateEvents: Flow<SyncStateEvent>
 
 	val timelineEvents: Flow<SyncEvent>
 

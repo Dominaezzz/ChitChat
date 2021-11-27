@@ -36,6 +36,7 @@ import me.dominaezzz.chitchat.sdk.core.Room
 import me.dominaezzz.chitchat.ui.LocalAppModel
 import me.dominaezzz.chitchat.ui.room.getMember
 import me.dominaezzz.chitchat.models.LocalEcho
+import me.dominaezzz.chitchat.sdk.util.copy
 import me.dominaezzz.chitchat.util.loadIcon
 import me.dominaezzz.chitchat.util.loadImage
 import me.dominaezzz.chitchat.util.formatting.parseMatrixCustomHtml

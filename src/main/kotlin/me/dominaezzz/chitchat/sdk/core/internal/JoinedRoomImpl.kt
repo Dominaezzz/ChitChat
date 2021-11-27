@@ -7,6 +7,7 @@ import io.github.matrixkt.models.Direction
 import io.github.matrixkt.models.MatrixError
 import io.github.matrixkt.models.MatrixException
 import io.github.matrixkt.models.events.SyncEvent
+import io.github.matrixkt.models.events.SyncStateEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.TypingContent
 import io.github.matrixkt.models.events.contents.room.*
@@ -53,17 +54,17 @@ class JoinedRoomImpl(
 		.transform { room -> room.timeline?.events?.forEach { emit(it) } }
 
 	private val stateSemaphore = Semaphore(1)
-	private val lazyStateFlow = MutableSharedFlow<SyncEvent>()
+	private val lazyStateFlow = MutableSharedFlow<SyncStateEvent>()
 	private val syncStateFlow = roomFlow
 		.onEach { stateSemaphore.withPermit { /* Wait for lazy state event emissions */ } }
 		.transform { room ->
 			room.state?.events?.forEach { emit(it) }
-			room.timeline?.events?.forEach { if (it.stateKey != null) emit(it) }
+			room.timeline?.events?.forEach { if (it is SyncStateEvent) emit(it) }
 		}
 	@OptIn(ExperimentalCoroutinesApi::class)
 	private val stateFlow = merge(lazyStateFlow, syncStateFlow)
 
-	override val stateEvents: Flow<SyncEvent>
+	override val stateEvents: Flow<SyncStateEvent>
 		get() = stateFlow
 
 	private val stateFlowMap = MapOfFlows<Triple<String, String, DeserializationStrategy<*>>, Any?> { (type, stateKey, deserializer) ->
@@ -111,7 +112,7 @@ class JoinedRoomImpl(
 			emit(members)
 
 			stateFlow.filter { it.type == "m.room.member" }
-				.map { it.stateKey!! to MatrixJson.decodeFromJsonElement(MemberContent.serializer(), it.content) }
+				.map { it.stateKey to MatrixJson.decodeFromJsonElement(MemberContent.serializer(), it.content) }
 				.collect { (userId, content) ->
 					if (userId in members) {
 						if (content.membership != membership) {

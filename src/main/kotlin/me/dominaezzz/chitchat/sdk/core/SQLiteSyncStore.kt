@@ -4,6 +4,7 @@ import io.github.matrixkt.api.GetMembersByRoom
 import io.github.matrixkt.api.GetRoomEvents
 import io.github.matrixkt.models.events.StrippedState
 import io.github.matrixkt.models.events.SyncEvent
+import io.github.matrixkt.models.events.SyncStateEvent
 import io.github.matrixkt.models.events.contents.ReceiptContent
 import io.github.matrixkt.models.events.contents.room.MemberContent
 import io.github.matrixkt.models.events.contents.room.Membership
@@ -701,7 +702,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		}
 	}
 
-	private fun Connection.getNewState(roomId: String, eventIds: Set<String>): List<SyncEvent> {
+	private fun Connection.getNewState(roomId: String, eventIds: Set<String>): List<SyncStateEvent> {
 		val queryNewState = """
 				WITH new_events(eventId) AS (SELECT value FROM JSON_EACH(?2))
 				SELECT JSON_GROUP_ARRAY(json)
@@ -719,7 +720,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		}
 	}
 
-	override suspend fun storeMembers(roomId: String, response: GetMembersByRoom.Response): List<SyncEvent> {
+	override suspend fun storeMembers(roomId: String, response: GetMembersByRoom.Response): List<SyncStateEvent> {
 		return helper.usingWriteConnection { conn ->
 			val query = "SELECT MAX(timelineId) FROM room_events WHERE roomId = ?;"
 			val oldestTimelineId = conn.prepareStatement(query).use { stmt ->
@@ -811,7 +812,7 @@ class SQLiteSyncStore(private val databaseFile: Path) : SyncStore {
 		}
 	}
 
-	override suspend fun storeTimelineEvents(roomId: String, response: GetRoomEvents.Response): List<SyncEvent> {
+	override suspend fun storeTimelineEvents(roomId: String, response: GetRoomEvents.Response): List<SyncStateEvent> {
 		val timelineEvents = response.chunk
 		if (timelineEvents.isEmpty()) {
 			// check(response.state.isNullOrEmpty())

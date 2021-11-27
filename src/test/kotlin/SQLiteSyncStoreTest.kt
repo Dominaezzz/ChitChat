@@ -1,9 +1,12 @@
 import io.github.matrixkt.api.GetRoomEvents
+import io.github.matrixkt.models.events.StateEvent
 import io.github.matrixkt.models.events.SyncEvent
+import io.github.matrixkt.models.events.SyncStateEvent
 import io.github.matrixkt.models.sync.*
 import io.github.matrixkt.utils.MatrixJson
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.dominaezzz.chitchat.sdk.core.SQLiteSyncStore
@@ -30,7 +33,7 @@ class SQLiteSyncStoreTest {
 			rooms = Rooms(
 				join = mapOf(roomId to JoinedRoom(
 					summary = RoomSummary(),
-					state = State(events.dropLast(20).filter { it.stateKey != null }.associateBy { it.type to it.stateKey!! }.values.toList()),
+					state = State(events.dropLast(20).filterIsInstance<SyncStateEvent>().asReversed().distinctBy { it.type to it.stateKey }),
 					timeline = Timeline(events.takeLast(20), limited = true, prevBatch = "PREV")
 				))
 			)
@@ -66,7 +69,7 @@ class SQLiteSyncStoreTest {
 			rooms = Rooms(
 				join = mapOf(roomId to JoinedRoom(
 					summary = RoomSummary(),
-					state = State(events.take(30).filter { it.stateKey != null }.associateBy { it.type to it.stateKey!! }.values.toList()),
+					state = State(events.take(30).filterIsInstance<SyncStateEvent>().asReversed().distinctBy { it.type to it.stateKey }),
 					timeline = Timeline(events.drop(30).take(30), limited = true, prevBatch = "PREV")
 				))
 			)
@@ -76,24 +79,24 @@ class SQLiteSyncStoreTest {
 			rooms = Rooms(
 				join = mapOf(roomId to JoinedRoom(
 					summary = RoomSummary(),
-					state = State(events.drop(60).dropLast(20).filter { it.stateKey != null }.associateBy { it.type to it.stateKey!! }.values.toList()),
+					state = State(events.drop(60).dropLast(20).filterIsInstance<SyncStateEvent>().asReversed().distinctBy { it.type to it.stateKey }),
 					timeline = Timeline(events.takeLast(20), limited = true, prevBatch = "PREV2")
 				))
 			)
 		)
 
 		val timelineGap = events.dropLast(20).drop(60).asReversed()
-		val timelineState = timelineGap.filter { it.stateKey != null }
-			.map { it.type to it.stateKey!! }.toSet()
+		val timelineState = timelineGap.filterIsInstance<SyncStateEvent>()
+			.map { it.type to it.stateKey }.toSet()
 		val messages = GetRoomEvents.Response(
 			start = "PREV2",
 			chunk = timelineGap.map { it.toMatrixEvent(roomId) },
 			state = events.take(60)
-				.filter { it.stateKey != null }
-				.associateBy { it.type to it.stateKey!! }
+				.filterIsInstance<SyncStateEvent>()
+				.associateBy { it.type to it.stateKey }
 				.filterKeys { it in timelineState }
 				.values
-				.map { it.toMatrixEvent(roomId) }
+				.map { it.toMatrixEvent(roomId) as StateEvent<JsonObject, JsonObject> }
 		)
 
 		val store = SQLiteSyncStore(folder.newFile().toPath())

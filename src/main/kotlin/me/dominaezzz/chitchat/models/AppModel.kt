@@ -124,7 +124,7 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Clo
 
 			room.stateEvents.filter { it.type == "m.room.member" }
 				.transform { event ->
-					val userId = event.stateKey!!
+					val userId = event.stateKey
 					val member = MatrixJson.decodeFromJsonElement<MemberContent>(event.content)
 
 					val index = members.indexOfFirst { it.first == userId }
