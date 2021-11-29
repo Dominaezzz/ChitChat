@@ -2,7 +2,6 @@ package me.dominaezzz.chitchat.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,14 +23,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
 import io.github.matrixkt.api.GetUserProfile
 import io.github.matrixkt.models.events.contents.DirectContent
 import io.github.matrixkt.models.events.contents.TagContent
 import io.github.matrixkt.utils.rpc
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import me.dominaezzz.chitchat.models.CreateRoomModel
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.util.loadIcon
 import java.net.URI
@@ -99,65 +96,14 @@ private fun Collection<Room>.partitionRooms(syncClient: SyncClient): Flow<RoomLi
 
 @Composable
 fun RoomListView(
+	modifier: Modifier = Modifier,
 	rooms: Collection<Room>,
 	selectedRoom: String?,
 	onSelectedRoomChanged: (String?) -> Unit,
-	modifier: Modifier = Modifier
+	showCreateRoom: () -> Unit,
+	showPublicRooms: () -> Unit
 ) {
 	var roomFilter by remember { mutableStateOf("") }
-
-	var showPublicRoomsPopup by remember { mutableStateOf(false) }
-	if (showPublicRoomsPopup) {
-		Popup(
-			alignment = Alignment.Center,
-			onDismissRequest = { showPublicRoomsPopup = false },
-			focusable = true
-		) {
-			Card(
-				modifier = Modifier.fillMaxSize(0.7f),
-				elevation = 20.dp
-			) {
-				PublicRooms()
-			}
-		}
-	}
-
-	var showCreateRoomPopup by remember { mutableStateOf(false) }
-	if (showCreateRoomPopup) {
-		val appModel = LocalAppModel.current
-		Popup(
-			alignment = Alignment.Center,
-			onDismissRequest = { /* Don't want user to accidentally close dialog */ },
-			focusable = true
-		) {
-			Card(elevation = 24.dp) {
-				val scope = rememberCoroutineScope()
-				val model = remember { CreateRoomModel(scope, appModel.client, appModel.session) }
-				val status by model.createStatus.collectAsState()
-
-				Box(Modifier.animateContentSize()) {
-					when (status) {
-						is CreateRoomModel.Status.Creating -> {
-							CircularProgressIndicator(Modifier.padding(8.dp))
-						}
-						is CreateRoomModel.Status.Created -> {
-							CircularProgressIndicator(Modifier.padding(8.dp))
-							SideEffect {
-								showCreateRoomPopup = false
-							}
-						}
-						is CreateRoomModel.Status.Failed, null -> {
-							CreateRoomView(
-								model,
-								onCreateClicked = { model.createRoom() },
-								onCancelClicked = { showCreateRoomPopup = false }
-							)
-						}
-					}
-				}
-			}
-		}
-	}
 
 	Column(modifier) {
 		TopAppBar(
@@ -218,11 +164,11 @@ fun RoomListView(
 				leadingIcon = { Icon(Icons.Filled.FilterList, null) }
 			)
 
-			IconButton(onClick = { showCreateRoomPopup = true }) {
+			IconButton(onClick = { showCreateRoom() }) {
 				Icon(Icons.Filled.Add, null)
 			}
 
-			IconButton(onClick = { showPublicRoomsPopup = true }) {
+			IconButton(onClick = { showPublicRooms() }) {
 				Icon(Icons.Filled.Explore, null)
 			}
 		}
