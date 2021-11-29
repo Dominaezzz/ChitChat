@@ -182,7 +182,10 @@ fun CreateRoomView(
 			}
 
 			// Visibility in public room directory.
-			Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)) {
+			Row(
+				horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+				verticalAlignment = Alignment.CenterVertically
+			) {
 				Checkbox(
 					checked = model.visibility != RoomVisibility.PRIVATE,
 					onCheckedChange = {
@@ -193,7 +196,10 @@ fun CreateRoomView(
 			}
 
 			// Enabling encryption
-			Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)) {
+			Row(
+				horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+				verticalAlignment = Alignment.CenterVertically
+			) {
 				@OptIn(ExperimentalFoundationApi::class)
 				TooltipArea(
 					tooltip = { TooltipContent("E2EE is not yet supported") },
