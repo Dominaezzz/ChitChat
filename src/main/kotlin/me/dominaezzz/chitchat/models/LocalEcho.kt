@@ -8,7 +8,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.sdk.core.LoginSession
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 class LocalEcho(
@@ -31,14 +32,14 @@ class LocalEcho(
 
 	@OptIn(ExperimentalTime::class)
 	private suspend fun processMessages() {
-		val maxBackOff = Duration.minutes(5)
+		val maxBackOff = 5.minutes
 
 		while (true) {
 			val message = pendingMessages.first { it.isNotEmpty() }.first()
 
 			val request = SendMessage(SendMessage.Url(roomId, message.type, message.txnId), message.content)
 
-			var backOff = Duration.seconds(3)
+			var backOff = 3.seconds
 			while (true) {
 				try {
 					val response = client.rpc(request, session.accessToken)

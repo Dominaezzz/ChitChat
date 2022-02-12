@@ -28,6 +28,8 @@ import java.nio.file.Path
 import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
@@ -227,7 +229,7 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Clo
 		} catch (e: MatrixException) {
 			val matrixError = e.error
 			if (matrixError is MatrixError.LimitExceeded) {
-				val waitPeriod = Duration.milliseconds(matrixError.retryAfterMillis)
+				val waitPeriod = matrixError.retryAfterMillis.milliseconds
 				TypingUpdateResult.RateLimit(waitPeriod)
 			} else {
 				TypingUpdateResult.Failed(e)
@@ -258,7 +260,7 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Clo
 				}
 
 				if (isStillTyping) {
-					if (lastNotification == null || lastNotification.elapsedNow() > Duration.seconds(20)) {
+					if (lastNotification == null || lastNotification.elapsedNow() > 20.seconds) {
 						// Need to notify server again or for the first time.
 
 						val request = SetTyping(typingUrl, SetTyping.Body(typing = true, timeout = 25_000))
@@ -278,7 +280,7 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Clo
 						}
 					}
 				} else {
-					if (lastNotification != null && lastNotification.elapsedNow() < Duration.seconds(25)) {
+					if (lastNotification != null && lastNotification.elapsedNow() < 25.seconds) {
 						// Need to tell server that we're done typing.
 
 						val request = SetTyping(typingUrl, SetTyping.Body(typing = false))

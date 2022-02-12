@@ -330,6 +330,7 @@ private fun LoginToHomeServer(
 							is ServerDiscoveryResult.Success -> {
 								Icon(Icons.Filled.Check, null)
 							}
+							else -> {}
 						}
 					}
 				},
