@@ -131,7 +131,7 @@ fun RoomView(
 					RoomSettingsModel(scope, room.id, appModel.client, appModel.syncClient, appModel.session)
 				}
 				Card(modifier = Modifier.fillMaxSize(0.7f), elevation = 20.dp) {
-					RoomSettings(room.id, model)
+					RoomSettings(model)
 				}
 			}
 		}

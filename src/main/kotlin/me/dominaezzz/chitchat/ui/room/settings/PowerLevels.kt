@@ -15,60 +15,27 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.PowerLevelsContent
-import kotlinx.serialization.json.Json
 
-@Stable
-class PowerLevelEditState(value: PowerLevelsContent) {
-	var ban by mutableStateOf(value.ban)
-	var invite by mutableStateOf(value.invite)
-	var kick by mutableStateOf(value.kick)
-	var redact by mutableStateOf(value.redact)
+class PowerLevelsModel {
+	var ban: Long? by mutableStateOf(null)
+	var invite: Long? by mutableStateOf(null)
+	var kick: Long? by mutableStateOf(null)
+	var redact: Long? by mutableStateOf(null)
+	var eventsDefault: Long? by mutableStateOf(null)
+	var stateDefault: Long? by mutableStateOf(null)
+	var usersDefault: Long? by mutableStateOf(null)
 
-	val events = value.events.map { it.toPair() }.toMutableStateMap()
-	var eventsDefault by mutableStateOf(value.eventsDefault)
-	var stateDefault by mutableStateOf(value.stateDefault)
-
-	val users = value.users.map { it.toPair() }.toMutableStateMap()
-	var usersDefault by mutableStateOf(value.usersDefault)
-
-	fun isDirty(original: PowerLevelsContent): Boolean {
-		if (ban != original.ban) return true
-		if (invite != original.invite) return true
-		if (kick != original.kick) return true
-		if (redact != original.redact) return true
-
-		if (eventsDefault != original.eventsDefault) return true
-		if (stateDefault != original.stateDefault) return true
-		if (events.toMap() != original.events.toMap()) return true
-
-		if (usersDefault != original.usersDefault) return true
-		if (users.toMap() != original.users.toMap()) return true
-
-		return false
-	}
-
-	fun create(): PowerLevelsContent {
-		return PowerLevelsContent(
-			ban,
-			events.filterValues { it != eventsDefault },
-			eventsDefault,
-			invite,
-			kick,
-			redact,
-			stateDefault,
-			users.filterValues { it != usersDefault },
-			usersDefault
-		)
-	}
+	val events = mutableStateMapOf<String, Long>()
+	val users = mutableStateMapOf<String, Long>()
 }
 
 @Composable
 fun RoomPowerLevelsEdit(
-	current: PowerLevelsContent,
-	state: PowerLevelEditState = remember { PowerLevelEditState(current) },
+	settingsModel: RoomSettingsModel,
+	model: PowerLevelsModel,
+	current: PowerLevelsContent?,
 	modifier: Modifier = Modifier
 ) {
-	// TODO: Support smart granular enable/disable based on permissions
 	// TODO: Show warnings when demoting users or promoting actions
 
 	Column(
@@ -81,17 +48,32 @@ fun RoomPowerLevelsEdit(
 			Text("Privileged Users", style = MaterialTheme.typography.h6)
 		}
 
-		for ((userId, powerLevel) in state.users) {
+		for ((userId, powerLevel) in current?.users.orEmpty()) {
+			val member by remember(settingsModel, userId) { settingsModel.getMember(userId) }.collectAsState(null)
+
+			PermissionEdit(
+				value = model.users[userId] ?: powerLevel,
+				onValueChange = { model.users[userId] = it },
+				label = member?.displayName ?: userId
+			)
+		}
+		for ((userId, powerLevel) in model.users) {
+			if (userId in current?.users.orEmpty()) continue
+
+			val member by remember(settingsModel, userId) { settingsModel.getMember(userId) }.collectAsState(null)
+
 			PermissionEdit(
 				value = powerLevel,
-				onValueChange = { state.users[userId] = it },
-				label = userId
+				onValueChange = { model.users[userId] = it },
+				label = member?.displayName ?: userId
 			)
 		}
 
+		// TODO: Allow adding new users.
+
 		PermissionEdit(
-			value = state.usersDefault,
-			onValueChange = { state.usersDefault = it },
+			value = model.usersDefault ?: current?.usersDefault ?: 0,
+			onValueChange = { model.usersDefault = it },
 			label = "Other users"
 		)
 
@@ -102,49 +84,61 @@ fun RoomPowerLevelsEdit(
 		}
 
 		PermissionEdit(
-			value = state.ban,
-			onValueChange = { state.ban = it },
+			value = model.ban ?: current?.ban ?: 50,
+			onValueChange = { model.ban = it },
 			label = "Ban users"
 		)
 
 		PermissionEdit(
-			value = state.kick,
-			onValueChange = { state.kick = it },
+			value = model.kick ?: current?.kick ?: 50,
+			onValueChange = { model.kick = it },
 			label = "Kick users"
 		)
 
 		PermissionEdit(
-			value = state.invite,
-			onValueChange = { state.invite = it },
+			value = model.invite ?: current?.invite ?: 50,
+			onValueChange = { model.invite = it },
 			label = "Invite users"
 		)
 
 		PermissionEdit(
-			value = state.redact,
-			onValueChange = { state.redact = it },
+			value = model.redact ?: current?.redact ?: 50,
+			onValueChange = { model.redact = it },
 			label = "Redact messages"
 		)
 
-		// TODO: Make this tidier and more user friendly.
-		for ((eventType, powerLevel) in state.events) {
+		PermissionEdit(
+			value = model.eventsDefault ?: current?.eventsDefault ?: 0,
+			onValueChange = { model.eventsDefault = it },
+			label = "Default level for message events"
+		)
+
+		PermissionEdit(
+			value = model.stateDefault ?: current?.stateDefault ?: 0,
+			onValueChange = { model.stateDefault = it },
+			label = "Default level for state events"
+		)
+
+		val eventMap = remember { eventTypes.associateBy({ it.type }, { it.name }) }
+
+		for ((eventType, powerLevel) in current?.events.orEmpty()) {
+			PermissionEdit(
+				value = model.events[eventType] ?: powerLevel,
+				onValueChange = { model.events[eventType] = it },
+				label = eventMap[eventType] ?: eventType
+			)
+		}
+		for ((eventType, powerLevel) in model.events) {
+			if (eventType in current?.events.orEmpty()) continue
+
 			PermissionEdit(
 				value = powerLevel,
-				onValueChange = { state.events[eventType] = it },
-				label = eventType
+				onValueChange = { model.events[eventType] = it },
+				label = eventMap[eventType] ?: eventType
 			)
 		}
 
-		PermissionEdit(
-			value = state.eventsDefault,
-			onValueChange = { state.eventsDefault = it },
-			label = "Send exotic events"
-		)
-
-		PermissionEdit(
-			value = state.stateDefault,
-			onValueChange = { state.stateDefault = it },
-			label = "Configure exotic room settings"
-		)
+		// TODO: Allow adding new event types.
 	}
 }
 
@@ -180,11 +174,12 @@ object PowerLevelVisualTransformation : VisualTransformation {
 private fun PermissionEdit(
 	value: Long,
 	onValueChange: (Long) -> Unit,
-	label: String
+	label: String,
+	modifier: Modifier = Modifier
 ) {
 	var showDropDown by remember { mutableStateOf(false) }
 
-	Box {
+	Box(modifier) {
 		var popupWidth by remember { mutableStateOf(0) }
 
 		OutlinedTextField(
@@ -220,39 +215,38 @@ private fun PermissionEdit(
 	}
 }
 
+data class EventType(val type: String, val name: String)
 
-@Composable
-fun RoomPowerLevelsSample() {
-	// language=json
-	val json = """
-		{
-			"ban": 50,
-			"events": {
-			  "im.vector.modular.widgets": 50,
-			  "m.room.avatar": 50,
-			  "m.room.canonical_alias": 50,
-			  "m.room.history_visibility": 100,
-			  "m.room.name": 50,
-			  "m.room.power_levels": 100,
-			  "m.room.topic": 50
-			},
-			"events_default": 0,
-			"invite": 0,
-			"kick": 50,
-			"redact": 50,
-			"state_default": 50,
-			"users": {
-			  "@Mjark:matrix.org": 100,
-			  "@abuse:matrix.org": 50,
-			  "@matthew:matrix.org": 100,
-			  "@richvdh:matrix.org": 100,
-			  "@richvdh:sw1v.org": 100,
-			  "@travis:t2l.io": 50
-			},
-			"users_default": 0
-		}
-		""".trimIndent()
-	val content = Json.decodeFromString(PowerLevelsContent.serializer(), json)
-
-	RoomPowerLevelsEdit(content)
-}
+// These should be ordered by popularity.
+private val eventTypes = listOf(
+	EventType("m.room.name", "Set room name"),
+	EventType("m.room.topic", "Set room topic"),
+	EventType("m.room.avatar", "Set room avatar"),
+	EventType("m.room.canonical_alias", "Set room aliases"),
+	EventType("m.room.message", "Send messages"),
+	EventType("m.room.encrypted", "Send encrypted messages"),
+	EventType("m.room.encryption", "Enable encryption"),
+	EventType("m.room.guest_access", "Configure guest access"),
+	EventType("m.room.history_visibility", "Configure who can see previous messages"),
+	EventType("m.room.join_rules", "Configure who can join the room"),
+	EventType("m.room.pinned_events", "Configure who can pin/unpin messages"),
+	EventType("m.room.power_levels", "Configure permissions in the room"),
+	EventType("m.room.server_acl", "Change server access-control list"),
+	EventType("m.room.tombstone", "Upgrade the room"),
+	// EventType("m.call.answer", ""),
+	// EventType("m.call.candidates", ""),
+	// EventType("m.call.hangup", ""),
+	// EventType("m.call.invite", ""),
+	// EventType("m.policy.rule.room", ""),
+	// EventType("m.policy.rule.server", ""),
+	// EventType("m.policy.rule.user", ""),
+	// EventType("m.sticker", ""),
+	// EventType("m.key.verification.accept", ""),
+	// EventType("m.key.verification.cancel", ""),
+	// EventType("m.key.verification.done", ""),
+	// EventType("m.key.verification.key", ""),
+	// EventType("m.key.verification.mac", ""),
+	// EventType("m.key.verification.ready", ""),
+	// EventType("m.key.verification.request", ""),
+	// EventType("m.key.verification.start", ""),
+)

@@ -7,18 +7,17 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.matrixkt.models.events.contents.room.GuestAccess
-import io.github.matrixkt.models.events.contents.room.GuestAccessContent
 import io.github.matrixkt.models.events.contents.room.JoinRule
 import kotlinx.collections.immutable.toPersistentList
-import me.dominaezzz.chitchat.ui.LocalAppModel
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun RoomSettings(roomId: String, model: RoomSettingsModel) {
+fun RoomSettings(model: RoomSettingsModel) {
 	var selected by remember { mutableStateOf(Setting.General) }
 
 	Row(Modifier.padding(16.dp)) {
@@ -42,14 +41,14 @@ fun RoomSettings(roomId: String, model: RoomSettingsModel) {
 		when (selected) {
 			Setting.General -> GeneralSettings(model)
 			Setting.Permissions -> {
-				RoomPowerLevelsSample()
+				val currentPowerLevels by model.powerLevelContent.collectAsState()
+				RoomPowerLevelsEdit(model, model.powerLevelsModel, currentPowerLevels)
 			}
 			Setting.Security -> {
 				Column {
 					RoomHistoryVisibilitySample()
 				}
 			}
-			else -> {}
 		}
 	}
 }
@@ -156,7 +155,10 @@ private fun JoinRuleEdit(model: RoomSettingsModel, modifier: Modifier = Modifier
 
 		@Composable
 		fun option(value: JoinRule, text: String) {
-			Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+			Row(
+				horizontalArrangement = Arrangement.spacedBy(8.dp),
+				verticalAlignment = Alignment.CenterVertically
+			) {
 				RadioButton(
 					selected = (model.joinRule ?: currentJoinRule?.joinRule) == value,
 					onClick = { model.joinRule = value },
@@ -180,7 +182,10 @@ private fun GuestAccessEdit(model: RoomSettingsModel, modifier: Modifier = Modif
 
 	@Composable
 	fun option(value: GuestAccess, text: String) {
-		Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+		Row(
+			horizontalArrangement = Arrangement.spacedBy(8.dp),
+			verticalAlignment = Alignment.CenterVertically
+		) {
 			RadioButton(
 				selected = (model.guestAccess ?: currentGuestAccess?.guestAccess) == value,
 				onClick = { model.guestAccess = value },

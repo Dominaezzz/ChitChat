@@ -94,4 +94,12 @@ class RoomSettingsModel(
 	var guestAccess: GuestAccess? by mutableStateOf(null)
 
 	val powerLevelContent: StateFlow<PowerLevelsContent?> = getState("m.room.power_levels")
+	val powerLevelsModel = PowerLevelsModel()
+
+	@OptIn(ExperimentalCoroutinesApi::class)
+	fun getMember(userId: String): Flow<MemberContent?> {
+		return syncClient.joinedRooms.map { it[roomId] }
+			.distinctUntilChanged()
+			.flatMapLatest { it?.getMember(userId) ?: flowOf(null) }
+	}
 }
