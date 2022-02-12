@@ -1,9 +1,9 @@
 import org.jetbrains.compose.compose
 
 plugins {
-	kotlin("jvm") version "1.5.31"
-	kotlin("plugin.serialization") version "1.5.31"
-	id("org.jetbrains.compose") version "1.0.0-rc6"
+	kotlin("jvm") version "1.6.10"
+	kotlin("plugin.serialization") version "1.6.10"
+	id("org.jetbrains.compose") version "1.1.0-alpha04"
 }
 
 group = "me.dominaezzz"
@@ -21,9 +21,9 @@ repositories {
 	google()
 }
 
-val ktorVersion = "1.6.4"
-val coroutinesVersion = "1.5.2-native-mt"
-val serializationVersion = "1.3.1"
+val ktorVersion = "1.6.7"
+val coroutinesVersion = "1.6.0-native-mt"
+val serializationVersion = "1.3.2"
 val matrixKtVersion = "0.1.8"
 val sqliteVersion = "3.36.0.3"
 
