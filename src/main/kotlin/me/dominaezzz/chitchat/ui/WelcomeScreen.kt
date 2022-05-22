@@ -1,13 +1,10 @@
 package me.dominaezzz.chitchat.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.BoxWithTooltip
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -19,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -30,11 +26,11 @@ import io.github.matrixkt.api.Login
 import io.github.matrixkt.models.UserIdentifier
 import io.github.matrixkt.models.wellknown.DiscoveryInformation
 import io.github.matrixkt.utils.*
-import io.github.matrixkt.utils.resource.href
 import io.ktor.client.*
 import io.ktor.client.engine.java.*
-import io.ktor.client.features.logging.*
-import io.ktor.client.request.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.plugins.resources.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -117,14 +113,14 @@ private fun LoginToHomeServer(
 
 		val discoveryInfo = try {
 			HttpClient(engine) {
-				MatrixConfig(hostUrl)
+				MatrixConfig(hostUrl.toString())
 				Logging {
 					level = LogLevel.BODY
 					logger = Logger.SIMPLE
 				}
 			}.use { client ->
 				// This endpoint doesn't return Content-Type of json sadly.
-				val response = client.get<String> { href(GetWellknown.Url(), url) }
+				val response = client.get(GetWellknown.Url()).bodyAsText()
 				MatrixJson.decodeFromString<DiscoveryInformation>(response)
 			}
 		} catch (e: Exception) {
@@ -137,7 +133,7 @@ private fun LoginToHomeServer(
 
 		try {
 			val loginFlows = HttpClient(engine) {
-				MatrixConfig(baseUrl)
+				MatrixConfig(baseUrl.toString())
 				Logging {
 					level = LogLevel.BODY
 					logger = Logger.SIMPLE
@@ -176,7 +172,8 @@ private fun LoginToHomeServer(
 			value = username,
 			onValueChange = { username = it },
 			modifier = Modifier
-				.focusOrder(usernameInput) {
+				.focusRequester(usernameInput)
+				.focusProperties {
 					next = passwordInput
 					previous = passwordInput
 				}
@@ -223,7 +220,8 @@ private fun LoginToHomeServer(
 			value = password,
 			onValueChange = { password = it },
 			modifier = Modifier
-				.focusOrder(passwordInput) {
+				.focusRequester(passwordInput)
+				.focusProperties {
 					next = usernameInput
 					previous = usernameInput
 				},
@@ -276,7 +274,7 @@ private fun LoginToHomeServer(
 			}
 
 			HttpClient(engine) {
-				MatrixConfig(providedUrl)
+				MatrixConfig(providedUrl.toString())
 				Logging {
 					level = LogLevel.ALL
 					logger = Logger.SIMPLE
@@ -297,7 +295,6 @@ private fun LoginToHomeServer(
 			}
 		}
 
-		@OptIn(ExperimentalAnimationApi::class)
 		AnimatedVisibility(discoveryResult is ServerDiscoveryResult.Failure) {
 			OutlinedTextField(
 				value = homeserver ?: "",
@@ -358,7 +355,7 @@ private fun LoginToHomeServer(
 						)
 					)
 					val result = runCatching {
-						HttpClient(engine) { MatrixConfig(homeserverUrl!!) }.use { it.rpc(request) }
+						HttpClient(engine) { MatrixConfig(homeserverUrl!!.toString()) }.use { it.rpc(request) }
 					}
 					println(result)
 					result.onSuccess { response ->

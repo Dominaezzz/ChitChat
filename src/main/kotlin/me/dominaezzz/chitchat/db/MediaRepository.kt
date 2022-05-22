@@ -5,8 +5,8 @@ package me.dominaezzz.chitchat.db
 import io.github.matrixkt.api.GetContent
 import io.github.matrixkt.utils.rpc
 import io.ktor.client.*
-import io.ktor.client.features.*
-import io.ktor.network.sockets.*
+import io.ktor.client.network.sockets.*
+import io.ktor.client.plugins.*
 import io.ktor.utils.io.core.Closeable
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel

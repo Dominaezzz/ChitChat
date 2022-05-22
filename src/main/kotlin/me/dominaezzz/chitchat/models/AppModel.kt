@@ -12,8 +12,7 @@ import io.github.matrixkt.utils.MatrixJson
 import io.github.matrixkt.utils.rpc
 import io.ktor.client.*
 import io.ktor.client.engine.java.*
-import io.ktor.client.features.*
-import io.ktor.http.*
+import io.ktor.client.plugins.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -46,9 +45,8 @@ class AppModel(applicationDir: Path, private val appDatabase: AppDatabase) : Clo
 		)
 	}
 
-	val homeServerUrl = Url(session.discoveryInfo.homeServer.baseUrl)
 	val client = HttpClient(Java) {
-		MatrixConfig(homeServerUrl)
+		MatrixConfig(session.discoveryInfo.homeServer.baseUrl)
 
 		install(HttpTimeout) {
 			connectTimeoutMillis = 10_000
