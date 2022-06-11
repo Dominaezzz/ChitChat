@@ -1,9 +1,9 @@
 package me.dominaezzz.chitchat.sdk.crypto
 
-import io.github.matrixkt.api.QueryKeys
-import io.github.matrixkt.models.DeviceKeys
-import io.github.matrixkt.models.UnsignedDeviceInfo
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.clientserver.api.QueryKeys
+import io.github.matrixkt.clientserver.models.DeviceKeys
+import io.github.matrixkt.clientserver.models.UnsignedDeviceInfo
+import io.github.matrixkt.client.rpc
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn

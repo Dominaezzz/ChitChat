@@ -1,9 +1,9 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.events.SyncEvent
-import io.github.matrixkt.models.events.SyncStateEvent
-import io.github.matrixkt.models.events.contents.ReceiptContent
-import io.github.matrixkt.models.events.contents.room.MemberContent
+import io.github.matrixkt.clientserver.models.events.SyncEvent
+import io.github.matrixkt.clientserver.models.events.SyncStateEvent
+import io.github.matrixkt.events.contents.ReceiptContent
+import io.github.matrixkt.events.contents.room.MemberContent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.serializer

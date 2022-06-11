@@ -1,18 +1,18 @@
 package me.dominaezzz.chitchat.sdk.crypto
 
-import io.github.matrixkt.api.UploadKeys
-import io.github.matrixkt.models.*
-import io.github.matrixkt.models.events.OlmEventPayload
-import io.github.matrixkt.models.events.contents.ForwardedRoomKeyContent
-import io.github.matrixkt.models.events.contents.RoomKeyContent
-import io.github.matrixkt.models.events.contents.room.EncryptedContent
-import io.github.matrixkt.models.sync.Event
+import io.github.matrixkt.clientserver.api.UploadKeys
+import io.github.matrixkt.clientserver.models.*
+import io.github.matrixkt.client.OlmEventPayload
+import io.github.matrixkt.events.contents.ForwardedRoomKeyContent
+import io.github.matrixkt.events.contents.RoomKeyContent
+import io.github.matrixkt.events.contents.room.EncryptedContent
+import io.github.matrixkt.clientserver.models.sync.Event
 import io.github.matrixkt.olm.InboundGroupSession
 import io.github.matrixkt.olm.Message
 import io.github.matrixkt.olm.Session
 import io.github.matrixkt.olm.Utility
-import io.github.matrixkt.utils.MatrixJson
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.client.MatrixJson
+import io.github.matrixkt.client.rpc
 import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*

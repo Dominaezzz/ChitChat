@@ -1,15 +1,15 @@
 package me.dominaezzz.chitchat.models
 
-import io.github.matrixkt.api.JoinRoomById
-import io.github.matrixkt.api.SetTyping
-import io.github.matrixkt.models.MatrixError
-import io.github.matrixkt.models.MatrixException
-import io.github.matrixkt.models.Presence
-import io.github.matrixkt.models.events.contents.room.MemberContent
-import io.github.matrixkt.models.events.contents.room.Membership
-import io.github.matrixkt.utils.MatrixConfig
-import io.github.matrixkt.utils.MatrixJson
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.clientserver.api.JoinRoomById
+import io.github.matrixkt.clientserver.api.SetTyping
+import io.github.matrixkt.clientserver.models.MatrixError
+import io.github.matrixkt.client.MatrixException
+import io.github.matrixkt.events.contents.room.MemberContent
+import io.github.matrixkt.events.contents.room.Membership
+import io.github.matrixkt.client.MatrixConfig
+import io.github.matrixkt.client.MatrixJson
+import io.github.matrixkt.client.rpc
+import io.github.matrixkt.events.Presence
 import io.ktor.client.*
 import io.ktor.client.engine.java.*
 import io.ktor.client.plugins.*

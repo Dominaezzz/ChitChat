@@ -1,7 +1,7 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.events.contents.TagContent
-import io.github.matrixkt.models.events.contents.room.*
+import io.github.matrixkt.events.contents.TagContent
+import io.github.matrixkt.events.contents.room.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.sdk.core.internal.coalesce

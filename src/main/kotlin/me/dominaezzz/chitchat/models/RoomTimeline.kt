@@ -1,8 +1,8 @@
 package me.dominaezzz.chitchat.models
 
-import io.github.matrixkt.models.events.MatrixEvent
-import io.github.matrixkt.models.events.UnsignedData
-import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.client.MatrixJson
+import io.github.matrixkt.clientserver.models.events.MatrixEvent
+import io.github.matrixkt.clientserver.models.events.UnsignedData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.builtins.ListSerializer
@@ -144,7 +144,6 @@ class RoomTimeline(
 		// "m.room.tombstone"
 	)
 
-	@OptIn(ExperimentalStdlibApi::class)
 	private fun Connection.getEventsBetween(roomId: String, from: Int, to: Int, eventTypes: List<String> = supportedEventTypes): List<MatrixEvent> {
 		val sql = """
 			WITH event_types(type) AS (SELECT value FROM JSON_EACH(?))

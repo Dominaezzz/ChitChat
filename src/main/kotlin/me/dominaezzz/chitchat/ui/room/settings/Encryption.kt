@@ -7,7 +7,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import io.github.matrixkt.models.events.contents.room.EncryptionContent
+import io.github.matrixkt.events.contents.room.EncryptionContent
 import kotlinx.serialization.json.Json
 
 @Stable

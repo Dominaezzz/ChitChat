@@ -1,8 +1,8 @@
 package me.dominaezzz.chitchat.sdk.util
 
-import io.github.matrixkt.models.events.MatrixEvent
-import io.github.matrixkt.models.events.RoomEvent
-import io.github.matrixkt.models.events.SyncEvent
+import io.github.matrixkt.clientserver.models.events.MatrixEvent
+import io.github.matrixkt.clientserver.models.events.RoomEvent
+import io.github.matrixkt.clientserver.models.events.SyncEvent
 
 fun SyncEvent.toMatrixEvent(roomId: String): MatrixEvent {
 	return MatrixEvent(

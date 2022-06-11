@@ -1,7 +1,7 @@
 package me.dominaezzz.chitchat.models
 
-import io.github.matrixkt.api.SendMessage
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.client.rpc
+import io.github.matrixkt.clientserver.api.SendMessage
 import io.ktor.client.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
@@ -10,7 +10,6 @@ import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.sdk.core.LoginSession
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
 
 class LocalEcho(
 	private val roomId: String,
@@ -30,7 +29,6 @@ class LocalEcho(
 	private val _sentMessages = MutableSharedFlow<Sent?>()
 	val sentMessages: Flow<Sent> = _sentMessages.filterNotNull()
 
-	@OptIn(ExperimentalTime::class)
 	private suspend fun processMessages() {
 		val maxBackOff = 5.minutes
 

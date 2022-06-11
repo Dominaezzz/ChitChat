@@ -3,7 +3,7 @@ package me.dominaezzz.chitchat.util
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.unit.IntSize
-import io.github.matrixkt.models.EncryptedFile
+import io.github.matrixkt.events.EncryptedFile
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import me.dominaezzz.chitchat.db.MediaRepository

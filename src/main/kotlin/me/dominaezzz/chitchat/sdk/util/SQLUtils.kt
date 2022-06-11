@@ -1,6 +1,6 @@
 package me.dominaezzz.chitchat.sdk.util
 
-import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.client.MatrixJson
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.decodeFromString

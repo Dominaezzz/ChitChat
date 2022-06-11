@@ -1,6 +1,6 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.models.wellknown.DiscoveryInformation
+import io.github.matrixkt.clientserver.models.wellknown.DiscoveryInformation
 
 data class LoginSession(
 	val accessToken: String,

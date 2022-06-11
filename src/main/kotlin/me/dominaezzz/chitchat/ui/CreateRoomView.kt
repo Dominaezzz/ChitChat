@@ -22,10 +22,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
-import io.github.matrixkt.api.SearchUserDirectory
-import io.github.matrixkt.models.RoomPreset
-import io.github.matrixkt.models.RoomVersionStability
-import io.github.matrixkt.models.RoomVisibility
+import io.github.matrixkt.clientserver.api.SearchUserDirectory
+import io.github.matrixkt.clientserver.models.RoomPreset
+import io.github.matrixkt.clientserver.models.RoomVersionStability
+import io.github.matrixkt.clientserver.models.RoomVisibility
 import me.dominaezzz.chitchat.models.CreateRoomModel
 import me.dominaezzz.chitchat.util.Banner
 import me.dominaezzz.chitchat.util.TooltipContent

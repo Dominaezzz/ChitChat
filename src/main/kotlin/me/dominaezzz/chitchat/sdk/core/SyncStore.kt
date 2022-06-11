@@ -1,15 +1,14 @@
 package me.dominaezzz.chitchat.sdk.core
 
-import io.github.matrixkt.api.GetMembersByRoom
-import io.github.matrixkt.api.GetRoomEvents
-import io.github.matrixkt.models.events.StrippedState
-import io.github.matrixkt.models.events.SyncEvent
-import io.github.matrixkt.models.events.SyncStateEvent
-import io.github.matrixkt.models.events.contents.ReceiptContent
-import io.github.matrixkt.models.events.contents.room.Membership
-import io.github.matrixkt.models.sync.RoomSummary
-import io.github.matrixkt.models.sync.SyncResponse
-import io.github.matrixkt.models.sync.UnreadNotificationCounts
+import io.github.matrixkt.clientserver.api.GetMembersByRoom
+import io.github.matrixkt.clientserver.api.GetRoomEvents
+import io.github.matrixkt.events.StrippedState
+import io.github.matrixkt.clientserver.models.events.SyncStateEvent
+import io.github.matrixkt.events.contents.ReceiptContent
+import io.github.matrixkt.events.contents.room.Membership
+import io.github.matrixkt.clientserver.models.sync.RoomSummary
+import io.github.matrixkt.clientserver.models.sync.SyncResponse
+import io.github.matrixkt.clientserver.models.sync.UnreadNotificationCounts
 import kotlinx.serialization.json.JsonObject
 
 interface SyncStore {

@@ -1,7 +1,7 @@
 package me.dominaezzz.chitchat.sdk.crypto
 
-import io.github.matrixkt.models.EncryptedFile
-import io.github.matrixkt.models.JWK
+import io.github.matrixkt.events.EncryptedFile
+import io.github.matrixkt.events.JWK
 import java.io.InputStream
 import java.io.OutputStream
 import java.security.DigestInputStream

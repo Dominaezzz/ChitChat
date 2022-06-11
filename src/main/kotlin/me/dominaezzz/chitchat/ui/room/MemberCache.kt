@@ -1,7 +1,7 @@
 package me.dominaezzz.chitchat.ui.room
 
 import androidx.compose.runtime.*
-import io.github.matrixkt.models.events.contents.room.MemberContent
+import io.github.matrixkt.events.contents.room.MemberContent
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.launchIn

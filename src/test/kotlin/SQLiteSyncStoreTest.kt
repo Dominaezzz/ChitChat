@@ -1,9 +1,9 @@
-import io.github.matrixkt.api.GetRoomEvents
-import io.github.matrixkt.models.events.StateEvent
-import io.github.matrixkt.models.events.SyncEvent
-import io.github.matrixkt.models.events.SyncStateEvent
-import io.github.matrixkt.models.sync.*
-import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.clientserver.api.GetRoomEvents
+import io.github.matrixkt.clientserver.models.events.StateEvent
+import io.github.matrixkt.clientserver.models.events.SyncEvent
+import io.github.matrixkt.clientserver.models.events.SyncStateEvent
+import io.github.matrixkt.clientserver.models.sync.*
+import io.github.matrixkt.client.MatrixJson
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.JsonObject

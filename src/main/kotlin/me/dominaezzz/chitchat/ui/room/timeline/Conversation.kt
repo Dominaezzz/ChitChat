@@ -23,10 +23,10 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.github.matrixkt.models.events.MatrixEvent
-import io.github.matrixkt.models.events.MegolmEventPayload
-import io.github.matrixkt.models.events.contents.room.*
-import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.clientserver.models.events.MatrixEvent
+import io.github.matrixkt.client.MegolmEventPayload
+import io.github.matrixkt.events.contents.room.*
+import io.github.matrixkt.client.MatrixJson
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonNull

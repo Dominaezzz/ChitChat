@@ -11,8 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import io.github.matrixkt.models.events.contents.room.GuestAccess
-import io.github.matrixkt.models.events.contents.room.JoinRule
+import io.github.matrixkt.events.contents.room.GuestAccess
+import io.github.matrixkt.events.contents.room.JoinRule
 import kotlinx.collections.immutable.toPersistentList
 
 @OptIn(ExperimentalMaterialApi::class)

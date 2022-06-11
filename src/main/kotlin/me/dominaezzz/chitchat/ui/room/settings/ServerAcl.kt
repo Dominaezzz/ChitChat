@@ -7,7 +7,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.matrixkt.models.events.contents.room.ServerAclContent
+import io.github.matrixkt.events.contents.room.ServerAclContent
 import kotlinx.serialization.json.Json
 
 @Stable

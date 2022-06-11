@@ -23,10 +23,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import io.github.matrixkt.models.events.contents.room.MemberContent
-import io.github.matrixkt.models.events.contents.room.MessageContent
-import io.github.matrixkt.models.events.contents.room.PowerLevelsContent
-import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.events.contents.room.MemberContent
+import io.github.matrixkt.events.contents.room.MessageContent
+import io.github.matrixkt.events.contents.room.PowerLevelsContent
+import io.github.matrixkt.client.MatrixJson
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.drop
 import kotlinx.serialization.json.encodeToJsonElement

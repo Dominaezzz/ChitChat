@@ -1,21 +1,21 @@
 package me.dominaezzz.chitchat.sdk.core.internal
 
-import io.github.matrixkt.api.GetMembersByRoom
-import io.github.matrixkt.api.GetRoomEvents
-import io.github.matrixkt.api.GetRoomStateWithKey
-import io.github.matrixkt.models.Direction
-import io.github.matrixkt.models.MatrixError
-import io.github.matrixkt.models.MatrixException
-import io.github.matrixkt.models.events.SyncEvent
-import io.github.matrixkt.models.events.SyncStateEvent
-import io.github.matrixkt.models.events.contents.ReceiptContent
-import io.github.matrixkt.models.events.contents.TypingContent
-import io.github.matrixkt.models.events.contents.room.*
-import io.github.matrixkt.models.sync.Event
-import io.github.matrixkt.models.sync.JoinedRoom
-import io.github.matrixkt.models.sync.SyncResponse
-import io.github.matrixkt.utils.MatrixJson
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.clientserver.api.GetMembersByRoom
+import io.github.matrixkt.clientserver.api.GetRoomEvents
+import io.github.matrixkt.clientserver.api.GetRoomStateWithKey
+import io.github.matrixkt.clientserver.models.Direction
+import io.github.matrixkt.clientserver.models.MatrixError
+import io.github.matrixkt.client.MatrixException
+import io.github.matrixkt.clientserver.models.events.SyncEvent
+import io.github.matrixkt.clientserver.models.events.SyncStateEvent
+import io.github.matrixkt.events.contents.ReceiptContent
+import io.github.matrixkt.events.contents.TypingContent
+import io.github.matrixkt.events.contents.room.*
+import io.github.matrixkt.clientserver.models.sync.Event
+import io.github.matrixkt.clientserver.models.sync.JoinedRoom
+import io.github.matrixkt.clientserver.models.sync.SyncResponse
+import io.github.matrixkt.client.MatrixJson
+import io.github.matrixkt.client.rpc
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,7 +40,6 @@ class JoinedRoomImpl(
 	override val ownUserId: String
 		get() = loginSession.userId
 
-	@OptIn(ExperimentalCoroutinesApi::class)
 	private val roomFlow: Flow<JoinedRoom> = syncFlow.mapNotNull { it.rooms }
 		.transformWhile { rooms ->
 			val joinedRoom = rooms.join[id]
@@ -61,7 +60,6 @@ class JoinedRoomImpl(
 			room.state?.events?.forEach { emit(it) }
 			room.timeline?.events?.forEach { if (it is SyncStateEvent) emit(it) }
 		}
-	@OptIn(ExperimentalCoroutinesApi::class)
 	private val stateFlow = merge(lazyStateFlow, syncStateFlow)
 
 	override val stateEvents: Flow<SyncStateEvent>

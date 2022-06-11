@@ -2,7 +2,7 @@ package me.dominaezzz.chitchat.sdk.crypto
 
 import io.github.matrixkt.olm.Account
 import io.github.matrixkt.olm.Utility
-import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.client.MatrixJson
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.builtins.MapSerializer

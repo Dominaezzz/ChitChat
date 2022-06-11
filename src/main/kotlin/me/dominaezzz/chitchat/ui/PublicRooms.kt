@@ -18,9 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import io.github.matrixkt.api.QueryPublicRooms
-import io.github.matrixkt.models.PublicRoomsChunk
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.clientserver.api.QueryPublicRooms
+import io.github.matrixkt.clientserver.models.PublicRoomsChunk
+import io.github.matrixkt.client.rpc
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.util.loadIcon

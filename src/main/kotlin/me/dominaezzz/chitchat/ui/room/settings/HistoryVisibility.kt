@@ -7,8 +7,8 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.matrixkt.models.events.contents.room.HistoryVisibility
-import io.github.matrixkt.models.events.contents.room.HistoryVisibilityContent
+import io.github.matrixkt.events.contents.room.HistoryVisibility
+import io.github.matrixkt.events.contents.room.HistoryVisibilityContent
 import kotlinx.serialization.json.Json
 
 @Stable

@@ -1,13 +1,14 @@
 package me.dominaezzz.chitchat.models
 
 import androidx.compose.runtime.*
-import io.github.matrixkt.api.CreateRoom
-import io.github.matrixkt.api.GetCapabilities
-import io.github.matrixkt.api.SearchUserDirectory
-import io.github.matrixkt.models.*
-import io.github.matrixkt.models.events.contents.room.EncryptionContent
-import io.github.matrixkt.utils.MatrixJson
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.client.MatrixException
+import io.github.matrixkt.client.MatrixJson
+import io.github.matrixkt.client.rpc
+import io.github.matrixkt.clientserver.api.CreateRoom
+import io.github.matrixkt.clientserver.api.GetCapabilities
+import io.github.matrixkt.clientserver.api.SearchUserDirectory
+import io.github.matrixkt.clientserver.models.*
+import io.github.matrixkt.events.contents.room.EncryptionContent
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -124,7 +125,6 @@ class CreateRoomModel(
 		}
 	}
 
-	@OptIn(ExperimentalStdlibApi::class)
 	private fun buildRequest(): CreateRoom {
 		return CreateRoom(
 			CreateRoom.Url(),

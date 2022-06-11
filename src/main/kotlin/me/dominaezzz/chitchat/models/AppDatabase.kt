@@ -1,8 +1,8 @@
 package me.dominaezzz.chitchat.models
 
-import io.github.matrixkt.api.Login
-import io.github.matrixkt.models.sync.Event
-import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.clientserver.api.Login
+import io.github.matrixkt.clientserver.models.sync.Event
+import io.github.matrixkt.client.MatrixJson
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import me.dominaezzz.chitchat.sdk.util.*

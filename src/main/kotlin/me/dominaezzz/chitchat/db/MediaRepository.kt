@@ -2,8 +2,8 @@
 
 package me.dominaezzz.chitchat.db
 
-import io.github.matrixkt.api.GetContent
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.clientserver.api.GetContent
+import io.github.matrixkt.client.rpc
 import io.ktor.client.*
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*

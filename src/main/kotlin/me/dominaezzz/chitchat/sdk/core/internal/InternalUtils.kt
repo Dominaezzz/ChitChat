@@ -1,6 +1,6 @@
 package me.dominaezzz.chitchat.sdk.core.internal
 
-import io.github.matrixkt.utils.MatrixJson
+import io.github.matrixkt.client.MatrixJson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.DeserializationStrategy

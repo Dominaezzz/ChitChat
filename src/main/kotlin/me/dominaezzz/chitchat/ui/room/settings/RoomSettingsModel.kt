@@ -1,17 +1,16 @@
 package me.dominaezzz.chitchat.ui.room.settings
 
 import androidx.compose.runtime.*
-import io.github.matrixkt.api.GetRoomIdByAlias
-import io.github.matrixkt.models.MatrixError
-import io.github.matrixkt.models.MatrixException
-import io.github.matrixkt.models.events.contents.room.*
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.client.MatrixException
+import io.github.matrixkt.client.rpc
+import io.github.matrixkt.clientserver.api.GetRoomIdByAlias
+import io.github.matrixkt.clientserver.models.MatrixError
+import io.github.matrixkt.events.contents.room.*
 import io.ktor.client.*
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import me.dominaezzz.chitchat.sdk.core.*
 
 class RoomSettingsModel(

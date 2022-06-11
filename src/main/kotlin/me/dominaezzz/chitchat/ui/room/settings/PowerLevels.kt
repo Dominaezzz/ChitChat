@@ -14,7 +14,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
-import io.github.matrixkt.models.events.contents.room.PowerLevelsContent
+import io.github.matrixkt.events.contents.room.PowerLevelsContent
 
 class PowerLevelsModel {
 	var ban: Long? by mutableStateOf(null)

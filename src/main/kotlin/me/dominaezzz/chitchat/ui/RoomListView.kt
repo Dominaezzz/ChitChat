@@ -1,7 +1,6 @@
 package me.dominaezzz.chitchat.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,11 +22,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.github.matrixkt.api.GetUserProfile
-import io.github.matrixkt.models.events.contents.DirectContent
-import io.github.matrixkt.models.events.contents.TagContent
-import io.github.matrixkt.utils.rpc
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import io.github.matrixkt.client.rpc
+import io.github.matrixkt.clientserver.api.GetUserProfile
+import io.github.matrixkt.events.contents.DirectContent
+import io.github.matrixkt.events.contents.TagContent
 import kotlinx.coroutines.flow.*
 import me.dominaezzz.chitchat.sdk.core.*
 import me.dominaezzz.chitchat.util.loadIcon
@@ -123,7 +121,6 @@ fun RoomListView(
 			backgroundColor = Color.Transparent,
 			actions = {
 				val syncClient = LocalAppModel.current.syncClient
-				@OptIn(ExperimentalCoroutinesApi::class)
 				val syncCount by remember(syncClient) {
 					syncClient.syncFlow
 						.distinctUntilChangedBy { it.nextBatch }
@@ -195,7 +192,6 @@ fun RoomListView(
 					val displayName = roomDetail.displayName
 					val displayAvatar = roomDetail.displayAvatar
 
-					@OptIn(ExperimentalAnimationApi::class)
 					AnimatedVisibility(roomFilter.isEmpty() || displayName.contains(roomFilter, true)) {
 						@OptIn(ExperimentalMaterialApi::class)
 						ListItem(

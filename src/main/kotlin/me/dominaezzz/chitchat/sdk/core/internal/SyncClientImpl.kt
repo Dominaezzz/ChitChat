@@ -1,10 +1,10 @@
 package me.dominaezzz.chitchat.sdk.core.internal
 
-import io.github.matrixkt.api.Sync
-import io.github.matrixkt.models.Presence
-import io.github.matrixkt.models.events.StrippedState
-import io.github.matrixkt.models.sync.SyncResponse
-import io.github.matrixkt.utils.rpc
+import io.github.matrixkt.client.rpc
+import io.github.matrixkt.clientserver.api.Sync
+import io.github.matrixkt.clientserver.models.sync.SyncResponse
+import io.github.matrixkt.events.Presence
+import io.github.matrixkt.events.StrippedState
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
